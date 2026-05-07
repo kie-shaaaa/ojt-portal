@@ -19,7 +19,7 @@ const actions = [
 export const HeroSection = (): JSX.Element => {
   return (
     <section
-      className="flex flex-1 max-h-[528px] relative flex-col w-[1280px] min-h-[500px] items-center justify-center px-6 py-20 bg-[#00153cd9]"
+      className="flex flex-1 max-h-[528px] relative flex-col w-full min-h-[500px] items-center justify-center px-6 py-20 bg-[#00153cd9]" style={{backgroundAttachment: 'fixed'}}
       aria-labelledby="hero-banner-title"
     >
       <div className="items-start pt-0 pb-6 px-0 inline-flex flex-col relative flex-[0_0_auto]">

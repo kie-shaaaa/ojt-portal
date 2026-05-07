@@ -10,7 +10,7 @@ const navLinks = [
 
 export const NavBar = (): JSX.Element => {
   return (
-    <header className="flex flex-1 max-h-[68px] relative w-[1280px] items-center justify-between px-12 py-3 bg-[#002b7f]">
+    <header className="flex flex-1 max-h-[68px] relative w-full items-center justify-between px-12 py-3 bg-[#002b7f]">
       <div className="inline-flex items-center gap-3 relative flex-[0_0_auto]">
         <div
           className="w-10 h-10 border border-solid border-white bg-[url(/image.png)] relative rounded-full bg-cover bg-[50%_50%]"
