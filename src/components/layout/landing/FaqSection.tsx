@@ -74,7 +74,8 @@ export const FaqSection = (): JSX.Element => {
   return (
     <section
       aria-labelledby={`${accordionId}-heading`}
-      className="ml-32 mr-32 flex-1 max-h-[755.25px] max-w-screen-lg w-[1024px] gap-12 px-6 py-20 flex relative flex-col items-start"
+      className="w-full flex-1 max-h-[755.25px] gap-12 px-6 py-20 flex relative flex-col items-center bg-white"
+      style={{backgroundAttachment: 'fixed'}}
     >
       <div className="flex items-center self-stretch w-full flex-col relative flex-[0_0_auto]">
         <h2
@@ -84,7 +85,7 @@ export const FaqSection = (): JSX.Element => {
           Frequently Asked Questions
         </h2>
       </div>
-      <div className="flex flex-col items-start gap-4 relative self-stretch w-full flex-[0_0_auto]">
+      <div className="flex flex-col items-start gap-4 relative w-full max-w-[1024px] flex-[0_0_auto]">
         {faqItems.map((item) => {
           const isOpen = openItemId === item.id;
           const panelId = `${accordionId}-${item.id}-panel`;

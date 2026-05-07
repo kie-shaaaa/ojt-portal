@@ -19,9 +19,10 @@ const actions = [
 export const HeroSection = (): JSX.Element => {
   return (
     <section
-      className="flex flex-1 max-h-[528px] relative flex-col w-[1280px] min-h-[500px] items-center justify-center px-6 py-20 bg-[#00153cd9]"
+      className="flex flex-1 max-h-[528px] relative flex-col w-full min-h-[700px] items-center justify-center px-6 py-20  bg-[url('/landing/portal-bg.png')] bg-cover bg-center bg-no-repeat"
       aria-labelledby="hero-banner-title"
     >
+      <div className="absolute inset-0 bg-black/75" />
       <div className="items-start pt-0 pb-6 px-0 inline-flex flex-col relative flex-[0_0_auto]">
         <div className="inline-flex flex-col items-center gap-4 relative flex-[0_0_auto]">
           <div className="inline-flex items-start p-2 relative flex-[0_0_auto] bg-white rounded-full">

@@ -53,7 +53,7 @@ const legalLinks = [
 
 export const Footer = (): JSX.Element => {
   return (
-    <footer className="flex flex-1 max-h-[421px] relative mt-0.5 flex-col w-[1280px] items-start gap-8 pt-16 pb-8 px-16 bg-[#001d4e]">
+    <footer className="flex flex-1 max-h-[421px] relative flex-col w-full items-center gap-8 pt-16 pb-8 px-16 bg-[#001d4e]">
       <div className="grid grid-cols-4 grid-rows-[194px] max-w-6xl h-fit gap-12 pt-0 pb-16 px-0 border-b [border-bottom-style:solid] border-[#ffffff1a]">
         <section className="relative row-[1_/_2] col-[1_/_2] w-full h-fit flex flex-col items-start gap-6 pt-0 pb-[32.5px] px-0">
           <div className="flex items-center gap-3 relative self-stretch w-full flex-[0_0_auto]">
