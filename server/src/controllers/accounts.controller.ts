@@ -1,6 +1,6 @@
-import { Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { AccountsService } from '../services/accounts.service';
-import type { Account } from '../data/types';
+import type { Account, AccountCreate } from '../data/types';
 import { AuthService } from '../services/auth.service';
 
 @Controller('accounts')
@@ -11,7 +11,8 @@ export class AccountsController {
   ) {}
 
   @Post('signup')
-  async signUp(account: Account) {
+  async signUp(@Body() account: AccountCreate): Promise<Account> {
+    console.log('Received account creation request:', account);
     account.password = await this.authService.hashPassword(account.password);
     return this.accountsService.createAccount(account);
   }

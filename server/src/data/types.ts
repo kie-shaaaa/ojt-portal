@@ -37,14 +37,25 @@ export type Account = {
   id?: number;
   email: string;
   password: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 };
 
-export type Rerponse = {
+export type AccountCreate = {
+  email: string;
+  username: string;
+  password: string;
+  account_type: string;
+};
+
+export type Response = {
   status: number;
   message: string;
   ok: boolean;
   error?: [];
   data?: any;
+};
+
+export type FindAccount = {
+  email: string;
 };

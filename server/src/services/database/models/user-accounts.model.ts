@@ -25,7 +25,8 @@ export async function createUserAccounts(client: Client) {
             password VARCHAR(255) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
             account_status account_status DEFAULT 'active',
-            date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
