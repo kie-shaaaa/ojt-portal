@@ -70,7 +70,7 @@ export const ContactSection = (): JSX.Element => {
 
   return (
     <section
-      className="flex-1 max-h-[878px] w-[1280px] px-16 py-20 bg-[#002b7f] flex relative flex-col items-start"
+      className="flex-1 max-h-[878px] w-full px-16 py-20 bg-[#002b7f] flex relative flex-col items-center"
       aria-labelledby="contact-section-heading"
     >
       <div className="flex max-w-6xl items-start gap-12 relative w-full flex-[0_0_auto]">
