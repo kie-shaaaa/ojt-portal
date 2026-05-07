@@ -8,6 +8,7 @@ import { AuthService } from './services/auth.service';
 import { AuthModule } from './auth.module';
 import { AuthController } from './auth.controller';
 import { DatabaseService } from './service/database.service';
+import { AuthController } from './controllers/auth.controller';
 
 @Module({
   imports: [AccountsModule, AuthModule],
