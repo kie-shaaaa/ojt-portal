@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Send, Search } from "lucide-react";
 import { JSX } from "react";
 
@@ -8,6 +9,7 @@ const actions = [
     icon: Send,
     variant: "primary" as const,
     type: "button" as const,
+    href: "/apply",
   },
   {
     label: "Track Application",
@@ -73,16 +75,33 @@ export const HeroSection = (): JSX.Element => {
       >
         {actions.map((action) => {
           const isPrimary = action.variant === "primary";
+          const className = isPrimary
+            ? "all-[unset] box-border inline-flex items-center justify-center gap-3 px-12 py-4 bg-[#2668ff] rounded-[28px] shadow-[0_16px_40px_-24px_rgba(0,0,0,0.8)] text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            : "all-[unset] box-border inline-flex items-center justify-center gap-3 px-12 py-4 rounded-[28px] border border-white/70 bg-transparent text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+
+          if (action.href) {
+            return (
+              <Link key={action.label} href={action.href} className={className} aria-label={action.label}>
+                <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
+                  {action.icon && (
+                    <action.icon
+                      className="relative w-5 h-5 text-white"
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+                <div className="flex items-center justify-center [font-family:'Inter-SemiBold',Helvetica] font-semibold text-white text-base text-center tracking-[0] leading-6 whitespace-nowrap relative w-fit">
+                  {action.label}
+                </div>
+              </Link>
+            );
+          }
 
           return (
             <button
               key={action.label}
               type={action.type}
-              className={
-                isPrimary
-                  ? "all-[unset] box-border inline-flex items-center justify-center gap-3 px-12 py-4 bg-[#2668ff] rounded-[28px] shadow-[0_16px_40px_-24px_rgba(0,0,0,0.8)] text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                  : "all-[unset] box-border inline-flex items-center justify-center gap-3 px-12 py-4 rounded-[28px] border border-white/70 bg-transparent text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              }
+              className={className}
               aria-label={action.label}
             >
               <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
