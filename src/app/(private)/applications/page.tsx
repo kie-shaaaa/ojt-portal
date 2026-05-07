@@ -1,8 +1,20 @@
-export default function ApplicationPage(){
-    return (
-        <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">Applications</h1>
-          <p>This is the applications page. Here you can manage and review all submitted applications.</p>
-        </div>
-      );
+import { JSX } from "react";
+
+import { ApplicationStatsSection } from "@/components/layout/private/Dashboard/ApplicationStatsSection";
+import { ApplicationsHeaderSection } from "@/components/layout/private/Applications/ApplicationsHeaderSection";
+import { ApplicationsFilterSection } from "@/components/layout/private/Applications/ApplicationsFilterSection";
+import { ApplicationsTableSection } from "@/components/layout/private/Applications/ApplicationsTableSection";
+
+export default function ApplicationPage(): JSX.Element {
+  return (
+    <main
+      className="relative flex w-full flex-col items-start gap-6 p-8"
+      data-id="main-content"
+    >
+      <ApplicationsHeaderSection />
+      <ApplicationStatsSection />
+      <ApplicationsFilterSection />
+      <ApplicationsTableSection />
+    </main>
+  );
 }

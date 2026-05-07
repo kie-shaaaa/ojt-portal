@@ -1,8 +1,20 @@
-export default function DashboardPage() {
+import { JSX } from "react";
+
+import { ApplicationsHeaderSection } from "@/components/layout/private/Dashboard/ApplicationsHeaderSection";
+import { ApplicationChartsSection } from "@/components/layout/private/Dashboard/ApplicationCharts";
+import { ApplicationDetailsSection } from "@/components/layout/private/Dashboard/ApplicationDetailsSection";
+import { ApplicationStatsSection } from "@/components/layout/private/Dashboard/ApplicationStatsSection";
+
+export default function DashboardPage(): JSX.Element {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-      <p>Welcome to the dashboard! Here you can find an overview of your activities and statistics.</p>
-    </div>
+    <main
+      className="relative flex w-full flex-col items-start gap-6 p-8"
+      data-id="main-content"
+    >
+      <ApplicationsHeaderSection />
+      <ApplicationStatsSection />
+      <ApplicationChartsSection />
+      <ApplicationDetailsSection />
+    </main>
   );
 }
