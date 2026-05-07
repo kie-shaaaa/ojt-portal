@@ -10,10 +10,4 @@ export class AccountsController {
     private readonly accountsService: AccountsService,
   ) {}
 
-  @Post('signup')
-  async signUp(@Body() account: AccountCreate): Promise<Account> {
-    console.log('Received account creation request:', account);
-    account.password = await this.authService.hashPassword(account.password);
-    return this.accountsService.createAccount(account);
-  }
 }

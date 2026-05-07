@@ -5,6 +5,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyCsrf from '@fastify/csrf-protection';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -15,6 +16,14 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5000',
   });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   await app.register(fastifyCsrf as any);
 
