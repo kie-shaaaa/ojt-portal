@@ -1,7 +1,7 @@
-
+import Image from "next/image";
 import { UserRound } from "lucide-react";
 import { JSX } from "react";
-<UserRound />
+import ntcLogo from "../../../assets/ntc-logo.png";
 
 const navLinks = [
   { label: "FAQs", href: "#faqs" },
@@ -12,11 +12,15 @@ export const NavBar = (): JSX.Element => {
   return (
     <header className="flex flex-1 max-h-[68px] relative w-full items-center justify-between px-12 py-3 bg-[#002b7f]">
       <div className="inline-flex items-center gap-3 relative flex-[0_0_auto]">
-        <div
-          className="w-10 h-10 border border-solid border-white bg-[url(/image.png)] relative rounded-full bg-cover bg-[50%_50%]"
-          role="img"
-          aria-label="NTC OJT Application logo"
-        />
+        <div className="w-10 h-10 border border-solid border-white relative rounded-full overflow-hidden">
+          <Image
+            src={ntcLogo}
+            alt="NTC OJT Application logo"
+            fill
+            className="object-cover object-center"
+            sizes="40px"
+          />
+        </div>
         <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
           <div className="flex items-start self-stretch w-full flex-col relative flex-[0_0_auto]">
             <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-lg tracking-[0] leading-7 whitespace-nowrap relative w-fit">
@@ -52,7 +56,10 @@ export const NavBar = (): JSX.Element => {
           className="all-[unset] box-border inline-flex gap-2 px-4 py-2 bg-[#2a52be] rounded border border-solid border-[#60a5fa4c] items-center relative flex-[0_0_auto] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
         >
           <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-            <UserRound className="relative w-[18px] h-[18px] text-white" aria-hidden="true" />
+            <UserRound
+              className="relative w-[18px] h-[18px] text-white"
+              aria-hidden="true"
+            />
           </div>
           <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
             <div className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm text-center tracking-[0] leading-5 whitespace-nowrap relative w-fit">

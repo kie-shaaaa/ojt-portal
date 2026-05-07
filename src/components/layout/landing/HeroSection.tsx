@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { Send, Search } from "lucide-react";
 import { JSX } from "react";
+import ntcLogo from "../../../assets/ntc-logo.png";
 
 const actions = [
   {
@@ -30,11 +32,15 @@ export const HeroSection = (): JSX.Element => {
               className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-full shadow-[0px_8px_10px_-6px_#0000001a,0px_20px_25px_-5px_#0000001a]"
               aria-hidden="true"
             />
-            <div
-              className="w-20 h-20 border-2 border-solid border-[#002b7f] bg-[url(/NTC-seal.png)] relative rounded-full bg-cover bg-[50%_50%]"
-              role="img"
-              aria-label="National Telecommunications Commission seal"
-            />
+            <div className="w-20 h-20 border-2 border-solid border-[#002b7f] relative rounded-full overflow-hidden">
+              <Image
+                src={ntcLogo}
+                alt="National Telecommunications Commission seal"
+                fill
+                className="object-cover object-center"
+                sizes="80px"
+              />
+            </div>
           </div>
           <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
             <div className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-semibold text-slate-200 text-sm text-center tracking-[0.35px] leading-5 whitespace-nowrap relative w-fit">
