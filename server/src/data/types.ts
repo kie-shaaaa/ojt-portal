@@ -42,6 +42,7 @@ export type Account = {
 };
 
 export type AccountCreate = {
+  id?: string;
   email: string;
   username: string;
   password: string;

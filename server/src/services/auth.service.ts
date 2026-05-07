@@ -28,16 +28,21 @@ export class AuthService {
       throw new BadRequestException('Email and password are required');
     }
 
+    console.log(`[AUTH] Attempting sign-in for email: ${email}`);
     const user = await this.findUser(email);
     if (!user) {
+      console.log(`[AUTH] User not found for email: ${email}`);
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    console.log(`[AUTH] User found for email: ${email}, verifying password...`);
     const isValid = await this.verifyPassword(user.password, password);
     if (!isValid) {
+      console.log(`[AUTH] Password verification failed for email: ${email}`);
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    console.log(`[AUTH] Password verified successfully for email: ${email}`);
     // Log successful sign-in
     await this.logSignIn(email, true, null, user.id);
 
