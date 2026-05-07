@@ -1,0 +1,39 @@
+import { Client } from 'pg';
+
+export async function createFileUploads(client: Client) {
+  await client.query(`
+        DO $$
+        BEGIN
+            CREATE TYPE file_type AS ENUM ('ojt_resume', 'job_resume', 'cover_letter', 'other');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+    `);
+
+  await client.query(`
+        CREATE TABLE IF NOT EXISTS file_uploads (
+            id SERIAL PRIMARY KEY,
+            application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+            file_type file_type NOT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            file_path VARCHAR(500) NOT NULL,
+            file_size INTEGER NOT NULL,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+
+  await client
+    .query(
+      `
+        CREATE INDEX IF NOT EXISTS idx_application_id ON file_uploads(application_id);
+    `,
+    )
+    .catch(() => {});
+
+  await client
+    .query(
+      `
+        CREATE INDEX IF NOT EXISTS idx_file_type ON file_uploads(file_type);
+    `,
+    )
+    .catch(() => {});
+}
