@@ -3,10 +3,10 @@ import {
   InternalServerErrorException,
   BadRequestException,
   UnauthorizedException,
-  ConflictException,
 } from '@nestjs/common';
+import { Client } from 'pg';
 import * as argon2 from 'argon2';
-import type { Account, AccountRegister } from '../data/types';
+import type { Account } from '../data/types';
 import { DatabaseService } from './database/database.service';
 
 @Injectable()
@@ -97,7 +97,7 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
     try {
       const timestamp = new Date();
       const status = success ? 'SUCCESS' : 'FAILED';

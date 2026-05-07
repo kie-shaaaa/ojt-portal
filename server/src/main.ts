@@ -4,7 +4,12 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import fastifyCsrf from '@fastify/csrf-protection';
+
+import cookie from '@fastify/cookie';
+import csrf from '@fastify/csrf-protection';
+import rateLimit from '@fastify/rate-limit';
+import helmet from '@fastify/helmet';
+
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -13,8 +18,31 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
+  // MUST register plugins BEFORE app.listen
+
+  await app.register(cookie as any);
+
+  await app.register(helmet as any, {
+    global: true,
+    contentSecurityPolicy: false,
+  });
+
+  await app.register(rateLimit as any, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
+  await app.register(csrf as any, {
+    cookieOpts: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  });
+
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5000',
+    credentials: true,
   });
 
   app.useGlobalPipes(
@@ -25,8 +53,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.register(fastifyCsrf as any);
-
   await app.listen(process.env.PORT ?? 5000);
 }
+
 bootstrap();

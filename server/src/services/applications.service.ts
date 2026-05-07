@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
-import { Application } from '../data/types';
+import { Application, ApplicationStatus } from '../data/types';
 import { CreateApplicationDto } from '../data/create-application.dto';
 
 @Injectable()
@@ -8,8 +8,8 @@ export class ApplicationsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async submitApplication(application: CreateApplicationDto) {
-    const client = await this.databaseService.getClient();
     try {
+      const client = await this.databaseService.getClient();
       const exists = await client.query(
         'SELECT id FROM applications WHERE email = $1',
         [application.email],
@@ -83,7 +83,7 @@ export class ApplicationsService {
         [count],
       );
 
-      return res.rows || {};
+      return res.rows || [];
     } catch (error) {
       return {
         error,
@@ -105,7 +105,7 @@ export class ApplicationsService {
         [email || '', id || null],
       );
 
-      return res.rows;
+      return res.rows || [];
     } catch (error) {
       return {
         error,
@@ -114,6 +114,29 @@ export class ApplicationsService {
       };
     }
   }
+  async updateApplication(id: number, status: ApplicationStatus) {
+    const client = await this.databaseService.getClient();
 
+    try {
+      const res = await client.query<Application>(
+        `
+      UPDATE applications
+      SET status = $1
+      WHERE id = $2
+      RETURNING *;
+      `,
+        [status, id],
+      );
+
+      return res.rows[0] ?? null;
+    } catch (error) {
+      return {
+        error,
+        message: 'failed to update data',
+        ok: false,
+      };
+    }
+  }
+  
   async validateApplication() {}
 }
