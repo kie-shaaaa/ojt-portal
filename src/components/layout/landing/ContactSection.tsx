@@ -1,5 +1,6 @@
 "use client";
-import { FormEvent, useId, useState } from "react";
+import { FormEvent, useEffect, useId, useState } from "react";
+import { usePathname } from "next/navigation";
 import { JSX } from "react";
 import { Phone, Mail, Clock, Send, ChevronDown } from "lucide-react";
 
@@ -56,6 +57,13 @@ export const ContactSection = (): JSX.Element => {
   const emailId = useId();
   const subjectId = useId();
   const messageId = useId();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname === "/contact") {
+      document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [pathname]);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -70,7 +78,8 @@ export const ContactSection = (): JSX.Element => {
 
   return (
     <section
-      className="flex-1 max-h-[878px] w-[1280px] px-16 py-20 bg-[#002b7f] flex relative flex-col items-start"
+      id="contact"
+      className="flex-1 max-h-[878px] w-full px-16 py-20 bg-[#002b7f] flex relative flex-col items-center scroll-mt-[96px]"
       aria-labelledby="contact-section-heading"
     >
       <div className="flex max-w-6xl items-start gap-12 relative w-full flex-[0_0_auto]">
@@ -216,10 +225,8 @@ export const ContactSection = (): JSX.Element => {
                   </label>
                 </div>
                 <div className="flex items-center justify-center px-4 py-3 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md border border-solid border-slate-200">
-                  <div className="pointer-events-none flex flex-col w-full h-full items-start justify-center pl-[533.39px] pr-[9px] py-[13px] absolute top-0 left-0">
-                    <div className="relative w-6 h-6">
-                      <ChevronDown className="absolute w-[70%] h-[60%] top-[40%] left-[30%] text-slate-400" aria-hidden="true" />
-                    </div>
+                  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
+                    <ChevronDown className="relative w-4 h-4 text-slate-400" aria-hidden="true" />
                   </div>
                   <div className="flex flex-col items-start relative flex-1 grow">
                     <select
@@ -233,7 +240,7 @@ export const ContactSection = (): JSX.Element => {
                           subject: event.target.value,
                         }))
                       }
-                      className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-800 text-base tracking-[0] leading-6 bg-transparent border-0 outline-none appearance-none pr-8"
+                      className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-800 text-base tracking-[0] leading-6 bg-transparent border-0 outline-none appearance-none pr-10"
                     >
                       <option value="" disabled className="text-slate-800">
                         Select a subject
@@ -256,7 +263,7 @@ export const ContactSection = (): JSX.Element => {
                     MESSAGE *
                   </label>
                 </div>
-                <div className="flex items-start justify-center pt-3 pb-[84px] px-4 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="flex items-start justify-center pt-3 pb-6 px-4 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
                   <div className="flex flex-col items-start relative flex-1 grow">
                     <textarea
                       id={messageId}
@@ -271,7 +278,7 @@ export const ContactSection = (): JSX.Element => {
                       }
                       placeholder="Type your message here..."
                       className="relative flex items-center self-stretch mt-[-1.00px] min-h-[24px] resize-none border-0 bg-transparent p-0 outline-none [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-base tracking-[0] leading-6 placeholder:text-gray-500"
-                      rows={4}
+                      rows={3}
                     />
                   </div>
                 </div>
