@@ -1,24 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import * as argon2 from 'argon2';
+import { JwtService } from '@nestjs/jwt';
 import { Account } from '../data/types';
 
 @Injectable()
 export class AuthService {
+  constructor(private readonly jwtService: JwtService) {}
+
   async signInAccount(email: string, password: string) {
     try {
       const user = await this.findUser(email);
       if (!user) {
-        throw new Error('User not found');
+        throw new UnauthorizedException('User not found');
       }
 
       const isValid = await this.verifyPassword(user.password, password);
 
       if (!isValid) {
-        throw new Error('Invalid password');
+        throw new UnauthorizedException('Invalid password');
       }
 
-      return user;
+      const payload = {
+        sub: user.email,
+        email: user.email,
+      };
+
+      const access_token = await this.jwtService.signAsync(payload);
+
+      return {
+        token: access_token,
+        user: {
+          email: user.email,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      };
     } catch (error) {
       return error;
     }

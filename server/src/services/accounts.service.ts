@@ -1,50 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import * as argon2 from "argon2"
 import { Account } from '../data/types';
 import { AuthService } from './auth.service';
 
 @Injectable()
 export class AccountsService {
-    constructor(private readonly authService: AuthService) {}
-    
-    async createAccount(account: Account) {
-        try {
-            
-            const exists = await this.authService.findUser(account.email)
-            if (exists) {
-                throw new Error('User already exists')
-            }
-            const hash = await this.authService.hashPassword(account.password)
+  constructor(private readonly authService: AuthService) {}
 
-            const newUser: Account = {
-                email: account.email,
-                password: hash,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
+  async createAccount(account: Account) {
+    try {
+      const exists = await this.authService.findUser(account.email);
+      if (exists) {
+        throw new Error('User already exists');
+      }
+      const hash = await this.authService.hashPassword(account.password);
 
-            // TODO: Implement database query to create new user with newUser object
-            return newUser
-            
-        } catch (error) {
-            return error;
-        }
+      const newUser: Account = {
+        email: account.email,
+        password: hash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // TODO: Implement database query to create new user with newUser object
+      return newUser;
+    } catch (error) {
+      return error;
     }
+  }
 
-    async updateAccount() {
+  async updateAccount() {}
 
-    }
+  async deleteAccount() {}
 
-    async deleteAccount() {
-    }
+  async deactivateAccount() {}
 
-    async deactivateAccount() {
-    }
-
-    async updatePassword(hash: string, newPassword: string) {
-        const newHash = await this.authService.hashPassword(newPassword)
-        return newHash
-    }
-
-
+  async updatePassword(hash: string, newPassword: string) {
+    const newHash = await this.authService.hashPassword(newPassword);
+    return newHash;
+  }
 }

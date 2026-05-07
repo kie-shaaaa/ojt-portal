@@ -1,6 +1,6 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Post } from '@nestjs/common';
 import { AccountsService } from '../services/accounts.service';
-import { Account } from '../data/types';
+import type { Account } from '../data/types';
 import { AuthService } from '../services/auth.service';
 
 @Controller('accounts')
@@ -10,11 +10,7 @@ export class AccountsController {
     private readonly accountsService: AccountsService,
   ) {}
 
-  async signIn(account: Account) {
-    account.password = await this.authService.hashPassword(account.password);
-    return this.authService.signInAccount(account.email, account.password);
-  }
-
+  @Post('signup')
   async signUp(account: Account) {
     account.password = await this.authService.hashPassword(account.password);
     return this.accountsService.createAccount(account);
