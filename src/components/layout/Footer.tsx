@@ -1,9 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import { JSX } from "react";
 import { Home, HelpCircle, Mail, MapPin, Phone, FileText, BookOpen } from "lucide-react";
 
 const quickLinks = [
-  { label: "Home", icon: Home, iconClassName: "w-4 h-4 text-slate-200", href: "#home" },
+  { label: "Home", icon: Home, iconClassName: "w-4 h-4 text-slate-200", href: "#top" },
   { label: "FAQs", icon: HelpCircle, iconClassName: "w-4 h-4 text-slate-200", href: "#faqs" },
   { label: "Contact", icon: Mail, iconClassName: "w-4 h-4 text-slate-200", href: "#contact" },
 ];
@@ -53,6 +55,22 @@ const legalLinks = [
 ];
 
 export const Footer = (): JSX.Element => {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const scrollToSection = (targetId: string) => {
+    if (targetId === "top") {
+      scrollToTop();
+      return;
+    }
+
+    document.getElementById(targetId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   return (
     <footer className="flex flex-1 max-h-[421px] relative flex-col w-full items-center gap-8 pt-16 pb-8 px-6 md:px-16 bg-[#001d4e]">
       <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-4 h-fit gap-12 pb-16 border-b border-[#ffffff1a]">
@@ -116,12 +134,13 @@ export const Footer = (): JSX.Element => {
                     <item.icon className={`relative ${item.iconClassName}`} aria-hidden="true" />
                   )}
                 </div>
-                <a
-                  href={item.href}
+                <button
+                  type="button"
+                  onClick={() => scrollToSection(item.href.replace("#", ""))}
                   className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-sm tracking-[0] leading-5 whitespace-nowrap relative w-fit focus:outline-none focus:underline hover:underline"
                 >
                   {item.label}
-                </a>
+                </button>
               </li>
             ))}
           </ul>
@@ -148,7 +167,7 @@ export const Footer = (): JSX.Element => {
                 </div>
                 <div className="inline-flex flex-col items-start relative self-stretch flex-[0_0_auto]">
                   <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                    <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-00 text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit">
+                    <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-200 text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit">
                       {item.label}
                     </div>
                   </div>
