@@ -8,8 +8,15 @@ export type Account = {
     id?: number,
     email: string,
     password: string,
-    createdAt: Date,
-    updatedAt: Date
+    created_at: Date,
+    updated_at: Date
+}
+
+export type AccountCreate = {
+    email: string,
+    username: string,
+    password: string,
+    account_type: string
 }
 
 export type Rerponse = {
@@ -36,3 +43,6 @@ export type ApplicationStatus = {
     id: number,
 }
 
+export type FindAccount = {
+    email: string,
+}

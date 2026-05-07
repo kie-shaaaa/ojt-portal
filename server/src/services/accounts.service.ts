@@ -1,33 +1,39 @@
 import { Injectable } from '@nestjs/common';
 import * as argon2 from "argon2"
-import { Account } from '../data/types';
+import { Account, AccountCreate } from '../data/types';
 import { AuthService } from './auth.service';
+import { DatabaseService } from './database/database.service';
 
 @Injectable()
 export class AccountsService {
-    constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService,
+        private readonly databaseService: DatabaseService) { }
     
-    async createAccount(account: Account) {
+    async createAccount(account: AccountCreate) {
+        const client = await this.databaseService.getClient();
         try {
-            
             const exists = await this.authService.findUser(account.email)
             if (exists) {
                 throw new Error('User already exists')
             }
             const hash = await this.authService.hashPassword(account.password)
 
-            const newUser: Account = {
+            const newUser: AccountCreate = {
                 email: account.email,
                 password: hash,
-                createdAt: new Date(),
-                updatedAt: new Date()
+                username: account.username,
+                account_type: account.account_type,
             }
 
-            // TODO: Implement database query to create new user with newUser object
-            return newUser
-            
+            const res = client.query<AccountCreate>(`
+                INSERT INTO user_accounts (email, password, username, account_type)
+                VALUES($1, $2, $3, $4)
+            `, [newUser.email, newUser.password, newUser.username, newUser.account_type]);
+
+
+            return res.rows[0] || null;
         } catch (error) {
-            return error;
+            return 
         }
     }
 
