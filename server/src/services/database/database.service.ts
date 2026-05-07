@@ -2,11 +2,11 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Client } from 'pg';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
-import { createApplications } from './models/applications.model';
-import { createUserAccounts } from './models/user-accounts.model';
-import { createOjtData } from './models/ojt-data.model';
-import { createFileUploads } from './models/file-uploads.model';
-import { createApplicationSettings } from './models/application-settings.model';
+import { createApplications } from '../../services/database/models/applications.model';
+import { createUserAccounts } from '../../services/database/models/user-accounts.model';
+import { createOjtData } from '../../services/database/models/ojt-data.model';
+import { createFileUploads } from '../../services/database/models/file-uploads.model';
+import { createApplicationSettings } from '../../services/database/models/application-settings.model';
 
 dotenv.config();
 
