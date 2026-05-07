@@ -8,6 +8,7 @@ import { createOjtData } from '../../services/database/models/ojt-data.model';
 import { createFileUploads } from '../../services/database/models/file-uploads.model';
 import { createApplicationSettings } from '../../services/database/models/application-settings.model';
 import { createLogs } from './models/logs.model';
+import { createAppointment } from './models/appointment.model';
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ export class DatabaseService implements OnModuleInit {
     await createOjtData(this.client);
     await createApplicationSettings(this.client);
     await createLogs(this.client);
+    await createAppointment(this.client);
 
     console.log(chalk.bgGreen.black('[SUPABASE] All tables are ready!'));
   }
