@@ -114,6 +114,29 @@ export class ApplicationsService {
       };
     }
   }
+
+  async getApplicationByStatus(status: ApplicationStatus) {
+    const client = await this.databaseService.getClient();
+
+    try {
+      const res = await client.query<Application>(
+        `
+      SELECT * FROM applications
+      WHERE status = $1;
+      `,
+        [status],
+      );
+
+      return res.rows[0] ?? null;
+    } catch (error) {
+      return {
+        error,
+        message: 'failed to update data',
+        ok: false,
+      };
+    }
+  }
+  
   async updateApplication(id: number, status: ApplicationStatus) {
     const client = await this.databaseService.getClient();
 

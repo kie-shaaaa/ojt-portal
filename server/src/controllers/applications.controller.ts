@@ -1,6 +1,15 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApplicationsService } from '../services/applications.service';
 import { CreateApplicationDto } from '../data/create-application.dto';
+import type { ApplicationStatus } from '../data/types';
 
 @Controller('applications')
 export class ApplicationsController {
@@ -8,7 +17,32 @@ export class ApplicationsController {
 
   @Get('/fetch-all')
   async getApplications(@Query('count') count?: string) {
-    return this.applicationService.getApplications(Number(count) || 0);
+    return await this.applicationService.getApplications(Number(count) || 0);
+  }
+
+  @Get('/fetch')
+  async getApplicationByIdOrEmail(
+    @Query('id') id?: string,
+    @Query('email') email?: string,
+  ) {
+    return await this.applicationService.getApplicationByIdOrEmail(
+      Number(id),
+      email || '',
+    );
+  }
+
+  @Get('/calendar')
+  async getApplicationForInterview() {  
+    return await this.applicationService.getApplicationByStatus(
+      'for_interview',
+    );
+  }
+
+  @Get('/status')
+  async getApplicationByStatus(@Query('status') status?: ApplicationStatus) {
+    if (!status)
+      throw new BadRequestException('Status required to fetch applications');
+    return await this.applicationService.getApplicationByStatus(status);
   }
 
   @Post('/submit')
@@ -21,14 +55,19 @@ export class ApplicationsController {
       throw new BadRequestException(error);
     }
   }
-  @Get('/fetch')
-  async getApplicationByIdOrEmail(
-    @Query('id') id?: string,
-    @Query('email') email?: string,
+  @Patch('/update')
+  async updateApplication(
+    @Body() id: number,
+    @Body() status: ApplicationStatus,
   ) {
-    return this.applicationService.getApplicationByIdOrEmail(
-      Number(id),
-      email || '',
-    );
+    try {
+      const result = await this.applicationService.updateApplication(
+        id,
+        status,
+      );
+      return result;
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
   }
 }

@@ -1,6 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Patch } from '@nestjs/common';
 import { AccountsService } from '../services/accounts.service';
-import type { Account, AccountCreate } from '../data/types';
 import { AuthService } from '../services/auth.service';
 
 @Controller('accounts')
@@ -10,4 +9,8 @@ export class AccountsController {
     private readonly accountsService: AccountsService,
   ) {}
 
+  @Patch('/update')
+  async updateAccount() {
+    // TODO
+  }
 }
