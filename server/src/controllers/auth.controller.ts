@@ -1,5 +1,11 @@
 import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
-import type { AccountCreate, AccountRegister } from '../data/types';
+import type {
+  AccountCreate,
+  AccountRegister,
+  SignInResponse,
+  RegisterResponse,
+  ChangePasswordResponse,
+} from '../data/types';
 import { AuthService } from '../services/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { AccountsService } from '../services/accounts.service';
@@ -13,65 +19,62 @@ export class AuthController {
   ) {}
 
   @Post('signin')
-  async signIn(@Body() body: any) {
+  async signIn(@Body() body: AccountRegister): Promise<SignInResponse> {
     console.log('SignIn Request Body:', body);
 
-    let credentials: AccountRegister;
-    if (typeof body === 'string') {
-      try {
-        // If it's a string missing braces like: "email": "...", "password": "..."
-        // We wrap it in braces to make it valid JSON
-        credentials = JSON.parse(`{${body}}`);
-      } catch (e) {
-        // If it's just a raw string that isn't JSON-like
-        throw new BadRequestException(
-          'Invalid request body format. Expected JSON object.',
-        );
-      }
-    } else {
-      credentials = body;
-    }
-
-    if (!credentials || !credentials.email || !credentials.password) {
+    if (!body || !body.email || !body.password) {
       throw new BadRequestException('Email and password are required');
     }
 
-    // Sign in user with plain text password
-    const user = await this.authService.signInAccount(
-      credentials.email,
-      credentials.password,
-    );
+    try {
+      // Sign in user with plain text password
+      const user = await this.authService.signInAccount(
+        body.email,
+        body.password,
+      );
 
-    // Create JWT token
-    const payload = {
-      sub: user.id,
-      email: user.email,
-    };
-    const token = await this.jwtService.signAsync(payload);
+      // Create JWT token
+      const payload = {
+        sub: user.id,
+        email: user.email,
+      };
+      const token = await this.jwtService.signAsync(payload);
 
-    return {
-      token,
-      user,
-    };
+      return {
+        token,
+        user,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Sign in failed';
+      throw new BadRequestException(message);
+    }
   }
 
   @Post('register')
-  async register(@Body() credentials: AccountCreate) {
-    // Register new user
-    const user = await this.accountService.createAccount(credentials);
+  async register(
+    @Body() credentials: AccountCreate,
+  ): Promise<RegisterResponse> {
+    try {
+      // Register new user
+      const user = await this.accountService.createAccount(credentials);
 
-    // Create JWT token
-    const payload = {
-      sub: user.id,
-      email: user.email,
-    };
-    const token = await this.jwtService.signAsync(payload);
+      // Create JWT token
+      const payload = {
+        sub: user.id,
+        email: user.email,
+      };
+      const token = await this.jwtService.signAsync(payload);
 
-    return {
-      token,
-      user,
-      message: 'User registered successfully',
-    };
+      return {
+        token,
+        user,
+        message: 'User registered successfully',
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Registration failed';
+      throw new BadRequestException(message);
+    }
   }
 
   @Post('change-password')
@@ -82,15 +85,21 @@ export class AuthController {
       currentPassword: string;
       newPassword: string;
     },
-  ) {
-    await this.authService.changePassword(
-      body.email,
-      body.currentPassword,
-      body.newPassword,
-    );
+  ): Promise<ChangePasswordResponse> {
+    try {
+      await this.authService.changePassword(
+        body.email,
+        body.currentPassword,
+        body.newPassword,
+      );
 
-    return {
-      message: 'Password changed successfully',
-    };
+      return {
+        message: 'Password changed successfully',
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Password change failed';
+      throw new BadRequestException(message);
+    }
   }
 }

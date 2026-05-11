@@ -4,7 +4,6 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Client } from 'pg';
 import * as argon2 from 'argon2';
 import type { Account } from '../data/types';
 import { DatabaseService } from './database/database.service';
@@ -47,7 +46,7 @@ export class AuthService {
     await this.logSignIn(email, true, null, user.id);
 
     // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
@@ -151,7 +150,7 @@ export class AuthService {
       throw new BadRequestException('Email is required');
     }
 
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
     try {
       const result = await client.query<Account>(
         `
@@ -210,7 +209,7 @@ export class AuthService {
     }
 
     const hashedPassword = await this.hashPassword(newPassword);
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
 
     try {
       await client.query(
@@ -258,7 +257,7 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
     try {
       await client.query(
         `

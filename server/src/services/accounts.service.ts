@@ -5,7 +5,6 @@ import {
   InternalServerErrorException,
   BadRequestException,
 } from '@nestjs/common';
-import * as argon2 from 'argon2';
 import { Account, AccountCreate } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
@@ -18,8 +17,8 @@ export class AccountsService {
     private readonly databaseService: DatabaseService,
   ) {}
 
-  async createAccount(account: AccountCreate) {
-    const client = await this.databaseService.getClient();
+  async createAccount(account: AccountCreate): Promise<Account> {
+    const client = this.databaseService.getClient();
     try {
       const exists = await this.authService.findUser(account.email);
       if (exists) {
@@ -34,7 +33,7 @@ export class AccountsService {
         account_type: account.account_type,
       };
 
-      const res = await client.query<AccountCreate>(
+      const res = await client.query<Account>(
         `
                 INSERT INTO user_accounts (email, password, username, account_type)
                 VALUES($1, $2, $3, $4)
