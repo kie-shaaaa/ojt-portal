@@ -1,47 +1,75 @@
 "use client";
 
-import { JSX, useId, useState } from "react";
+import { JSX, useState, useEffect } from "react";
 
 import {
-  Settings,
-  CheckCircle,
-  Calendar,
-  CalendarDays,
-  Save,
   Activity,
+  CheckCircle,
   Inbox,
+  Save,
+  Settings,
+  Lock,
+  LockOpen,
 } from "lucide-react";
+
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import DatePicker from "@/components/layout/DatePicker";
 
 export const ApplicationDetailsSection = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState(true);
   const [scheduledDate, setScheduledDate] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const dateInputId = useId();
+  // Load saved settings on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("portalSettings");
+    if (saved) {
+      try {
+        const { isOpen: savedIsOpen, scheduledDate: savedDate } = JSON.parse(
+          saved,
+        );
+        setIsOpen(savedIsOpen);
+        setScheduledDate(savedDate || "");
+      } catch (error) {
+        console.error("Failed to load portal settings:", error);
+      }
+    }
+  }, []);
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      // Hold the saving state long enough to accommodate a future backend request.
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // Save to localStorage
+      localStorage.setItem(
+        "portalSettings",
+        JSON.stringify({
+          isOpen,
+          scheduledDate,
+        }),
+      );
+
+      // Here you would normally make an API call to save to backend
+      // Example: await updatePortalSettings({ isOpen, scheduledDate });
+    } catch (error) {
+      console.error("Failed to save portal settings:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <section
       aria-label="Application details"
-      className="grid grid-cols-1 gap-6 xl:grid-cols-12"
+      className="grid grid-cols-1 gap-6 xl:grid-cols-3"
     >
-      {/* Left Panel */}
-      <section className="xl:col-span-5 rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 p-6">
-          <h2 className="text-sm font-semibold text-slate-700">
-            Applicant&apos;s Schools
-          </h2>
-        </div>
-
-        <div className="min-h-[360px] xl:h-[570px]" />
-      </section>
-
-      {/* Right Side */}
-      <div className="xl:col-span-7 grid gap-6">
-        {/* Application Control */}
+      <div className="grid gap-6 xl:col-span-2 xl:grid-cols-2">
         <section
           aria-labelledby="application-control-heading"
           className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         >
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Settings className="h-5 w-5 text-slate-600" />
@@ -55,22 +83,26 @@ export const ApplicationDetailsSection = (): JSX.Element => {
             </div>
 
             <div
-              className={`inline-flex items-center gap-1 rounded px-2 py-1 ${
-                isOpen ? "bg-green-100" : "bg-slate-100"
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${
+                isOpen ? "bg-green-100" : "bg-red-100"
               }`}
               aria-label={`Portal status ${isOpen ? "OPEN" : "CLOSED"}`}
             >
-              <CheckCircle
-                className={`h-3 w-3 ${
-                  isOpen
-                    ? "fill-green-600 text-green-600"
-                    : "fill-slate-500 text-slate-500"
-                }`}
-              />
+              {isOpen ? (
+                <LockOpen
+                  className="h-5 w-5 animate-pulse text-green-600"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Lock
+                  className="h-5 w-5 animate-pulse text-red-600"
+                  aria-hidden="true"
+                />
+              )}
 
               <span
-                className={`text-[10px] font-bold ${
-                  isOpen ? "text-green-600" : "text-slate-500"
+                className={`text-xs font-bold ${
+                  isOpen ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {isOpen ? "OPEN" : "CLOSED"}
@@ -78,9 +110,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
             </div>
           </div>
 
-          {/* Content */}
           <div className="mt-6 space-y-6">
-            {/* Status Toggle */}
             <div className="flex items-center">
               <label
                 htmlFor="portal-status-toggle"
@@ -100,7 +130,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                   }. Toggle portal status.`}
                   onClick={() => setIsOpen((prev) => !prev)}
                   className={`relative flex h-6 w-12 items-center rounded-full transition-colors ${
-                    isOpen ? "bg-green-500" : "bg-slate-300"
+                    isOpen ? "bg-green-500" : "bg-red-500"
                   }`}
                 >
                   <span
@@ -112,7 +142,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
                 <span
                   className={`text-sm font-bold ${
-                    isOpen ? "text-green-500" : "text-slate-500"
+                    isOpen ? "text-green-500" : "text-red-500"
                   }`}
                 >
                   {isOpen ? "OPEN" : "CLOSED"}
@@ -120,58 +150,37 @@ export const ApplicationDetailsSection = (): JSX.Element => {
               </div>
             </div>
 
-            {/* Date Input */}
             <div className="space-y-2">
-              <label
-                htmlFor={dateInputId}
-                className="flex cursor-text items-center gap-2 text-sm font-semibold text-slate-600"
-              >
-                <Calendar className="h-4 w-4 text-slate-500" />
+              <DatePicker
+                id="scheduled-opening-date"
+                label="Scheduled Opening Date (Optional)"
+                value={scheduledDate}
+                onChange={setScheduledDate}
+                placeholder="yyyy/mm/dd"
+              />
 
-                <span>Scheduled Opening Date (Optional)</span>
-              </label>
-
-              <div className="relative">
-                <input
-                  id={dateInputId}
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(event) => setScheduledDate(event.target.value)}
-                  aria-describedby={`${dateInputId}-description`}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 pr-10 text-sm text-slate-600 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-
-                <CalendarDays
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                  aria-hidden="true"
-                />
-              </div>
-
-              <p
-                id={`${dateInputId}-description`}
-                className="text-[10px] italic text-slate-400"
-              >
+              <p className="text-[10px] italic text-slate-400">
                 Leave empty for manual control only. Portal will auto-open on
                 this date.
               </p>
             </div>
 
-            {/* Button */}
             <div className="flex justify-end pt-2">
               <button
                 type="button"
+                onClick={handleSaveSettings}
+                disabled={isSaving}
                 aria-label="Update portal settings"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0038a8] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#002f8c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0038a8]"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#0038a8] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-50 hover:bg-[#002f8c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0038a8]"
               >
                 <Save className="h-4 w-4" />
 
-                <span>Update Portal Settings</span>
+                <span>{isSaving ? "Saving..." : "Update Portal Settings"}</span>
               </button>
             </div>
           </div>
         </section>
 
-        {/* Recent Activity */}
         <section
           aria-labelledby="recent-activity-heading"
           className="min-h-[300px] rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
@@ -196,6 +205,42 @@ export const ApplicationDetailsSection = (): JSX.Element => {
           </div>
         </section>
       </div>
+
+      <section
+        aria-labelledby="applicant-schools-heading"
+        className="rounded-xl border border-slate-200 bg-white shadow-sm xl:col-start-3 xl:self-start"
+      >
+        <div className="border-b border-slate-100 p-6">
+          <h2
+            id="applicant-schools-heading"
+            className="text-sm font-semibold text-slate-700"
+          >
+            Applicant&apos;s Schools
+          </h2>
+        </div>
+
+        <div className="min-h-[240px] xl:min-h-[260px]" />
+      </section>
+
+      {/* Saving Modal */}
+      {isSaving && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="flex aspect-square w-64 flex-col items-center justify-center gap-4 rounded-2xl bg-blue-50/95 p-7 shadow-2xl ring-1 ring-blue-100 sm:w-72">
+            <div className="flex h-24 w-24 items-center justify-center">
+              <DotLottieReact
+                src="https://lottie.host/199225e8-1f26-4f62-950a-41cfed998703/4esdI4dLN5.lottie"
+                loop
+                autoplay
+                style={{ height: "100%", width: "100%" }}
+              />
+            </div>
+
+            <p className="text-xl font-bold tracking-wide text-slate-800">
+              Saving
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
