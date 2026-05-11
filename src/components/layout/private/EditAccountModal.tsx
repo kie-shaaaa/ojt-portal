@@ -1,6 +1,11 @@
-import { JSX, useId, useState } from "react";
+"use client";
+
+import type { AccountRow } from "../../../app/(private)/accounts/page";
+import type { FormEvent, JSX } from "react";
+import { useEffect, useId, useState } from "react";
 import { ChevronDown, Shield, X } from "lucide-react";
-import { AccountRow } from "../../../app/(private)/accounts/page";
+
+type AccountType = AccountRow["accountType"];
 
 const accountTypes = [
   { label: "Admin", value: "Admin" },
@@ -22,15 +27,34 @@ export const EditAccountModal = ({
   const accountTypeId = useId();
 
   const [username, setUsername] = useState(account.username);
-  const [accountType, setAccountType] = useState(account.accountType);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [accountType, setAccountType] = useState<AccountType>(
+    account.accountType,
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+
     onUpdate({
       ...account,
       username,
       accountType,
     });
+
     onClose();
   };
 
@@ -42,8 +66,11 @@ export const EditAccountModal = ({
         onClick={onClose}
         aria-hidden="true"
       />
+
       {/* Modal */}
       <section
+        role="dialog"
+        aria-modal="true"
         aria-labelledby="edit-account-title"
         className="fixed top-1/2 left-1/2 z-50 w-[448px] max-w-md -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-xl bg-white shadow-[0px_25px_50px_-12px_#00000040]"
       >
@@ -116,7 +143,9 @@ export const EditAccountModal = ({
                 id={accountTypeId}
                 name="accountType"
                 value={accountType}
-                onChange={(event) => setAccountType(event.target.value)}
+                onChange={(event) =>
+                  setAccountType(event.target.value as AccountType)
+                }
                 className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-base font-normal leading-6 text-gray-700 outline-none transition focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/20"
               >
                 {accountTypes.map((type) => (
