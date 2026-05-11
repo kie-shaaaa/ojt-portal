@@ -302,9 +302,20 @@ export const ApplicationsTableSection = (): JSX.Element => {
           application={changeStatusApplication}
           onClose={() => setChangeStatusApplication(null)}
           onConfirm={(newStatus: string, id: string) => {
-            setApplicationsState((prev) =>
-              prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)),
-            );
+            setApplicationsState((prev) => {
+              const next = prev.map((a) =>
+                a.id === id ? { ...a, status: newStatus } : a,
+              );
+
+              setSelectedApplication((prevSelected) =>
+                prevSelected && prevSelected.id === id
+                  ? (next.find((a) => a.id === id) ?? null)
+                  : prevSelected,
+              );
+
+              return next;
+            });
+
             setChangeStatusApplication(null);
           }}
         />

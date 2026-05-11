@@ -31,6 +31,52 @@ export const ApplicationDetails = ({
   onClose,
   onChangeStatus,
 }: ApplicationDetailsProps): JSX.Element => {
+  const getStatusClasses = (status?: string) => {
+    const s = status?.toLowerCase() ?? "";
+
+    if (s.includes("pending")) {
+      return {
+        wrapper: "rounded-full bg-amber-100 px-3 py-1",
+        text: "text-amber-700",
+      };
+    }
+
+    if (
+      s.includes("under review") ||
+      (s.includes("review") && !s.includes("pending"))
+    ) {
+      return {
+        wrapper: "rounded-full bg-sky-100 px-3 py-1",
+        text: "text-sky-600",
+      };
+    }
+
+    if (s.includes("interview")) {
+      return {
+        wrapper: "rounded-full bg-purple-100 px-3 py-1",
+        text: "text-purple-600",
+      };
+    }
+
+    if (s.includes("accept")) {
+      return {
+        wrapper: "rounded-full bg-green-100 px-3 py-1",
+        text: "text-green-600",
+      };
+    }
+
+    if (s.includes("reject")) {
+      return {
+        wrapper: "rounded-full bg-red-100 px-3 py-1",
+        text: "text-red-600",
+      };
+    }
+
+    return {
+      wrapper: "rounded-full bg-slate-100 px-3 py-1",
+      text: "text-slate-700",
+    };
+  };
   const rows: DetailRow[] = [
     { label: "Application ID:", value: application?.id ?? "—" },
     { label: "Applicant Name:", value: application?.applicantName ?? "—" },
@@ -119,10 +165,12 @@ export const ApplicationDetails = ({
 
             <div className="col-span-2 flex items-center gap-3">
               <div
-                className="rounded-full bg-purple-100 px-3 py-1"
+                className={getStatusClasses(application?.status).wrapper}
                 aria-label="Current application status"
               >
-                <span className="text-xs font-medium text-purple-600">
+                <span
+                  className={`text-xs font-medium ${getStatusClasses(application?.status).text}`}
+                >
                   {application?.status ?? "—"}
                 </span>
               </div>
