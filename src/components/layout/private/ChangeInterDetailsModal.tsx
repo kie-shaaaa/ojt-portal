@@ -1,5 +1,7 @@
-import { JSX, useId, useState, useEffect } from "react";
+import { JSX, useEffect, useId, useState } from "react";
 import { X, Save, ChevronDown } from "lucide-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import DatePicker from "@/components/layout/DatePicker";
 
 interface ChangeInternDetailsProps {
   intern?: {
@@ -32,35 +34,18 @@ export const ChangeInterDetailsModal = ({
   const [ojtNumber, setOjtNumber] = useState(intern?.ojtNumber ?? "001");
   const [gender, setGender] = useState(intern?.gender ?? "Female");
   const [deploymentDate, setDeploymentDate] = useState(
-    intern?.deploymentDate ?? "05/11/2026",
+    intern?.deploymentDate ?? "",
   );
-  const [endDate, setEndDate] = useState(intern?.endDate ?? "05/12/2026");
+  const [endDate, setEndDate] = useState(intern?.endDate ?? "");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setOjtYear(intern?.ojtYear ?? "2026");
     setOjtNumber(intern?.ojtNumber ?? "001");
     setGender(intern?.gender ?? "Female");
-    setDeploymentDate(intern?.deploymentDate ?? "05/11/2026");
-    setEndDate(intern?.endDate ?? "05/12/2026");
+    setDeploymentDate(intern?.deploymentDate ?? "");
+    setEndDate(intern?.endDate ?? "");
   }, [intern]);
-
-  const formFields = [
-    {
-      id: deploymentDateId,
-      label: "Deployment Date (Start Date)",
-      helperText: "Date when the internship starts",
-      value: deploymentDate,
-      onChange: setDeploymentDate,
-    },
-    {
-      id: endDateId,
-      label: "End Date",
-      labelSuffix: "(OJT Completion)",
-      helperText: "Date when the internship period ends",
-      value: endDate,
-      onChange: setEndDate,
-    },
-  ];
 
   const handleOjtNumberChange = (value: string) => {
     const numericValue = value.replace(/\D/g, "").slice(0, 3);
@@ -72,7 +57,8 @@ export const ChangeInterDetailsModal = ({
     else setOjtNumber(ojtNumber.padStart(3, "0"));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setIsSaving(true);
     const payload = {
       id: intern?.id,
       ojtYear,
@@ -81,12 +67,18 @@ export const ChangeInterDetailsModal = ({
       deploymentDate,
       endDate,
     };
-    if (onSave) onSave(payload);
-    onClose();
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (onSave) onSave(payload);
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <section
         role="dialog"
         aria-modal="true"
@@ -117,7 +109,7 @@ export const ChangeInterDetailsModal = ({
         {/* Content */}
         <div className="flex flex-col gap-6 px-8 pt-6 pb-10">
           {/* Intern Name */}
-          <dl className="flex w-full justify-between border-b border-gray-50 py-4">
+          <dl className="grid w-full gap-1 border-b border-gray-50 py-4">
             <dt className="text-base font-bold text-gray-700">Intern Name:</dt>
             <dd className="text-base text-gray-600">{intern?.name ?? "—"}</dd>
           </dl>
@@ -185,32 +177,33 @@ export const ChangeInterDetailsModal = ({
             </div>
 
             {/* Dates */}
-            {formFields.map((field, index) => (
-              <div key={field.id} className="flex flex-col gap-1.5">
-                <label
-                  htmlFor={field.id}
-                  className="text-sm font-bold text-gray-700"
-                >
-                  {field.label}{" "}
-                  {field.labelSuffix && (
-                    <span className="font-normal text-gray-400">
-                      {field.labelSuffix}
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  id={field.id}
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  aria-describedby={`${field.id}-hint`}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
-                />
-                <p id={`${field.id}-hint`} className="text-xs text-gray-500">
-                  {field.helperText}
-                </p>
-              </div>
-            ))}
+            <div className="flex flex-col gap-1.5">
+              <DatePicker
+                id={deploymentDateId}
+                label="Deployment Date"
+                labelClassName="text-gray-700"
+                value={deploymentDate}
+                onChange={setDeploymentDate}
+                placeholder="yyyy/mm/dd"
+              />
+              <p className="text-xs text-gray-500">
+                Date when the internship starts
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <DatePicker
+                id={endDateId}
+                label="End Date"
+                labelClassName="text-gray-700"
+                value={endDate}
+                onChange={setEndDate}
+                placeholder="yyyy/mm/dd"
+              />
+              <p className="text-xs text-gray-500">
+                Date when the internship period ends
+              </p>
+            </div>
           </form>
         </div>
 
@@ -220,19 +213,40 @@ export const ChangeInterDetailsModal = ({
             type="button"
             className="rounded-md border border-gray-300 bg-white px-6 py-2 text-sm text-gray-700"
             onClick={onClose}
+            disabled={isSaving}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-6 py-2 text-sm text-white hover:bg-blue-800"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-6 py-2 text-sm text-white hover:bg-blue-800 disabled:opacity-50"
           >
             <Save size={16} />
-            Save Changes
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </footer>
       </section>
+
+      {isSaving && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-sm">
+          <div className="flex aspect-square w-64 flex-col items-center justify-center gap-4 rounded-2xl bg-blue-50/95 p-7 shadow-2xl ring-1 ring-blue-100 sm:w-72">
+            <div className="flex h-24 w-24 items-center justify-center">
+              <DotLottieReact
+                src="https://lottie.host/199225e8-1f26-4f62-950a-41cfed998703/4esdI4dLN5.lottie"
+                loop
+                autoplay
+                style={{ height: "100%", width: "100%" }}
+              />
+            </div>
+
+            <p className="text-xl font-bold tracking-wide text-slate-800">
+              Saving
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

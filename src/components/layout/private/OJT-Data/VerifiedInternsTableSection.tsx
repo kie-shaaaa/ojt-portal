@@ -1,7 +1,5 @@
 "use client";
-import InlineInternDetailsModal, {
-  ModalInternData,
-} from "./InlineInternDetailsModal";
+import InternDetailsModal, { ModalInternData } from "../InternDetailsModal";
 import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useState, useEffect } from "react";
@@ -25,7 +23,7 @@ interface Intern {
 
 interface VerifiedInternsTableSectionProps {
   interns: Intern[];
-  onViewDetails?: (intern: any) => void;
+  onViewDetails?: (intern: ModalInternData) => void;
 }
 
 export const VerifiedInternsTableSection = ({
@@ -168,7 +166,11 @@ export const VerifiedInternsTableSection = ({
     };
 
     console.log("Opening inline modal for:", modalData.name);
-    setViewingIntern(modalData);
+    if (onViewDetails) {
+      onViewDetails(modalData);
+    } else {
+      setViewingIntern(modalData);
+    }
   };
 
   const handleEdit = (intern: Intern) => {
@@ -367,7 +369,7 @@ export const VerifiedInternsTableSection = ({
 
       {/* FIXED: Remove the !onViewDetails condition */}
       {viewingIntern && (
-        <InlineInternDetailsModal
+        <InternDetailsModal
           intern={viewingIntern}
           onClose={() => {
             console.log("Closing inline modal");
