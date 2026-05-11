@@ -63,6 +63,9 @@ const statDefs: Omit<StatCard, "value">[] = [
 export const ApplicationStatsSection = (): JSX.Element => {
   const router = useRouter();
   const [applications, setApplications] = useState<Array<any>>([]);
+  const [selectedFilter, setSelectedFilter] = useState<
+    string | null | undefined
+  >(undefined);
 
   useEffect(() => {
     const load = () => {
@@ -149,13 +152,18 @@ export const ApplicationStatsSection = (): JSX.Element => {
               }
             }}
             onClick={() => {
+              setSelectedFilter(stat.filter);
               const query = stat.filter
                 ? `?status=${encodeURIComponent(stat.filter)}`
                 : "";
               router.push(`/applications${query}`);
             }}
             key={`${stat.value}-${stat.label.join("-")}`}
-            className="cursor-pointer flex items-center rounded-xl border border-slate-100 bg-white p-5 shadow-sm transition hover:shadow-md"
+            className={`cursor-pointer flex items-center rounded-xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
+              selectedFilter === stat.filter
+                ? "border-blue-600 border-2"
+                : "border-slate-100"
+            }`}
           >
             <div
               className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.iconBgClass}`}
