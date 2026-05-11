@@ -1,10 +1,10 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import { FilterInternsSection } from "./../../../components/layout/private/OJT-Data/FilterInternSection";
-import { InternStatsOverviewSection } from "./../../../components/layout/private/OJT-Data/InternStatsOverviewSection";
-import { OjtDataHeaderSection } from "./../../../components/layout/private/OJT-Data/OjtDataHeaderSection";
-import { VerifiedInternsTableSection } from "./../../../components/layout/private/OJT-Data/VerifiedInternsTableSection";
-import InternDetailsModal, { ModalInternData } from "./../../../components/layout/private/InternDetailsModal";
+import { FilterInternsSection } from "../../../components/layout/private/OJT-Data/FilterInternSection";
+import { InternStatsOverviewSection } from "../../../components/layout/private/OJT-Data/InternStatsOverviewSection";
+import { OjtDataHeaderSection } from "../../../components/layout/private/OJT-Data/OjtDataHeaderSection";
+import { VerifiedInternsTableSection } from "../../../components/layout/private/OJT-Data/VerifiedInternsTableSection";
+import InternDetailsModal, { ModalInternData } from "../../../components/layout/private/InternDetailsModal";
 
 type CompletedInternRecord = {
   id: string;
