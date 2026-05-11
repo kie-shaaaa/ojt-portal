@@ -99,7 +99,7 @@ export const CalendarDatesGridSection = ({
   return (
     <section
       aria-label="Calendar dates grid"
-      className="grid grid-cols-7 grid-rows-6 auto-rows-[minmax(0,1fr)] border-t border-gray-100 rounded-b-2xl overflow-hidden flex-1 min-h-0 w-full"
+      className="grid grid-cols-7 grid-rows-6 auto-rows-[minmax(0,1fr)] aspect-[7/6] border-t border-gray-100 rounded-b-2xl overflow-hidden flex-1 min-h-0 w-full"
     >
       {cells.map((cell, idx) => {
         const isDisabled = !!cell.disabled;
@@ -110,12 +110,12 @@ export const CalendarDatesGridSection = ({
             key={key}
             aria-disabled={isDisabled}
             data-disabled={isDisabled}
-            className={`relative flex flex-col border-r border-b border-gray-100 bg-white p-2 min-w-0 ${
+            className={`relative flex flex-col h-full border-r border-b border-gray-100 bg-white p-2 min-w-0 overflow-hidden ${
               isDisabled ? "select-none" : ""
             }`}
           >
             {/* Day Number */}
-            <div className="flex justify-end">
+            <div className="flex justify-end flex-none">
               {cell.selected && !isDisabled ? (
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#0033a0] text-white text-sm font-bold">
                   {cell.day}
@@ -133,7 +133,7 @@ export const CalendarDatesGridSection = ({
               events[cell.day] &&
               events[cell.day].length > 0 && (
                 <div
-                  className="mt-3 flex flex-col gap-2 overflow-hidden"
+                  className="mt-3 flex-1 flex flex-col gap-2 overflow-auto"
                   aria-hidden={isDisabled}
                 >
                   {events[cell.day].slice(0, 1).map((ev, i) => (

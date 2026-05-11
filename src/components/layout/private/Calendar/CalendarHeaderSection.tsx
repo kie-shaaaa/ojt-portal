@@ -10,6 +10,10 @@ export const CalendarHeaderSection = (): JSX.Element => {
           Calendar
         </h1>
       </div>
+
+      <div className="w-72 max-[767px]:w-full">
+        <div className="h-[42px] invisible" />
+      </div>
     </header>
   );
 };

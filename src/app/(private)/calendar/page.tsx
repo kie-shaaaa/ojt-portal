@@ -38,7 +38,9 @@ export default function Page() {
       className="flex flex-col items-start relative w-full"
       aria-label="Calendar main content"
     >
-      <CalendarHeaderSection />
+      <header className="flex flex-col h-20 items-start pt-4 pb-0 px-6 z-[1] relative self-stretch w-full">
+        <CalendarHeaderSection />
+      </header>
 
       <section
         className="flex flex-col items-start justify-center p-6 relative flex-1 self-stretch w-full grow overflow-auto"
