@@ -1,13 +1,10 @@
 import {
-  BadRequestException,
   Body,
   Controller,
-  InternalServerErrorException,
   Patch,
   Post,
 } from '@nestjs/common';
 import { AccountsService } from '../services/accounts.service';
-import { AuthService } from '../services/auth.service';
 import type { AccountCreate } from '../data/types';
 
 @Controller('accounts')
