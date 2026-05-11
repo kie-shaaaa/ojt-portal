@@ -1,7 +1,7 @@
 "use client";
 import InlineInternDetailsModal, { ModalInternData } from "./InlineInternDetailsModal";
 import { JSX, useState } from "react";
-import { Download, Eye, Pencil, Trash2 } from "lucide-react";
+import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface Intern {
@@ -174,12 +174,12 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700 w-12">
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
                 </th>
                 <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">OJT ID</th>
                 <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">INTERN NAME</th>
@@ -202,12 +202,15 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
                 interns.map((intern) => (
                   <tr key={intern.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedInterns.includes(intern.id)}
-                        onChange={() => handleSelectIntern(intern.id)}
-                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
+                      <label className="inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedInterns.includes(intern.id)}
+                          onChange={() => handleSelectIntern(intern.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          aria-label={`Select intern ${intern.name}`}
+                        />
+                      </label>
                     </td>
                     <td className="px-6 py-4 text-sm font-mono text-slate-600">{intern.ojtId}</td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-800">{intern.name}</td>
@@ -217,29 +220,26 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
                     <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{formatDate(intern.startDate)}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{formatDate(intern.endDate)}</td>
                     <td className="px-6 py-4 text-sm">
+                     
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleViewDetails(intern)}
-                          className="p-1 text-slate-500 hover:text-blue-600 transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={16} />
+                          className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100">
+                      <Eye size={16} />
+                          
                         </button>
                         <button
                           onClick={() => handleEdit(intern)}
-                          className="p-1 text-slate-500 hover:text-green-600 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil size={16} />
+                           className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100">
+                            <SquarePen size={16}/>
                         </button>
-                        <button
+                        <button 
                           onClick={() => handleDelete(intern)}
-                          className="p-1 text-slate-500 hover:text-red-600 transition-colors"
-                          title="Delete"
-                        >
+                          className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100">
                           <Trash2 size={16} />
                         </button>
                       </div>
+                      
                     </td>
                   </tr>
                 ))

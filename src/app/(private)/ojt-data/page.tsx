@@ -19,6 +19,8 @@ const mockInterns: Array<{
   gender?: string;
   course?: string;
   hoursNeeded?: string;
+  ojtDetails?: string;  
+  deploymentDate?: string;  
 }> = [
   {
     id: '1',
