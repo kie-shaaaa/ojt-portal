@@ -60,7 +60,7 @@ export class AccountsService {
     }
   }
 
-  async updateAccount(id: number, newEmail?: string, newType?: AccountType) {
+  async updateAccount(id: number, newEmail?: string, newType?: string) {
     const client = this.databaseService.getClient();
     try {
       const exists = await client.query<Account>(
