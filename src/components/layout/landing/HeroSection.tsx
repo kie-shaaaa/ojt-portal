@@ -16,6 +16,7 @@ const actions = [
     icon: Search,
     variant: "secondary" as const,
     type: "button" as const,
+    href: "/track",
   },
 ];
 
