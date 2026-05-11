@@ -14,7 +14,7 @@ export type Application = {
   id: number;
 
   // Application Details
-  application_type: 'ojt' | 'job' | string;
+  application_type: string;
   other_application_type?: string | null;
 
   // Personal Info
@@ -83,6 +83,37 @@ export type Response = {
   ok: boolean;
   error?: [];
   data?: any;
+};
+
+// Submit application response
+export type SubmitApplicationResponse = {
+  ok: true;
+  message: string;
+  data: Application;
+};
+
+// Get applications response (returns array or null on success)
+export type GetApplicationsResponse = Application[] | null;
+
+// Get single application response (returns array on success)
+export type GetApplicationResponse = Application[];
+
+// Get application for status/update response (returns single application or null)
+export type GetApplicationStatusResponse = Application | null;
+
+export type SignInResponse = {
+  token: string;
+  user: Omit<Account, 'password'>;
+};
+
+export type RegisterResponse = {
+  token: string;
+  user: Account;
+  message: string;
+};
+
+export type ChangePasswordResponse = {
+  message: string;
 };
 
 export type FindAccount = {

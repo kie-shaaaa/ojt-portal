@@ -9,7 +9,6 @@ import {
   Min,
   IsBoolean,
   ValidateIf,
-  MinDate,
   IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -27,7 +26,7 @@ export class CreateApplicationDto {
   @IsEnum(['ojt', 'job', 'other'], {
     message: 'application_type must be ojt, job, or other',
   })
-  application_type?: 'ojt' | 'job' | string;
+  application_type?: 'ojt' | 'job' | 'other';
 
   @IsOptional()
   @IsString()
@@ -59,24 +58,24 @@ export class CreateApplicationDto {
   // ---------------------------
   // OJT Fields
   // ---------------------------
-  @ValidateIf((o) => o.application_type === 'ojt')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'ojt')
   @IsOptional()
   @IsString()
   school_name?: string | null;
 
-  @ValidateIf((o) => o.application_type === 'ojt')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'ojt')
   @IsOptional()
   @IsNumber()
   @Min(1, { message: 'Hours needed must be greater than 0' })
   @Type(() => Number)
   hours_needed?: number | null;
 
-  @ValidateIf((o) => o.application_type === 'ojt')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'ojt')
   @IsOptional()
   @IsString()
   course?: string | null;
 
-  @ValidateIf((o) => o.application_type === 'ojt')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'ojt')
   @IsOptional()
   @IsDateString({}, { message: 'Deployment date must be valid date' })
   deployment_date?: string | null;
@@ -84,31 +83,31 @@ export class CreateApplicationDto {
   // ---------------------------
   // Job Fields
   // ---------------------------
-  @ValidateIf((o) => o.application_type === 'job')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'job')
   @IsOptional()
   @IsString()
   position_applied?: string | null;
 
-  @ValidateIf((o) => o.application_type === 'job')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'job')
   @IsOptional()
   @IsNumber()
   @Min(0, { message: 'Years of experience cannot be negative' })
   @Type(() => Number)
   years_experience?: number | null;
 
-  @ValidateIf((o) => o.application_type === 'job')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'job')
   @IsOptional()
   @IsString()
   current_company?: string | null;
 
-  @ValidateIf((o) => o.application_type === 'job')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'job')
   @IsOptional()
   @IsNumber()
   @Min(0, { message: 'Salary expectation must be 0 or higher' })
   @Type(() => Number)
   salary_expectation?: number | null;
 
-  @ValidateIf((o) => o.application_type === 'job')
+  @ValidateIf((o: CreateApplicationDto) => o.application_type === 'job')
   @IsOptional()
   @IsDateString()
   available_date?: string | null;

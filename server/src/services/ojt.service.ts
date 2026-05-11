@@ -7,7 +7,7 @@ export class OjtService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async getOjt(count: number) {
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
     try {
       if (count < 1) return null;
 
@@ -23,9 +23,9 @@ export class OjtService {
         message: 'OJT data fetched successfully',
         data: res.rows || [],
       };
-    } catch (error) {
+    } catch (error: unknown) {
       return {
-        error: error,
+        error,
         message: 'Failed to fetch OJT data',
         ok: false,
       };
