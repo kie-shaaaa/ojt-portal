@@ -1,16 +1,25 @@
 "use client";
-"use client";
 
 import { ChangeEvent, JSX, useId, useState } from "react";
 import { Search } from "lucide-react";
 
-export const AccountsHeaderSection = (): JSX.Element => {
-  const searchInputId = useId();
-  const [searchTerm, setSearchTerm] = useState("");
+interface AccountsHeaderSectionProps {
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+}
 
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+export const AccountsHeaderSection = ({
+  searchTerm,
+  onSearchChange
+}: AccountsHeaderSectionProps): JSX.Element => {
+  const searchInputId = useId();
+
+  const handleSearchChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    onSearchChange(event.target.value);
   };
+
 
   return (
     <header className="flex w-full items-center justify-between gap-4 max-md:flex-col max-md:items-start">

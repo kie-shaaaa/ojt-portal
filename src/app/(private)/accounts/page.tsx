@@ -44,15 +44,31 @@ export const MainContentArea = (): JSX.Element => {
     accountType: "all",
     sortByDate: "newest",
   });
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   // Filter and sort accounts based on filter values
   const filteredAccounts = useMemo(() => {
     let result = [...mockAccounts];
 
-    // Filter by account type
-    if (filters.accountType !== "all") {
+
+     if (searchTerm.trim() !== "") {
       result = result.filter(
-        (account) => account.accountType.toLowerCase() === filters.accountType
+        (account) =>
+          account.username
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          account.email
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by account type
+    if (filters.accountType.toLowerCase() !== "all") {
+      result = result.filter(
+        (account) =>
+          account.accountType.toLowerCase() ===
+          filters.accountType.toLowerCase()
       );
     }
 
@@ -66,14 +82,17 @@ export const MainContentArea = (): JSX.Element => {
     });
 
     return result;
-  }, [filters]);
+  }, [filters, searchTerm]);
 
   return (
     <main
       className="relative flex flex-col items-start gap-6 p-8"
       aria-label="Accounts main content"
     >
-      <AccountsHeaderSection />
+      <AccountsHeaderSection 
+        searchTerm={searchTerm}
+        onSearchChange={(value: string) => setSearchTerm(value)}
+      />
       <AccountsStatsSection accounts={mockAccounts} />
       <AccountsFilterSection 
         filters={filters}

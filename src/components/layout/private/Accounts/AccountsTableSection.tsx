@@ -1,6 +1,6 @@
 import { AccountRow } from "../../../../app/(private)/accounts/page";
 import { JSX } from "react";
-import { UserPlus, Eye, Edit2, Trash2, CheckCircle } from "lucide-react";
+import { UserPlus, KeyRound, SquarePen, Trash2, CheckCircle } from "lucide-react";
 
 // Using lucide icons for row actions and buttons
 
@@ -95,13 +95,13 @@ export const AccountsTableSection = ({ accounts }: AccountsTableSectionProps): J
                     <td className="px-6 py-4 text-sm text-slate-600">{account.dateCreated}</td>
                     <td className="px-6 py-4 text-sm text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <button aria-label={`Edit ${account.username}`} className="p-1 text-slate-400 hover:text-slate-600 transition-colors" title="Edit">
-                          <Edit2 className="w-4 h-4" />
+                        <button aria-label={`Edit ${account.username}`} className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100" title="Edit Account">
+                          <SquarePen className="w-4.5 h-4.5" />
                         </button>
-                        <button aria-label={`View ${account.username}`} className="p-1 text-slate-400 hover:text-blue-600 transition-colors" title="View">
-                          <Eye className="w-4 h-4" />
+                        <button aria-label={`View ${account.username}`} className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100" title="Reset Password">
+                          <KeyRound className="w-4 h-4" />
                         </button>
-                        <button aria-label={`Delete ${account.username}`} className="p-1 text-slate-400 hover:text-red-600 transition-colors" title="Delete">
+                        <button aria-label={`Delete ${account.username}`} className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100" title="Delete Account">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
