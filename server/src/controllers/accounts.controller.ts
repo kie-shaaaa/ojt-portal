@@ -10,7 +10,7 @@ export class AccountsController {
   ) {}
 
   @Patch('/update')
-  async updateAccount() {
-    // TODO
+  async updateAccount(@Body('id') id: number, @Body('newEmail') newEmail?: string, @Body('newType') newType?: string) {
+   return this.accountsService.updateAccount(id, newEmail, newType);
   }
 }
