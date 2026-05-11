@@ -1,15 +1,16 @@
 import { MoreHorizontal } from "lucide-react";
 import { JSX, useMemo } from "react";
-
-type EventItem = {
-  title: string;
-  tag?: string;
-};
+import { CalendarAppointment } from "./calendarTypes";
 
 type Props = {
   year: number;
   month: number; // 0-based month
-  events?: Record<number, EventItem[]>;
+  events?: Record<string, CalendarAppointment[]>;
+  onAppointmentClick?: (
+    appointment: CalendarAppointment,
+    appointments: CalendarAppointment[],
+  ) => void;
+  onMoreClick?: (appointments: CalendarAppointment[]) => void;
 };
 
 type CalendarCell = {
@@ -22,10 +23,15 @@ type CalendarCell = {
   disabled?: boolean;
 };
 
+const toDateKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
 export const CalendarDatesGridSection = ({
   year,
   month,
   events = {},
+  onAppointmentClick,
+  onMoreClick,
 }: Props): JSX.Element => {
   const cells = useMemo(() => {
     const firstOfMonth = new Date(year, month, 1);
@@ -61,9 +67,8 @@ export const CalendarDatesGridSection = ({
         const today = new Date();
         const dayOfWeek = date.getDay();
         const disabled = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
-        const selected =
-          !disabled && date.toDateString() === today.toDateString();
-        const hasEvent = !!events[day];
+        const selected = !disabled && date.toDateString() === today.toDateString();
+        const hasEvent = !!events[toDateKey(date)];
         cell = {
           day,
           muted: false,
@@ -105,6 +110,8 @@ export const CalendarDatesGridSection = ({
         const isDisabled = !!cell.disabled;
         const textColor = cell.muted ? "text-slate-300" : "text-slate-800";
         const key = `cell-${idx}-${cell.date.toISOString()}`;
+        const cellAppointments = cell.inCurrentMonth ? events[toDateKey(cell.date)] ?? [] : [];
+
         return (
           <div
             key={key}
@@ -128,44 +135,43 @@ export const CalendarDatesGridSection = ({
             </div>
 
             {/* Event Card */}
-            {cell.inCurrentMonth &&
-              !isDisabled &&
-              events[cell.day] &&
-              events[cell.day].length > 0 && (
-                <div
-                  className="mt-3 flex-1 flex flex-col gap-2 overflow-auto"
-                  aria-hidden={isDisabled}
-                >
-                  {events[cell.day].slice(0, 1).map((ev, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm overflow-hidden"
-                    >
-                      <p className="text-[10px] text-slate-600 truncate">
-                        {ev.title}
-                      </p>
+            {cell.inCurrentMonth && !isDisabled && cellAppointments.length > 0 && (
+              <div
+                className="mt-3 flex-1 flex flex-col gap-2 overflow-auto"
+                aria-hidden={isDisabled}
+              >
+                {cellAppointments.slice(0, 1).map((appointment) => (
+                  <button
+                    key={appointment.id}
+                    type="button"
+                    onClick={() => onAppointmentClick?.(appointment, cellAppointments)}
+                    className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm overflow-hidden text-left transition hover:border-blue-300 hover:shadow-md"
+                  >
+                    <p className="text-[10px] text-slate-600 truncate">
+                      {appointment.title}
+                    </p>
 
-                      {ev.tag && (
-                        <div className="mt-2 inline-flex items-center justify-center rounded-full bg-purple-100 px-3 py-1">
-                          <span className="text-[10px] font-bold text-purple-700">
-                            {ev.tag}
-                          </span>
-                        </div>
-                      )}
+                    <div className="mt-2 inline-flex items-center justify-center rounded-full bg-purple-100 px-3 py-1">
+                      <span className="text-[10px] font-bold text-purple-700">
+                        {appointment.tag}
+                      </span>
                     </div>
-                  ))}
+                  </button>
+                ))}
 
-                  {events[cell.day].length > 1 && (
-                    <button
-                      disabled={isDisabled}
-                      className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-500 w-fit hover:bg-slate-200 transition"
-                    >
-                      <MoreHorizontal className="w-3 h-3" />+
-                      {events[cell.day].length - 1} more
-                    </button>
-                  )}
-                </div>
-              )}
+                {cellAppointments.length > 1 && (
+                  <button
+                    disabled={isDisabled}
+                    type="button"
+                    onClick={() => onMoreClick?.(cellAppointments)}
+                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-500 w-fit hover:bg-slate-200 transition"
+                  >
+                    <MoreHorizontal className="w-3 h-3" />+
+                    {cellAppointments.length - 1} more
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Hover-only prohibited icon overlay for disabled days */}
             {isDisabled && (
