@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  Download,
-  Eye,
-  Trash2,
-} from "lucide-react";
+import { Download, Eye, Trash2 } from "lucide-react";
 import { JSX, useState } from "react";
+import ApplicationDetails from "../ApplicationDetailsModal";
 
 type ApplicationRow = {
   id: string;
@@ -80,6 +77,8 @@ const columns = [
 export const ApplicationsTableSection = (): JSX.Element => {
   // State to track selected rows
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [selectedApplication, setSelectedApplication] =
+    useState<ApplicationRow | null>(null);
 
   // Check if all rows are selected
   const allSelected = selectedRows.size === applications.length;
@@ -109,9 +108,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
         <div>
-          <h2 className="text-xl font-semibold text-slate-800">
-            Applications
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-800">Applications</h2>
           <p className="text-sm text-slate-400">
             Showing {applications.length} of {applications.length} applications
           </p>
@@ -225,7 +222,10 @@ export const ApplicationsTableSection = (): JSX.Element => {
                 {/* Actions */}
                 <td className="px-6 py-6 align-top">
                   <div className="flex items-center gap-2">
-                    <button className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100">
+                    <button
+                      className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
+                      onClick={() => setSelectedApplication(application)}
+                    >
                       <Eye size={16} />
                     </button>
 
@@ -239,6 +239,12 @@ export const ApplicationsTableSection = (): JSX.Element => {
           </tbody>
         </table>
       </div>
+      {selectedApplication && (
+        <ApplicationDetails
+          application={selectedApplication}
+          onClose={() => setSelectedApplication(null)}
+        />
+      )}
     </section>
   );
 };

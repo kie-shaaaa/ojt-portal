@@ -1,6 +1,9 @@
 "use client";
-import InlineInternDetailsModal, { ModalInternData } from "./InlineInternDetailsModal";
-import { JSX, useState } from "react";
+import InlineInternDetailsModal, {
+  ModalInternData,
+} from "./InlineInternDetailsModal";
+import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
+import { JSX, useState, useEffect } from "react";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -12,7 +15,7 @@ interface Intern {
   school: string;
   startDate: string;
   endDate: string;
-  status: 'verified' | 'completed';
+  status: "verified" | "completed";
   verifiedDate: string;
   gender?: string;
   ojtDetails?: string;
@@ -24,17 +27,28 @@ interface VerifiedInternsTableSectionProps {
   onViewDetails?: (intern: any) => void;
 }
 
-export const VerifiedInternsTableSection = ({ interns, onViewDetails }: VerifiedInternsTableSectionProps): JSX.Element => {
+export const VerifiedInternsTableSection = ({
+  interns,
+  onViewDetails,
+}: VerifiedInternsTableSectionProps): JSX.Element => {
   const [selectedInterns, setSelectedInterns] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  const [viewingIntern, setViewingIntern] = useState<ModalInternData | null>(null);
+  const [viewingIntern, setViewingIntern] = useState<ModalInternData | null>(
+    null,
+  );
+  const [editingIntern, setEditingIntern] = useState<Intern | null>(null);
+  const [rows, setRows] = useState<Intern[]>(interns);
+
+  useEffect(() => {
+    setRows(interns);
+  }, [interns]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -42,14 +56,14 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
     if (selectAll) {
       setSelectedInterns([]);
     } else {
-      setSelectedInterns(interns.map(intern => intern.id));
+      setSelectedInterns(rows.map((intern) => intern.id));
     }
     setSelectAll(!selectAll);
   };
 
   const handleSelectIntern = (id: string) => {
     if (selectedInterns.includes(id)) {
-      setSelectedInterns(selectedInterns.filter(internId => internId !== id));
+      setSelectedInterns(selectedInterns.filter((internId) => internId !== id));
       setSelectAll(false);
     } else {
       setSelectedInterns([...selectedInterns, id]);
@@ -60,21 +74,21 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
   };
 
   const exportToExcel = (dataToExport: Intern[]) => {
-    const excelData = dataToExport.map(intern => ({
-      'OJT ID': intern.ojtId,
-      'Intern Name': intern.name,
-      'Gender': intern.gender || 'Not set',
-      'School': intern.school,
-      'OJT Details': intern.ojtDetails || '—',
-      'Deployment Date': formatDate(intern.startDate),
-      'End Date': formatDate(intern.endDate),
-      'Email': intern.email,
-      'Status': intern.status,
-      'Verified Date': formatDate(intern.verifiedDate)
+    const excelData = dataToExport.map((intern) => ({
+      "OJT ID": intern.ojtId,
+      "Intern Name": intern.name,
+      Gender: intern.gender || "Not set",
+      School: intern.school,
+      "OJT Details": intern.ojtDetails || "—",
+      "Deployment Date": formatDate(intern.startDate),
+      "End Date": formatDate(intern.endDate),
+      Email: intern.email,
+      Status: intern.status,
+      "Verified Date": formatDate(intern.verifiedDate),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
-    
+
     const colWidths = [
       { wch: 15 },
       { wch: 25 },
@@ -85,58 +99,79 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
       { wch: 15 },
       { wch: 30 },
       { wch: 12 },
-      { wch: 18 }
+      { wch: 18 },
     ];
-    worksheet['!cols'] = colWidths;
+    worksheet["!cols"] = colWidths;
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Verified Interns");
 
-    const fileName = `verified_interns_${new Date().toISOString().split('T')[0]}.xlsx`;
-    
+    const fileName = `verified_interns_${new Date().toISOString().split("T")[0]}.xlsx`;
+
     XLSX.writeFile(workbook, fileName);
   };
 
   const handleExportExcel = () => {
     if (selectedInterns.length > 0) {
-      const selectedData = interns.filter(intern => selectedInterns.includes(intern.id));
+      const selectedData = rows.filter((intern) =>
+        selectedInterns.includes(intern.id),
+      );
       exportToExcel(selectedData);
     } else {
-      exportToExcel(interns);
+      exportToExcel(rows);
     }
   };
 
   const handleViewDetails = (intern: Intern) => {
     const requirementFiles = [
-      { id: 'resume-or-cv', title: 'RESUME OR CV', fileType: 'PDF' as const },
-      { id: 'proof-of-enrollment', title: 'PROOF OF ENROLLMENT', fileType: 'PDF' as const },
-      { id: 'draft-endorsement-letter', title: 'DRAFT ENDORSEMENT LETTER', subtitle: '(ADDRESS TO CHIEF. FLORA R. RALAR)', fileType: 'PDF' as const },
-      { id: 'vaccine-card-or-medical-cert', title: 'VACCINE CARD OR MEDICAL CERT.', subtitle: '(XEROX COPY)', fileType: 'PDF' as const },
-      { id: 'draft-memorandum-of-agreement', title: 'DRAFT MEMORANDUM OF AGREEMENT', fileType: 'PDF' as const },
-      { id: '1x1-picture', title: '1X1 PICTURE', fileType: 'JPG/PNG' as const },
+      { id: "resume-or-cv", title: "RESUME OR CV", fileType: "PDF" as const },
+      {
+        id: "proof-of-enrollment",
+        title: "PROOF OF ENROLLMENT",
+        fileType: "PDF" as const,
+      },
+      {
+        id: "draft-endorsement-letter",
+        title: "DRAFT ENDORSEMENT LETTER",
+        subtitle: "(ADDRESS TO CHIEF. FLORA R. RALAR)",
+        fileType: "PDF" as const,
+      },
+      {
+        id: "vaccine-card-or-medical-cert",
+        title: "VACCINE CARD OR MEDICAL CERT.",
+        subtitle: "(XEROX COPY)",
+        fileType: "PDF" as const,
+      },
+      {
+        id: "draft-memorandum-of-agreement",
+        title: "DRAFT MEMORANDUM OF AGREEMENT",
+        fileType: "PDF" as const,
+      },
+      { id: "1x1-picture", title: "1X1 PICTURE", fileType: "JPG/PNG" as const },
     ];
 
     const modalData: ModalInternData = {
       ojtId: intern.ojtId,
-      portalId: intern.ojtId.replace('NTC-', 'OJT-'),
+      portalId: intern.ojtId.replace("NTC-", "OJT-"),
       name: intern.name,
-      gender: intern.gender || 'Not specified',
+      gender: intern.gender || "Not specified",
       email: intern.email,
-      phone: 'N/A',
+      phone: "N/A",
       school: intern.school,
-      course: intern.ojtDetails || 'Not specified',
-      hoursNeeded: 'N/A',
+      course: intern.ojtDetails || "Not specified",
+      hoursNeeded: "N/A",
       deploymentDate: intern.startDate,
       endDate: intern.endDate,
       requirementFiles,
     };
 
-    console.log('Opening inline modal for:', modalData.name);
+    console.log("Opening inline modal for:", modalData.name);
     setViewingIntern(modalData);
   };
 
   const handleEdit = (intern: Intern) => {
-    console.log("Editing intern:", intern);
+    // Open the Change Intern Details modal with mock data derived from the intern
+    setEditingIntern(intern);
   };
 
   const handleDelete = (intern: Intern) => {
@@ -151,14 +186,16 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
         {/* Header with title and export button */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 pb-0 w-full">
           <div>
-            <h3 className="text-lg font-semibold text-slate-800">Verified Interns (OJT Data)</h3>
+            <h3 className="text-lg font-semibold text-slate-800">
+              Verified Interns (OJT Data)
+            </h3>
             <p className="text-sm text-slate-500 mt-1">
-              Showing {interns.length} of {interns.length} interns
+              Showing {rows.length} of {rows.length} interns
             </p>
           </div>
           <div className="flex gap-3">
             {/* Export to Excel Button */}
-            <button 
+            <button
               onClick={handleExportExcel}
               className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
             >
@@ -173,34 +210,83 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
           <table className="w-full text-left">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700 w-12">
-                    <input
-                      type="checkbox"
-                      checked={selectAll}
-                      onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border border-slate-300 bg-white accent-blue-600 focus:ring-blue-500"
-                    />
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700 w-12"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border border-slate-300 bg-white accent-blue-600 focus:ring-blue-500"
+                  />
                 </th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">OJT ID</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">INTERN NAME</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">GENDER</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">SCHOOL</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap">OJT DETAILS</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap">DEPLOYMENT DATE</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap">END DATE</th>
-                <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">ACTIONS</th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                >
+                  OJT ID
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                >
+                  INTERN NAME
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                >
+                  GENDER
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                >
+                  SCHOOL
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap"
+                >
+                  OJT DETAILS
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap"
+                >
+                  DEPLOYMENT DATE
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap"
+                >
+                  END DATE
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                >
+                  ACTIONS
+                </th>
               </tr>
             </thead>
             <tbody>
               {interns.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
+                  <td
+                    colSpan={9}
+                    className="px-6 py-12 text-center text-slate-500"
+                  >
                     No interns found
                   </td>
                 </tr>
               ) : (
-                interns.map((intern) => (
-                  <tr key={intern.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                rows.map((intern) => (
+                  <tr
+                    key={intern.id}
+                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <label className="inline-flex items-center">
                         <input
@@ -212,34 +298,48 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
                         />
                       </label>
                     </td>
-                    <td className="px-6 py-4 text-sm font-mono text-slate-600">{intern.ojtId}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-800">{intern.name}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 ">{intern.gender || 'Not set'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{intern.school}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{intern.ojtDetails || '—'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{formatDate(intern.startDate)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{formatDate(intern.endDate)}</td>
+                    <td className="px-6 py-4 text-sm font-mono text-slate-600">
+                      {intern.ojtId}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                      {intern.name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 ">
+                      {intern.gender || "Not set"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {intern.school}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {intern.ojtDetails || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
+                      {formatDate(intern.startDate)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
+                      {formatDate(intern.endDate)}
+                    </td>
                     <td className="px-6 py-4 text-sm">
-                     
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleViewDetails(intern)}
-                          className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100">
-                      <Eye size={16} />
-                          
+                          className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
+                        >
+                          <Eye size={16} />
                         </button>
                         <button
                           onClick={() => handleEdit(intern)}
-                           className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100">
-                            <SquarePen size={16}/>
+                          className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100"
+                        >
+                          <SquarePen size={16} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(intern)}
-                          className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100">
+                          className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
-                      
                     </td>
                   </tr>
                 ))
@@ -269,8 +369,62 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
         <InlineInternDetailsModal
           intern={viewingIntern}
           onClose={() => {
-            console.log('Closing inline modal');
+            console.log("Closing inline modal");
             setViewingIntern(null);
+          }}
+        />
+      )}
+
+      {editingIntern && (
+        <ChangeInterDetailsModal
+          intern={{
+            id: editingIntern.id,
+            name: editingIntern.name,
+            ojtYear:
+              new Date(editingIntern.startDate).getFullYear().toString() ||
+              "2026",
+            ojtNumber: (() => {
+              const parts = editingIntern.ojtId?.split("-") || [];
+              const last = parts.length
+                ? parts[parts.length - 1]
+                : editingIntern.ojtId;
+              return (last || "001").slice(-3).padStart(3, "0");
+            })(),
+            gender: editingIntern.gender || "Female",
+            deploymentDate: editingIntern.startDate,
+            endDate: editingIntern.endDate,
+          }}
+          onClose={() => setEditingIntern(null)}
+          onSave={(payload) => {
+            // Apply changes to the local rows state so the table reflects edits
+            const computeNewOjtId = (oldId: string | undefined, p: any) => {
+              const parts = (oldId || "").split("-").filter(Boolean);
+              if (parts.length >= 2) {
+                // replace last with number
+                parts[parts.length - 1] =
+                  p.ojtNumber ?? parts[parts.length - 1];
+                // replace year if provided
+                if (p.ojtYear) parts[parts.length - 2] = p.ojtYear;
+                return parts.join("-");
+              }
+              return `${p.ojtYear ?? "2026"}-${p.ojtNumber ?? "001"}`;
+            };
+
+            setRows((prev) =>
+              prev.map((r) =>
+                r.id === payload.id
+                  ? {
+                      ...r,
+                      gender: payload.gender ?? r.gender,
+                      startDate: payload.deploymentDate ?? r.startDate,
+                      endDate: payload.endDate ?? r.endDate,
+                      ojtId: computeNewOjtId(r.ojtId, payload),
+                    }
+                  : r,
+              ),
+            );
+            console.log("Saved intern details:", payload);
+            setEditingIntern(null);
           }}
         />
       )}
