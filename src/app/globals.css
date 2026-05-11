@@ -10,6 +10,15 @@
   textarea {
     @apply appearance-none bg-transparent border-0 outline-none;
   }
+
+  /* Keep inputs reset generally, but restore native checkbox appearance
+     so the browser can render the check mark. Also set a visible accent color. */
+  input[type="checkbox"] {
+    -webkit-appearance: auto;
+    appearance: auto;
+    background-color: #ffffff;
+    accent-color: #2563EB; /* Tailwind blue-600 */
+  }
 }
 
 @layer components {

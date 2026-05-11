@@ -178,7 +178,7 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
                       type="checkbox"
                       checked={selectAll}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="w-4 h-4 rounded border border-slate-300 bg-white accent-blue-600 focus:ring-blue-500"
                     />
                 </th>
                 <th scope="col" className="px-6 py-4 text-sm font-semibold text-slate-700">OJT ID</th>
@@ -207,7 +207,7 @@ export const VerifiedInternsTableSection = ({ interns, onViewDetails }: Verified
                           type="checkbox"
                           checked={selectedInterns.includes(intern.id)}
                           onChange={() => handleSelectIntern(intern.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 rounded border border-slate-300 bg-white accent-blue-600 focus:ring-blue-500"
                           aria-label={`Select intern ${intern.name}`}
                         />
                       </label>
