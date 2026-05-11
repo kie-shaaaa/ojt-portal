@@ -23,11 +23,13 @@ interface ApplicationDetailsProps {
     status?: string;
   } | null;
   onClose: () => void;
+  onChangeStatus?: () => void;
 }
 
 export const ApplicationDetails = ({
   application,
   onClose,
+  onChangeStatus,
 }: ApplicationDetailsProps): JSX.Element => {
   const rows: DetailRow[] = [
     { label: "Application ID:", value: application?.id ?? "—" },
@@ -129,6 +131,7 @@ export const ApplicationDetails = ({
                 type="button"
                 aria-label="Change application status"
                 className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-blue-800"
+                onClick={() => onChangeStatus?.()}
               >
                 <Pencil size={14} strokeWidth={2.2} />
                 Change Status

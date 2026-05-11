@@ -4,6 +4,7 @@ import { Download, Eye, Trash2 } from "lucide-react";
 import { JSX, useState } from "react";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import ApplicationDetails from "../ApplicationDetailsModal";
+import ChangeStatusModal from "../ChangeStatusModal";
 
 type ApplicationRow = {
   id: string;
@@ -13,7 +14,7 @@ type ApplicationRow = {
   applicationType: string[];
   details: string[];
   submissionDate: string[];
-  status: "Pending" | "For interview";
+  status: string;
 };
 
 const applications: ApplicationRow[] = [
@@ -83,6 +84,8 @@ export const ApplicationsTableSection = (): JSX.Element => {
   const [applicationsState, setApplicationsState] =
     useState<ApplicationRow[]>(applications);
   const [applicationToDelete, setApplicationToDelete] =
+    useState<ApplicationRow | null>(null);
+  const [changeStatusApplication, setChangeStatusApplication] =
     useState<ApplicationRow | null>(null);
 
   // Check if all rows are selected
@@ -214,13 +217,33 @@ export const ApplicationsTableSection = (): JSX.Element => {
 
                 {/* Status */}
                 <td className="px-6 py-6 align-top">
-                  {application.status === "Pending" ? (
+                  {String(application.status)
+                    .toLowerCase()
+                    .includes("pending") ? (
                     <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                      Pending
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("interview") ? (
+                    <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-600">
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("accept") ? (
+                    <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-600">
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("reject") ? (
+                    <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
+                      {application.status}
                     </span>
                   ) : (
-                    <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-600">
-                      For interview
+                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      {application.status}
                     </span>
                   )}
                 </td>
@@ -252,6 +275,10 @@ export const ApplicationsTableSection = (): JSX.Element => {
         <ApplicationDetails
           application={selectedApplication}
           onClose={() => setSelectedApplication(null)}
+          onChangeStatus={() => {
+            // Keep the details modal open and open the change-status modal on top
+            setChangeStatusApplication(selectedApplication);
+          }}
         />
       )}
       {applicationToDelete && (
@@ -266,6 +293,19 @@ export const ApplicationsTableSection = (): JSX.Element => {
             );
             setSelectedRows(new Set());
             setApplicationToDelete(null);
+          }}
+        />
+      )}
+      {changeStatusApplication && (
+        <ChangeStatusModal
+          open={!!changeStatusApplication}
+          application={changeStatusApplication}
+          onClose={() => setChangeStatusApplication(null)}
+          onConfirm={(newStatus: string, id: string) => {
+            setApplicationsState((prev) =>
+              prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)),
+            );
+            setChangeStatusApplication(null);
           }}
         />
       )}
