@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   BadRequestException,
 } from '@nestjs/common';
-import { Account, AccountCreate } from '../data/types';
+import { Account, AccountCreate, AccountType } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
 
@@ -60,13 +60,15 @@ export class AccountsService {
     }
   }
 
-  async updateAccount(id: number, newEmail: string, newType: string) {
+  async updateAccount(id: number, newEmail: string, newType: AccountType) {
     const client = this.databaseService.getClient();
     try {
       const exists = await client.query<Account>(
         `
         SELECT id, email, account_type FROM user_accounts
+        WHERE id = $1
         `,
+        [id],
       );
       if (!exists) {
         throw new Error('User account does not exist');
@@ -99,7 +101,7 @@ export class AccountsService {
         message: 'Successfully updated account',
       };
     } catch (error) {
-      console.error('[ACCOUNTS] Error creating account:', error);
+      console.error('[ACCOUNTS] Error updating account:', error);
       if (
         error instanceof Error &&
         error.message.includes('User already exists')
@@ -112,10 +114,87 @@ export class AccountsService {
 
   async deleteAccount() {}
 
-  async deactivateAccount() {}
+  // TODO
+  async archiveAccount(id: number) {
+    try {
+      const client = await this.databaseService.getClient();
 
-  async updatePassword(hash: string, newPassword: string) {
-    const newHash = await this.authService.hashPassword(newPassword);
-    return newHash;
+      const exists = await client.query<Account>(
+        `
+        SELECT id, email, account_type FROM user_accounts
+        WHERE id = $1
+        `,
+        [id],
+      );
+      if (!exists) {
+        throw new Error('User account does not exist');
+      }
+
+      // Model column not yet initialized
+      const res = await client.query(
+        `UPDATE user_accounts
+        SET status = "disabled"
+        WHERE id = $1`,
+        [id],
+      );
+
+      return {
+        success: true,
+        message: 'Successfully deactivated account',
+        data: res || null,
+      };
+    } catch (error) {
+      console.error('[ACCOUNTS] Error deactivating account:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('User already exists')
+      ) {
+        throw new BadRequestException('User with this email already exists');
+      }
+      throw new InternalServerErrorException('Failed to create user account');
+    }
+  }
+
+  async updatePassword(id: number, newPassword: string) {
+    try {
+      const client = await this.databaseService.getClient();
+
+      const exists = await client.query<Account>(
+        `
+        SELECT id, email, account_type FROM user_accounts
+        WHERE id = $1
+        `,
+        [id],
+      );
+      if (!exists) {
+        throw new Error('User account does not exist');
+      }
+
+      const newHash = await this.authService.hashPassword(newPassword);
+
+      const res = await client.query<Account>(
+        `
+          UPDATE user_accounts
+          SET password = $1,
+          WHERE id = $2
+        `,
+        [newHash, id],
+      );
+
+      return {
+        success: true,
+        message: 'Successfully updated user accounts',
+        data: res || null,
+      };
+    } catch (error) {
+      console.error('[ACCOUNTS] Error changing account password:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('User already exists')
+      ) {
+        throw new BadRequestException('User with this email already exists');
+      }
+      throw new InternalServerErrorException('Failed to create user account');
+    }
   }
 }

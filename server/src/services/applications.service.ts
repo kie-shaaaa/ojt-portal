@@ -138,5 +138,4 @@ export class ApplicationsService {
     return res.rows[0] ?? null;
   }
 
-  async validateApplication() {}
 }

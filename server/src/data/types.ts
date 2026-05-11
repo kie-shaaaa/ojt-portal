@@ -148,3 +148,5 @@ export type AllOjt = {
   moved_to_ojt_at: string;
   admin_notes: string | null;
 };
+
+export type AccountType = 'admin' | 'employee';
