@@ -53,10 +53,11 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() credentials: AccountCreate,
+    @Body() id: number
   ): Promise<RegisterResponse> {
     try {
       // Register new user
-      const user = await this.accountService.createAccount(credentials);
+      const user = await this.accountService.createAccount(id, credentials);
 
       // Create JWT token
       const payload = {

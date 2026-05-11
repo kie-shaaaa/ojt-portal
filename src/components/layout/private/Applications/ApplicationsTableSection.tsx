@@ -1,11 +1,11 @@
 "use client";
 
-import {
-  Download,
-  Eye,
-  Trash2,
-} from "lucide-react";
-import { JSX, useState } from "react";
+import { Download, Eye, Pencil, Trash2 } from "lucide-react";
+import { JSX, useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
+import ApplicationDetails from "../ApplicationDetailsModal";
+import ChangeStatusModal from "../ChangeStatusModal";
 
 type ApplicationRow = {
   id: string;
@@ -15,7 +15,7 @@ type ApplicationRow = {
   applicationType: string[];
   details: string[];
   submissionDate: string[];
-  status: "Pending" | "For interview";
+  status: string;
 };
 
 const applications: ApplicationRow[] = [
@@ -78,42 +78,104 @@ const columns = [
 ];
 
 export const ApplicationsTableSection = (): JSX.Element => {
-  // State to track selected rows
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  // State to track selected rows by application ID
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [selectedApplication, setSelectedApplication] =
+    useState<ApplicationRow | null>(null);
+  const [applicationsState, setApplicationsState] =
+    useState<ApplicationRow[]>(applications);
+  const mountedRef = useRef(false);
+  const [applicationToDelete, setApplicationToDelete] =
+    useState<ApplicationRow | null>(null);
+  const [changeStatusApplication, setChangeStatusApplication] =
+    useState<ApplicationRow | null>(null);
 
-  // Check if all rows are selected
-  const allSelected = selectedRows.size === applications.length;
+  // Load applications from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("ojt_applications");
+      if (raw) {
+        setApplicationsState(JSON.parse(raw) as ApplicationRow[]);
+      } else {
+        localStorage.setItem("ojt_applications", JSON.stringify(applications));
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
-  // Handle header checkbox click
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status")?.toLowerCase() ?? null;
+
+  // Filter applications based on `status` query param
+  const filteredApplications = applicationsState.filter((a) =>
+    statusParam ? a.status.toLowerCase().includes(statusParam) : true,
+  );
+
+  // Check if all visible rows are selected
+  const allSelected =
+    filteredApplications.length > 0 &&
+    filteredApplications.every((a) => selectedRows.has(a.id));
+
+  // Handle header checkbox click (select/deselect all visible)
   const handleSelectAll = () => {
     if (allSelected) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(applications.map((_, index) => index)));
+      setSelectedRows(new Set(filteredApplications.map((a) => a.id)));
     }
   };
 
-  // Handle individual row checkbox click
-  const handleRowSelect = (index: number) => {
+  // Handle individual row checkbox click (by id)
+  const handleRowSelect = (id: string) => {
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(index)) {
-      newSelected.delete(index);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
     } else {
-      newSelected.add(index);
+      newSelected.add(id);
     }
     setSelectedRows(newSelected);
   };
+
+  // Persist applications to localStorage and notify listeners
+  useEffect(() => {
+    // avoid dispatch on first mount when loading from localStorage
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      // ensure localStorage has initial data (if empty)
+      try {
+        const raw = localStorage.getItem("ojt_applications");
+        if (!raw)
+          localStorage.setItem(
+            "ojt_applications",
+            JSON.stringify(applicationsState),
+          );
+      } catch (err) {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        "ojt_applications",
+        JSON.stringify(applicationsState),
+      );
+      window.dispatchEvent(new Event("applications:update"));
+    } catch (err) {
+      // ignore write errors
+    }
+  }, [applicationsState]);
 
   return (
     <section className="w-full overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
         <div>
-          <h2 className="text-xl font-semibold text-slate-800">
-            Applications
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-800">Applications</h2>
           <p className="text-sm text-slate-400">
-            Showing {applications.length} of {applications.length} applications
+            Showing {filteredApplications.length} of {applicationsState.length}{" "}
+            applications
           </p>
         </div>
 
@@ -151,7 +213,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
           </thead>
 
           <tbody>
-            {applications.map((application, index) => (
+            {filteredApplications.map((application, index) => (
               <tr
                 key={`${application.id}-${index}`}
                 className="border-t border-slate-100 hover:bg-slate-50/40"
@@ -161,8 +223,8 @@ export const ApplicationsTableSection = (): JSX.Element => {
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-slate-300"
-                    checked={selectedRows.has(index)}
-                    onChange={() => handleRowSelect(index)}
+                    checked={selectedRows.has(application.id)}
+                    onChange={() => handleRowSelect(application.id)}
                   />
                 </td>
 
@@ -210,14 +272,40 @@ export const ApplicationsTableSection = (): JSX.Element => {
                 </td>
 
                 {/* Status */}
-                <td className="px-6 py-6 align-top">
-                  {application.status === "Pending" ? (
+                <td className="px-6 py-6 align-top min-w-[160px] whitespace-nowrap">
+                  {String(application.status)
+                    .toLowerCase()
+                    .includes("pending") ? (
                     <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                      Pending
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("review") ? (
+                    <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-600">
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("interview") ? (
+                    <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-600">
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("accept") ? (
+                    <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-600">
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("reject") ? (
+                    <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-600">
+                      {application.status}
                     </span>
                   ) : (
-                    <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-600">
-                      For interview
+                    <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      {application.status}
                     </span>
                   )}
                 </td>
@@ -225,11 +313,27 @@ export const ApplicationsTableSection = (): JSX.Element => {
                 {/* Actions */}
                 <td className="px-6 py-6 align-top">
                   <div className="flex items-center gap-2">
-                    <button className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100">
+                    <button
+                      className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
+                      onClick={() => setSelectedApplication(application)}
+                      aria-label={`View application ${application.applicantName}`}
+                    >
                       <Eye size={16} />
                     </button>
 
-                    <button className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100">
+                    <button
+                      className="rounded-md bg-amber-50 p-2 text-amber-500 transition hover:bg-amber-100"
+                      onClick={() => setChangeStatusApplication(application)}
+                      aria-label={`Change status for ${application.applicantName}`}
+                    >
+                      <Pencil size={16} />
+                    </button>
+
+                    <button
+                      className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
+                      onClick={() => setApplicationToDelete(application)}
+                      aria-label={`Delete application ${application.applicantName}`}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -239,6 +343,60 @@ export const ApplicationsTableSection = (): JSX.Element => {
           </tbody>
         </table>
       </div>
+      {selectedApplication && (
+        <ApplicationDetails
+          application={selectedApplication}
+          onClose={() => setSelectedApplication(null)}
+        />
+      )}
+      {applicationToDelete && (
+        <ConfirmDeleteModal
+          open={!!applicationToDelete}
+          title="Delete application"
+          message={`Are you sure you want to delete application from ${applicationToDelete.applicantName}? This action cannot be undone.`}
+          onCancel={() => setApplicationToDelete(null)}
+          onConfirm={() => {
+            setApplicationsState((prev) =>
+              prev.filter((a) => a.id !== applicationToDelete.id),
+            );
+            setSelectedRows(new Set());
+            setApplicationToDelete(null);
+          }}
+        />
+      )}
+      {changeStatusApplication && (
+        <ChangeStatusModal
+          open={!!changeStatusApplication}
+          application={changeStatusApplication}
+          onClose={() => setChangeStatusApplication(null)}
+          onConfirm={(newStatus: string, id: string, scheduleDate?: string, scheduleTime?: string) => {
+            setApplicationsState((prev) => {
+              const next = prev.map((a) => {
+                if (a.id === id) {
+                  const updated = { ...a, status: newStatus };
+                  // Store schedule info if provided (can be extended to use these values)
+                  if (scheduleDate && scheduleTime) {
+                    // You can store these in the application object or pass to an API
+                    console.log(`Schedule set for ${newStatus}: ${scheduleDate} at ${scheduleTime}`);
+                  }
+                  return updated;
+                }
+                return a;
+              });
+
+              setSelectedApplication((prevSelected) =>
+                prevSelected && prevSelected.id === id
+                  ? (next.find((a) => a.id === id) ?? null)
+                  : prevSelected,
+              );
+
+              return next;
+            });
+
+            setChangeStatusApplication(null);
+          }}
+        />
+      )}
     </section>
   );
 };
