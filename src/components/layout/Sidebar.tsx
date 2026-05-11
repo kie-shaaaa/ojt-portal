@@ -13,6 +13,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
 import { useState } from "react";
+import Image from "next/image";
+// use logo from public folder
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
@@ -41,8 +43,14 @@ export const AsideSidebar = (): JSX.Element => {
 
         {/* Top brand */}
         <div className="flex items-center p-4 md:p-6 w-full border-b border-[#1e40af80]">
-          <div className="flex items-center justify-center w-10 h-10 p-1 bg-white rounded-full">
-            <div className="w-8 h-8 bg-[url('/ntc-logo.png')] bg-cover bg-center" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden">
+            <Image
+              src="/ntc-logo.png"
+              alt="NTC logo"
+              width={40}
+              height={40}
+              className="object-cover"
+            />
           </div>
           <div className="hidden md:flex flex-col pl-3">
             <div className="font-bold text-xl text-white">NTC Admin</div>

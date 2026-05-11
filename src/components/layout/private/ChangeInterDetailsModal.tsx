@@ -1,7 +1,25 @@
-import { JSX, useId, useState } from "react";
+import { JSX, useId, useState, useEffect } from "react";
 import { X, Save, ChevronDown } from "lucide-react";
 
-export const ModalBackdrop = (): JSX.Element => {
+interface ChangeInternDetailsProps {
+  intern?: {
+    id?: string;
+    name?: string;
+    ojtYear?: string;
+    ojtNumber?: string;
+    gender?: string;
+    deploymentDate?: string;
+    endDate?: string;
+  } | null;
+  onClose: () => void;
+  onSave?: (data: any) => void;
+}
+
+export const ChangeInterDetailsModal = ({
+  intern,
+  onClose,
+  onSave,
+}: ChangeInternDetailsProps): JSX.Element => {
   const titleId = useId();
   const descriptionId = useId();
   const internNameId = useId();
@@ -10,11 +28,21 @@ export const ModalBackdrop = (): JSX.Element => {
   const deploymentDateId = useId();
   const endDateId = useId();
 
-  const [ojtYear] = useState("2026");
-  const [ojtNumber, setOjtNumber] = useState("001");
-  const [gender, setGender] = useState("Female");
-  const [deploymentDate, setDeploymentDate] = useState("05/11/2026");
-  const [endDate, setEndDate] = useState("05/12/2026");
+  const [ojtYear, setOjtYear] = useState(intern?.ojtYear ?? "2026");
+  const [ojtNumber, setOjtNumber] = useState(intern?.ojtNumber ?? "001");
+  const [gender, setGender] = useState(intern?.gender ?? "Female");
+  const [deploymentDate, setDeploymentDate] = useState(
+    intern?.deploymentDate ?? "05/11/2026",
+  );
+  const [endDate, setEndDate] = useState(intern?.endDate ?? "05/12/2026");
+
+  useEffect(() => {
+    setOjtYear(intern?.ojtYear ?? "2026");
+    setOjtNumber(intern?.ojtNumber ?? "001");
+    setGender(intern?.gender ?? "Female");
+    setDeploymentDate(intern?.deploymentDate ?? "05/11/2026");
+    setEndDate(intern?.endDate ?? "05/12/2026");
+  }, [intern]);
 
   const formFields = [
     {
@@ -44,29 +72,44 @@ export const ModalBackdrop = (): JSX.Element => {
     else setOjtNumber(ojtNumber.padStart(3, "0"));
   };
 
+  const handleSave = () => {
+    const payload = {
+      id: intern?.id,
+      ojtYear,
+      ojtNumber,
+      gender,
+      deploymentDate,
+      endDate,
+    };
+    if (onSave) onSave(payload);
+    onClose();
+  };
+
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        className="relative flex w-full max-w-2xl flex-col max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl"
       >
         {/* Header */}
         <header className="flex w-full items-center justify-between border-b border-gray-100 px-8 pt-8 pb-6">
           <div className="flex flex-col">
-            <h1
-              id={titleId}
-              className="text-xl font-bold text-blue-700"
-            >
+            <h1 id={titleId} className="text-xl font-bold text-blue-700">
               Edit Intern Details
             </h1>
             <p id={descriptionId} className="sr-only">
-              Update intern information including OJT ID number, gender, and internship dates.
+              Update intern information including OJT ID number, gender, and
+              internship dates.
             </p>
           </div>
-          <button aria-label="Close dialog" className="text-gray-400 hover:text-gray-600">
+          <button
+            aria-label="Close dialog"
+            className="text-gray-400 hover:text-gray-600"
+            onClick={onClose}
+          >
             <X size={20} />
           </button>
         </header>
@@ -76,14 +119,17 @@ export const ModalBackdrop = (): JSX.Element => {
           {/* Intern Name */}
           <dl className="flex w-full justify-between border-b border-gray-50 py-4">
             <dt className="text-base font-bold text-gray-700">Intern Name:</dt>
-            <dd className="text-base text-gray-600">Kie Villanueva</dd>
+            <dd className="text-base text-gray-600">{intern?.name ?? "—"}</dd>
           </dl>
 
           {/* Form */}
           <form className="grid gap-6 md:grid-cols-2 md:grid-rows-[102px_86px]">
             {/* OJT ID */}
             <div className="flex flex-col gap-1.5 pt-0 pb-4">
-              <label htmlFor={ojtIdFieldId} className="text-sm font-bold text-gray-700">
+              <label
+                htmlFor={ojtIdFieldId}
+                className="text-sm font-bold text-gray-700"
+              >
                 OJT ID Number
               </label>
               <div className="flex w-full">
@@ -109,7 +155,10 @@ export const ModalBackdrop = (): JSX.Element => {
 
             {/* Gender */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={genderFieldId} className="text-sm font-bold text-gray-700">
+              <label
+                htmlFor={genderFieldId}
+                className="text-sm font-bold text-gray-700"
+              >
                 Gender
               </label>
               <div className="relative">
@@ -121,7 +170,9 @@ export const ModalBackdrop = (): JSX.Element => {
                   onChange={(e) => setGender(e.target.value)}
                 >
                   {["Female", "Male"].map((option) => (
-                    <option key={option} value={option}>{option}</option>
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -136,10 +187,15 @@ export const ModalBackdrop = (): JSX.Element => {
             {/* Dates */}
             {formFields.map((field, index) => (
               <div key={field.id} className="flex flex-col gap-1.5">
-                <label htmlFor={field.id} className="text-sm font-bold text-gray-700">
+                <label
+                  htmlFor={field.id}
+                  className="text-sm font-bold text-gray-700"
+                >
                   {field.label}{" "}
                   {field.labelSuffix && (
-                    <span className="font-normal text-gray-400">{field.labelSuffix}</span>
+                    <span className="font-normal text-gray-400">
+                      {field.labelSuffix}
+                    </span>
                   )}
                 </label>
                 <input
@@ -163,11 +219,13 @@ export const ModalBackdrop = (): JSX.Element => {
           <button
             type="button"
             className="rounded-md border border-gray-300 bg-white px-6 py-2 text-sm text-gray-700"
+            onClick={onClose}
           >
             Cancel
           </button>
           <button
-            type="submit"
+            type="button"
+            onClick={handleSave}
             className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-6 py-2 text-sm text-white hover:bg-blue-800"
           >
             <Save size={16} />
@@ -179,4 +237,4 @@ export const ModalBackdrop = (): JSX.Element => {
   );
 };
 
-export default ModalBackdrop;
+export default ChangeInterDetailsModal;
