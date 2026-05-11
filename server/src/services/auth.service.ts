@@ -46,6 +46,7 @@ export class AuthService {
     await this.logSignIn(email, true, null, user.id);
 
     // Return user without password
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
