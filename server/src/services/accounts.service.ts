@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   BadRequestException,
 } from '@nestjs/common';
-import { Account, AccountCreate, AccountType } from '../data/types';
+import { Account, AccountCreate } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
 
