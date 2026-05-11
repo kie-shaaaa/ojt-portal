@@ -1,7 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Send, Search } from "lucide-react";
-import { JSX } from "react";
+import { JSX, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { ApplicationPortalClosedModal } from "@/components/modals/ApplicationPortalClosedModal";
 
 const actions = [
   {
@@ -21,6 +25,31 @@ const actions = [
 ];
 
 export const HeroSection = (): JSX.Element => {
+  const router = useRouter();
+  const [isPortalOpen, setIsPortalOpen] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Load portal status on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("portalSettings");
+    if (saved) {
+      try {
+        const { isOpen } = JSON.parse(saved);
+        setIsPortalOpen(isOpen);
+      } catch (error) {
+        console.error("Failed to load portal settings:", error);
+      }
+    }
+  }, []);
+
+  const handleSubmitApplication = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!isPortalOpen) {
+      setIsModalOpen(true);
+    } else {
+      router.push("/apply");
+    }
+  };
   return (
     <section
       id="home"
@@ -80,6 +109,30 @@ export const HeroSection = (): JSX.Element => {
             ? "all-[unset] box-border inline-flex items-center justify-center gap-3 px-12 py-4 bg-[#2668ff] rounded-[28px] shadow-[0_16px_40px_-24px_rgba(0,0,0,0.8)] text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             : "all-[unset] box-border inline-flex items-center justify-center gap-3 px-12 py-4 rounded-[28px] border border-white/70 bg-transparent text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
+          if (action.label === "Submit Application") {
+            return (
+              <button
+                key={action.label}
+                type="button"
+                className={className}
+                aria-label={action.label}
+                onClick={handleSubmitApplication}
+              >
+                <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
+                  {action.icon && (
+                    <action.icon
+                      className="relative w-5 h-5 text-white"
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+                <div className="flex items-center justify-center [font-family:'Inter-SemiBold',Helvetica] font-semibold text-white text-base text-center tracking-[0] leading-6 whitespace-nowrap relative w-fit">
+                  {action.label}
+                </div>
+              </button>
+            );
+          }
+
           if (action.href) {
             return (
               <Link key={action.label} href={action.href} className={className} aria-label={action.label}>
@@ -120,6 +173,11 @@ export const HeroSection = (): JSX.Element => {
           );
         })}
       </div>
+
+      <ApplicationPortalClosedModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 };
