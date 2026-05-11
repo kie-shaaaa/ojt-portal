@@ -12,7 +12,7 @@ export const FormStepper = ({ currentStep }: FormStepperProps): JSX.Element => {
     },
     {
       id: 2,
-      label: "OJT Requirements",
+      label: "OJT Information",
     },
     {
       id: 3,
@@ -33,11 +33,11 @@ export const FormStepper = ({ currentStep }: FormStepperProps): JSX.Element => {
   const progressPercentage = ((currentStep - 1) / 3) * 100;
 
   return (
-    <section className="flex flex-col items-start px-12 py-8 relative self-stretch w-full flex-[0_0_auto] bg-white border-b [border-bottom-style:solid] border" aria-label="Application progress">
-      <div className="relative flex w-full max-w-2xl items-start justify-between">
+    <section className="flex flex-col items-center px-12 py-6 relative self-stretch w-full flex-[0_0_auto] bg-white" aria-label="Application progress">
+      <div className="relative flex w-full max-w-4xl items-center justify-between">
         <div aria-hidden="true" className="absolute left-0 right-0 top-5 h-0.5 bg-slate-200" />
         <div aria-hidden="true" className="absolute left-0 top-5 h-0.5 bg-green-500" style={{ width: `${progressPercentage}%` }} />
-        <ol className="relative z-10 flex w-full items-start justify-between">
+        <ol className="relative z-10 flex w-full items-center justify-between">
           {steps.map((step) => {
             const status = getStatus(step.id);
             const isCompleted = status === "completed";
