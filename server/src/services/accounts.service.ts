@@ -35,10 +35,10 @@ export class AccountsService {
 
       const res = await client.query<Account>(
         `
-                INSERT INTO user_accounts (email, password, username, account_type)
-                VALUES($1, $2, $3, $4)
-                RETURNING id, email, password, username, account_type, created_at, updated_at
-            `,
+        INSERT INTO user_accounts (email, password, username, account_type)
+        VALUES($1, $2, $3, $4)
+        RETURNING id, email, password, username, account_type, created_at, updated_at
+        `,
         [
           newUser.email,
           newUser.password,
@@ -60,7 +60,55 @@ export class AccountsService {
     }
   }
 
-  async updateAccount() {}
+  async updateAccount(id: number, newEmail: string, newType: string) {
+    const client = this.databaseService.getClient();
+    try {
+      const exists = await client.query<Account>(
+        `
+        SELECT id, email, account_type FROM user_accounts
+        `,
+      );
+      if (!exists) {
+        throw new Error('User account does not exist');
+      }
+
+      if (exists.rows[0].email != newEmail) {
+        await client.query(
+          `
+          UPDATE user_accounts
+          SET email = $1
+          WHERE id = $2
+          `,
+          [newEmail, id],
+        );
+      }
+
+      if (exists.rows[0].account_type != newType) {
+        await client.query(
+          `
+          UPDATE user_accounts
+          SET account_type = $1
+          WHERE id = $2
+          `,
+          [newEmail, id],
+        );
+      }
+
+      return {
+        success: true,
+        message: 'Successfully updated account',
+      };
+    } catch (error) {
+      console.error('[ACCOUNTS] Error creating account:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('User already exists')
+      ) {
+        throw new BadRequestException('User with this email already exists');
+      }
+      throw new InternalServerErrorException('Failed to create user account');
+    }
+  }
 
   async deleteAccount() {}
 
