@@ -74,7 +74,10 @@ export const LoginFormSection = (): JSX.Element => {
                     onChange={(event) => setUsername(event.target.value)}
                   />
                 </div>
-                <User className="absolute top-4 left-[15px] w-[13px] h-[13px] text-[#6b7280]" aria-hidden="true" />
+                <User
+                  className="absolute top-4 left-[15px] w-[13px] h-[13px] text-[#6b7280]"
+                  aria-hidden="true"
+                />
               </div>
             </div>
             <div className="flex flex-col items-start gap-1.5 relative self-stretch w-full flex-[0_0_auto]">
@@ -109,7 +112,10 @@ export const LoginFormSection = (): JSX.Element => {
                     onChange={(event) => setPassword(event.target.value)}
                   />
                 </div>
-                <Lock className="absolute top-3.5 left-[15px] w-[13px] h-[18px] text-[#6b7280]" aria-hidden="true" />
+                <Lock
+                  className="absolute top-3.5 left-[15px] w-[13px] h-[18px] text-[#6b7280]"
+                  aria-hidden="true"
+                />
               </div>
             </div>
             <div className="flex items-center relative self-stretch w-full flex-[0_0_auto]">
@@ -149,7 +155,10 @@ export const LoginFormSection = (): JSX.Element => {
                 Login
               </span>
               <span className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                <ArrowRight className="relative w-[13.33px] h-[13.33px]" aria-hidden="true" />
+                <ArrowRight
+                  className="relative w-[13.33px] h-[13.33px]"
+                  aria-hidden="true"
+                />
               </span>
             </button>
           </div>
