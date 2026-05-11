@@ -3,10 +3,10 @@ import {
   InternalServerErrorException,
   BadRequestException,
   UnauthorizedException,
-  ConflictException,
 } from '@nestjs/common';
+import { Client } from 'pg';
 import * as argon2 from 'argon2';
-import { Account, AccountRegister } from '../data/types';
+import type { Account } from '../data/types';
 import { DatabaseService } from './database/database.service';
 
 @Injectable()
@@ -28,86 +28,27 @@ export class AuthService {
       throw new BadRequestException('Email and password are required');
     }
 
+    console.log(`[AUTH] Attempting sign-in for email: ${email}`);
     const user = await this.findUser(email);
     if (!user) {
+      console.log(`[AUTH] User not found for email: ${email}`);
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    console.log(`[AUTH] User found for email: ${email}, verifying password...`);
     const isValid = await this.verifyPassword(user.password, password);
     if (!isValid) {
+      console.log(`[AUTH] Password verification failed for email: ${email}`);
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    console.log(`[AUTH] Password verified successfully for email: ${email}`);
     // Log successful sign-in
     await this.logSignIn(email, true, null, user.id);
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
-  }
-
-  /**
-   * Register a new user account
-   * @param email User email
-   * @param password User password
-   * @returns Created user account without password
-   * @throws BadRequestException if email is invalid
-   * @throws ConflictException if email already exists
-   */
-  async registerAccount(
-    email: string,
-    password: string,
-  ): Promise<Omit<Account, 'password'>> {
-    if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
-    }
-
-    // Validate email format
-    if (!this.isValidEmail(email)) {
-      throw new BadRequestException('Invalid email format');
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      throw new BadRequestException(
-        'Password must be at least 8 characters long',
-      );
-    }
-
-    // Check if user already exists
-    const existingUser = await this.findUser(email);
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
-    }
-
-    const hashedPassword = await this.hashPassword(password);
-    const client = await this.databaseService.getClient();
-
-    try {
-      const now = new Date();
-      const result = await client.query<Account>(
-        `
-          INSERT INTO user_accounts (email, password, created_at, updated_at)
-          VALUES ($1, $2, $3, $4)
-          RETURNING id, email, created_at, updated_at;
-        `,
-        [email, hashedPassword, now, now],
-      );
-
-      const createdUser = result.rows[0];
-      await this.logSignIn(email, true, 'registration', createdUser.id);
-
-      return {
-        id: createdUser.id,
-        email: createdUser.email,
-        created_at: createdUser.created_at,
-        updated_at: createdUser.updated_at,
-      };
-    } catch (error) {
-      console.error('Registration failed', error);
-      await this.logSignIn(email, false, `Registration error: ${error}`);
-      throw new InternalServerErrorException('Failed to register user');
-    }
   }
 
   /**
@@ -156,7 +97,7 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
     try {
       const timestamp = new Date();
       const status = success ? 'SUCCESS' : 'FAILED';
