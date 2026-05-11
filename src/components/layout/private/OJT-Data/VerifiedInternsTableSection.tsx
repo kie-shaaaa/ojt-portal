@@ -3,6 +3,7 @@ import InlineInternDetailsModal, {
   ModalInternData,
 } from "./InlineInternDetailsModal";
 import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useState, useEffect } from "react";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -37,6 +38,7 @@ export const VerifiedInternsTableSection = ({
     null,
   );
   const [editingIntern, setEditingIntern] = useState<Intern | null>(null);
+  const [internToDelete, setInternToDelete] = useState<Intern | null>(null);
   const [rows, setRows] = useState<Intern[]>(interns);
 
   useEffect(() => {
@@ -175,9 +177,8 @@ export const VerifiedInternsTableSection = ({
   };
 
   const handleDelete = (intern: Intern) => {
-    if (confirm(`Are you sure you want to delete ${intern.name}?`)) {
-      console.log("Deleting intern:", intern);
-    }
+    // open confirm modal instead of native confirm()
+    setInternToDelete(intern);
   };
 
   return (
@@ -371,6 +372,22 @@ export const VerifiedInternsTableSection = ({
           onClose={() => {
             console.log("Closing inline modal");
             setViewingIntern(null);
+          }}
+        />
+      )}
+
+      {internToDelete && (
+        <ConfirmDeleteModal
+          open={!!internToDelete}
+          title="Delete intern"
+          message={`Are you sure you want to delete ${internToDelete.name}? This action cannot be undone.`}
+          onCancel={() => setInternToDelete(null)}
+          onConfirm={() => {
+            setRows((prev) => prev.filter((r) => r.id !== internToDelete.id));
+            setSelectedInterns((prev) =>
+              prev.filter((id) => id !== internToDelete.id),
+            );
+            setInternToDelete(null);
           }}
         />
       )}

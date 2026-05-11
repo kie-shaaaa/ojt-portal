@@ -2,6 +2,7 @@
 
 import { Download, Eye, Trash2 } from "lucide-react";
 import { JSX, useState } from "react";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import ApplicationDetails from "../ApplicationDetailsModal";
 
 type ApplicationRow = {
@@ -79,16 +80,20 @@ export const ApplicationsTableSection = (): JSX.Element => {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRow | null>(null);
+  const [applicationsState, setApplicationsState] =
+    useState<ApplicationRow[]>(applications);
+  const [applicationToDelete, setApplicationToDelete] =
+    useState<ApplicationRow | null>(null);
 
   // Check if all rows are selected
-  const allSelected = selectedRows.size === applications.length;
+  const allSelected = selectedRows.size === applicationsState.length;
 
   // Handle header checkbox click
   const handleSelectAll = () => {
     if (allSelected) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(applications.map((_, index) => index)));
+      setSelectedRows(new Set(applicationsState.map((_, index) => index)));
     }
   };
 
@@ -110,7 +115,8 @@ export const ApplicationsTableSection = (): JSX.Element => {
         <div>
           <h2 className="text-xl font-semibold text-slate-800">Applications</h2>
           <p className="text-sm text-slate-400">
-            Showing {applications.length} of {applications.length} applications
+            Showing {applicationsState.length} of {applicationsState.length}{" "}
+            applications
           </p>
         </div>
 
@@ -148,7 +154,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
           </thead>
 
           <tbody>
-            {applications.map((application, index) => (
+            {applicationsState.map((application, index) => (
               <tr
                 key={`${application.id}-${index}`}
                 className="border-t border-slate-100 hover:bg-slate-50/40"
@@ -229,7 +235,10 @@ export const ApplicationsTableSection = (): JSX.Element => {
                       <Eye size={16} />
                     </button>
 
-                    <button className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100">
+                    <button
+                      className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
+                      onClick={() => setApplicationToDelete(application)}
+                    >
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -243,6 +252,21 @@ export const ApplicationsTableSection = (): JSX.Element => {
         <ApplicationDetails
           application={selectedApplication}
           onClose={() => setSelectedApplication(null)}
+        />
+      )}
+      {applicationToDelete && (
+        <ConfirmDeleteModal
+          open={!!applicationToDelete}
+          title="Delete application"
+          message={`Are you sure you want to delete application from ${applicationToDelete.applicantName}? This action cannot be undone.`}
+          onCancel={() => setApplicationToDelete(null)}
+          onConfirm={() => {
+            setApplicationsState((prev) =>
+              prev.filter((a) => a.id !== applicationToDelete.id),
+            );
+            setSelectedRows(new Set());
+            setApplicationToDelete(null);
+          }}
         />
       )}
     </section>
