@@ -6,6 +6,7 @@ import { UserPlus, KeyRound, SquarePen, Trash2 } from "lucide-react";
 import { EditAccountModal } from "../EditAccountModal";
 import { ResetPasswordModal } from "../ResetPasswordModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
+import { CreateAccountModal } from "../CreateAccountModal";
 
 // Using lucide icons for row actions and buttons
 
@@ -49,6 +50,7 @@ export const AccountsTableSection = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
     null,
   );
@@ -100,6 +102,24 @@ export const AccountsTableSection = ({
     setIsDeleteModalOpen(false);
     setSelectedAccount(null);
   };
+
+  const handleCreateClick = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const handleAccountCreated = (newAccount: AccountRow) => {
+    setAccounts((current) => {
+      const updated = [newAccount, ...current];
+      return updated.sort((a, b) => a.id - b.id);
+    });
+  };
+
+  const nextId =
+    accounts.length > 0 ? Math.max(...accounts.map((a) => a.id)) + 1 : 1;
   return (
     <>
       <section className="flex flex-col items-start pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-xl overflow-hidden border border-solid border-gray-100 shadow-sm">
@@ -114,6 +134,7 @@ export const AccountsTableSection = ({
           </div>
           <button
             type="button"
+            onClick={handleCreateClick}
             aria-label="Create account"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#0033a0] text-white rounded-lg hover:bg-[#002a80] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0033a0]"
           >
@@ -246,6 +267,12 @@ export const AccountsTableSection = ({
         message={`Are you sure you want to delete ${selectedAccount?.username}? This action cannot be undone.`}
         onConfirm={handleConfirmDelete}
         onCancel={handleCloseDeleteModal}
+      />
+      <CreateAccountModal
+        open={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
+        onCreate={handleAccountCreated}
+        nextId={nextId}
       />
     </>
   );
