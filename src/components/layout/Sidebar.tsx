@@ -14,7 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
 import { useState } from "react";
 import Image from "next/image";
-import ntcLogo from "../assets/ntc-logo.png";
+// use logo from public folder
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
@@ -45,7 +45,7 @@ export const AsideSidebar = (): JSX.Element => {
         <div className="flex items-center p-4 md:p-6 w-full border-b border-[#1e40af80]">
           <div className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden">
             <Image
-              src={ntcLogo}
+              src="/ntc-logo.png"
               alt="NTC logo"
               width={40}
               height={40}

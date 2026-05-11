@@ -1,5 +1,5 @@
 import React from "react";
-import { AsideSidebar } from "../../components/Sidebar";
+import { AsideSidebar } from "../../components/layout/Sidebar";
 
 export default function PrivateLayout({
   children,
