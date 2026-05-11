@@ -1,7 +1,8 @@
 "use client";
 
 import { Download, Eye, Trash2 } from "lucide-react";
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import ApplicationDetails from "../ApplicationDetailsModal";
 import ChangeStatusModal from "../ChangeStatusModal";
@@ -77,39 +78,88 @@ const columns = [
 ];
 
 export const ApplicationsTableSection = (): JSX.Element => {
-  // State to track selected rows
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  // State to track selected rows by application ID
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRow | null>(null);
-  const [applicationsState, setApplicationsState] =
-    useState<ApplicationRow[]>(applications);
+  const [applicationsState, setApplicationsState] = useState<ApplicationRow[]>(
+    () => {
+      try {
+        const raw = localStorage.getItem("ojt_applications");
+        return raw ? (JSON.parse(raw) as ApplicationRow[]) : applications;
+      } catch (err) {
+        return applications;
+      }
+    },
+  );
+  const mountedRef = useRef(false);
   const [applicationToDelete, setApplicationToDelete] =
     useState<ApplicationRow | null>(null);
   const [changeStatusApplication, setChangeStatusApplication] =
     useState<ApplicationRow | null>(null);
 
-  // Check if all rows are selected
-  const allSelected = selectedRows.size === applicationsState.length;
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status")?.toLowerCase() ?? null;
 
-  // Handle header checkbox click
+  // Filter applications based on `status` query param
+  const filteredApplications = applicationsState.filter((a) =>
+    statusParam ? a.status.toLowerCase().includes(statusParam) : true,
+  );
+
+  // Check if all visible rows are selected
+  const allSelected =
+    filteredApplications.length > 0 &&
+    filteredApplications.every((a) => selectedRows.has(a.id));
+
+  // Handle header checkbox click (select/deselect all visible)
   const handleSelectAll = () => {
     if (allSelected) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(applicationsState.map((_, index) => index)));
+      setSelectedRows(new Set(filteredApplications.map((a) => a.id)));
     }
   };
 
-  // Handle individual row checkbox click
-  const handleRowSelect = (index: number) => {
+  // Handle individual row checkbox click (by id)
+  const handleRowSelect = (id: string) => {
     const newSelected = new Set(selectedRows);
-    if (newSelected.has(index)) {
-      newSelected.delete(index);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
     } else {
-      newSelected.add(index);
+      newSelected.add(id);
     }
     setSelectedRows(newSelected);
   };
+
+  // Persist applications to localStorage and notify listeners
+  useEffect(() => {
+    // avoid dispatch on first mount when loading from localStorage
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      // ensure localStorage has initial data (if empty)
+      try {
+        const raw = localStorage.getItem("ojt_applications");
+        if (!raw)
+          localStorage.setItem(
+            "ojt_applications",
+            JSON.stringify(applicationsState),
+          );
+      } catch (err) {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        "ojt_applications",
+        JSON.stringify(applicationsState),
+      );
+      window.dispatchEvent(new Event("applications:update"));
+    } catch (err) {
+      // ignore write errors
+    }
+  }, [applicationsState]);
 
   return (
     <section className="w-full overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200">
@@ -118,7 +168,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
         <div>
           <h2 className="text-xl font-semibold text-slate-800">Applications</h2>
           <p className="text-sm text-slate-400">
-            Showing {applicationsState.length} of {applicationsState.length}{" "}
+            Showing {filteredApplications.length} of {applicationsState.length}{" "}
             applications
           </p>
         </div>
@@ -157,7 +207,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
           </thead>
 
           <tbody>
-            {applicationsState.map((application, index) => (
+            {filteredApplications.map((application, index) => (
               <tr
                 key={`${application.id}-${index}`}
                 className="border-t border-slate-100 hover:bg-slate-50/40"
@@ -167,8 +217,8 @@ export const ApplicationsTableSection = (): JSX.Element => {
                   <input
                     type="checkbox"
                     className="h-4 w-4 rounded border-slate-300"
-                    checked={selectedRows.has(index)}
-                    onChange={() => handleRowSelect(index)}
+                    checked={selectedRows.has(application.id)}
+                    onChange={() => handleRowSelect(application.id)}
                   />
                 </td>
 

@@ -12,13 +12,13 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 // use logo from public folder
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
-  { label: "Applications", icon: FileText, href: "/applications", badge: "1" },
+  { label: "Applications", icon: FileText, href: "/applications" },
   { label: "Calendar", icon: Calendar, href: "/calendar" },
   { label: "OJT Data", icon: GraduationCap, href: "/ojt-data" },
   { label: "Accounts", icon: Users, href: "/accounts" },
@@ -28,6 +28,34 @@ export const AsideSidebar = (): JSX.Element => {
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem("ojt_applications");
+        const parsed = raw ? JSON.parse(raw) : [];
+        const count = (parsed ?? []).filter((a: any) =>
+          String(a.status ?? "")
+            .toLowerCase()
+            .includes("pending"),
+        ).length;
+        setPendingCount(Number(count ?? 0));
+      } catch (err) {
+        setPendingCount(0);
+      }
+    };
+
+    load();
+
+    const onUpdate = () => load();
+    window.addEventListener("applications:update", onUpdate);
+    window.addEventListener("storage", onUpdate);
+    return () => {
+      window.removeEventListener("applications:update", onUpdate);
+      window.removeEventListener("storage", onUpdate);
+    };
+  }, []);
 
   const handleLogout = () => {
     router.push("/");
@@ -79,6 +107,13 @@ export const AsideSidebar = (): JSX.Element => {
               ? pathname?.startsWith(item.href)
               : false;
             const Icon = item.icon;
+            const displayBadge =
+              item.label === "Applications"
+                ? pendingCount > 0
+                  ? String(pendingCount)
+                  : ""
+                : ((item as any).badge ?? "");
+
             return (
               <Link
                 key={item.label}
@@ -93,9 +128,9 @@ export const AsideSidebar = (): JSX.Element => {
                   </span>
                 </div>
 
-                {item.badge ? (
+                {displayBadge ? (
                   <div className="ml-auto hidden md:flex items-center justify-center bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {item.badge}
+                    {displayBadge}
                   </div>
                 ) : null}
               </Link>
