@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
@@ -94,5 +93,4 @@ export class BrevoService {
   async sendHtmlEmail(to: string, subject: string, html: string) {
     return this.sendMail({ to, subject, html });
   }
-
 }

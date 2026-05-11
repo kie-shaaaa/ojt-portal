@@ -117,7 +117,7 @@ export class AccountsService {
   // TODO
   async archiveAccount(id: number) {
     try {
-      const client = await this.databaseService.getClient();
+      const client = this.databaseService.getClient();
 
       const exists = await client.query<Account>(
         `
@@ -157,7 +157,7 @@ export class AccountsService {
 
   async updatePassword(id: number, newPassword: string) {
     try {
-      const client = await this.databaseService.getClient();
+      const client = this.databaseService.getClient();
 
       const exists = await client.query<Account>(
         `
