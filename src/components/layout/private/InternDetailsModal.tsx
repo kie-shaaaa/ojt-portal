@@ -1,10 +1,32 @@
+"use client";
+
 import {
   X,
   Eye,
   Download,
   FileText,
 } from "lucide-react";
-import { JSX } from "react";
+import { JSX, useEffect, useState } from "react";
+
+export type ModalInternData = {
+  ojtId: string;
+  portalId?: string;
+  name: string;
+  gender?: string;
+  email?: string;
+  phone?: string;
+  school?: string;
+  course?: string;
+  hoursNeeded?: string;
+  deploymentDate?: string;
+  endDate?: string;
+  requirementFiles?: Array<{
+    id?: string;
+    title: string;
+    subtitle?: string;
+    fileType?: "PDF" | "JPG/PNG" | string;
+  }>;
+};
 
 type DetailRow = {
   label: string;
@@ -12,83 +34,125 @@ type DetailRow = {
   bold?: boolean;
 };
 
-type RequirementFile = {
-  title: string;
-};
+const FileCard = ({ file }: { file: { id?: string; title: string; subtitle?: string; fileType?: string } }): JSX.Element => {
+  const { title, fileType } = file;
 
-const detailRows: DetailRow[] = [
-  { label: "Portal ID:", value: "OJT-000001" },
-  { label: "OJT ID:", value: "2026-001", bold: true },
-  { label: "Name:", value: "Kie Villanueva" },
-  { label: "Gender:", value: "Female" },
-  { label: "Email:", value: "kkkk@gmail.com" },
-  { label: "Phone:", value: "9627067133" },
-  { label: "School:", value: "Adamson University" },
-  { label: "Course:", value: "BA in Anthropology" },
-  { label: "Hours Needed:", value: "21 hours" },
-  { label: "Deployment Date:", value: "May 11, 2026" },
-  { label: "End Date:", value: "May 12, 2026" },
-];
+  const handleView = () => {
+    const content = `Preview of ${title}`;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
 
-const requirementFiles: RequirementFile[] = [
-  { title: "RESUME OR CV" },
-  { title: "PROOF OF ENROLLMENT" },
-  { title: "DRAFT ENDORSEMENT LETTER" },
-  { title: "VACCINE CARD OR MEDICAL CERT" },
-  { title: "DRAFT MEMORANDUM OF AGREEMENT" },
-  { title: "1X1 PICTURE" },
-];
+  const handleDownload = () => {
+    const content = `Downloaded file: ${title}`;
+    const ext = (fileType || "txt").toLowerCase().includes("pdf") ? "pdf" : (fileType || "txt");
+    const blob = new Blob([content], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/\s+/g, "_").toLowerCase()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
 
-const FileCard = ({ title }: { title: string }): JSX.Element => {
   return (
-    <div className="flex w-full flex-col gap-2">
-      {/* File Box */}
-      <div className="flex items-center rounded-lg border border-gray-100 bg-gray-50 p-3">
-        <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-md bg-red-100">
-          <FileText className="h-5 w-5 text-red-600" />
-        </div>
-
-        <div className="flex flex-col">
-          <span className="text-sm font-bold text-gray-900">
-            {title}
-          </span>
-
-          <span className="text-[10px] font-semibold uppercase text-gray-500">
-            PDF
-          </span>
-        </div>
+    <div className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white ring-1 ring-gray-100">
+        <FileText className="h-5 w-5 text-red-500" />
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="min-w-0">
+        <span className="block break-words text-sm font-medium uppercase leading-5 text-gray-900">
+          {title}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 justify-self-end">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded bg-blue-700 px-4 py-2 text-xs font-medium text-white transition hover:bg-blue-800"
+          onClick={handleView}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3 text-xs font-medium text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-50"
         >
           <Eye size={14} />
-          View File
+          <span className="sr-only">View</span>
+          <span className="ml-2 text-xs">View</span>
         </button>
 
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+          onClick={handleDownload}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#0038a8] px-3 text-xs font-medium text-white transition hover:bg-[#002f8c]"
         >
           <Download size={14} />
-          Download
+          <span className="sr-only">Download</span>
+          <span className="ml-2 text-xs">Download</span>
         </button>
       </div>
     </div>
   );
 };
 
-export const ModalBackdrop = (): JSX.Element => {
+type InternDetailsModalProps = {
+  onClose?: () => void;
+  intern?: ModalInternData | null;
+};
+
+export default function InternDetailsModal({ onClose, intern }: InternDetailsModalProps): JSX.Element {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setIsVisible(true));
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose && onClose();
+    };
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+  const detailRows: DetailRow[] = [
+    { label: "Portal ID:", value: intern?.portalId ?? "OJT-000001" },
+    { label: "OJT ID:", value: intern?.ojtId ?? "2026-001", bold: true },
+    { label: "Name:", value: intern?.name ?? "Kie Villanueva" },
+    { label: "Gender:", value: intern?.gender ?? "Female" },
+    { label: "Email:", value: intern?.email ?? "kkkk@gmail.com" },
+    { label: "Phone:", value: intern?.phone ?? "9627067133" },
+    { label: "School:", value: intern?.school ?? "Adamson University" },
+    { label: "Course:", value: intern?.course ?? "BA in Anthropology" },
+    { label: "Hours Needed:", value: intern?.hoursNeeded ?? "21 hours" },
+    { label: "Deployment Date:", value: intern?.deploymentDate ?? "May 11, 2026" },
+    { label: "End Date:", value: intern?.endDate ?? "May 12, 2026" },
+  ];
+
+  const requirementFiles = intern?.requirementFiles ?? [
+    { id: "resume-or-cv", title: "RESUME OR CV", fileType: "PDF" },
+    { id: "proof-of-enrollment", title: "PROOF OF ENROLLMENT", fileType: "PDF" },
+    { id: "draft-endorsement-letter", title: "DRAFT ENDORSEMENT LETTER", fileType: "PDF" },
+    { id: "vaccine-card-or-medical-cert", title: "VACCINE CARD OR MEDICAL CERT", fileType: "PDF" },
+    { id: "draft-memorandum-of-agreement", title: "DRAFT MEMORANDUM OF AGREEMENT", fileType: "PDF" },
+    { id: "1x1-picture", title: "1X1 PICTURE", fileType: "JPG/PNG" },
+  ];
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-black/50 p-4">
+    <div
+      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
+        isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
+      }`}
+      onClick={() => onClose && onClose()}
+    >
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="intern-details-title"
-        className="flex h-[920px] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out ${
+          isVisible ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-2 opacity-0"
+        }`}
       >
         {/* Header */}
         <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
@@ -103,6 +167,7 @@ export const ModalBackdrop = (): JSX.Element => {
             type="button"
             aria-label="Close modal"
             className="text-gray-400 transition hover:text-gray-600"
+            onClick={() => onClose && onClose()}
           >
             <X size={20} />
           </button>
@@ -144,11 +209,11 @@ export const ModalBackdrop = (): JSX.Element => {
               </span>
             </div>
 
-            <div className="flex w-2/3 flex-col gap-6">
+            <div className="flex w-2/3 flex-col gap-4">
               {requirementFiles.map((file) => (
                 <FileCard
-                  key={file.title}
-                  title={file.title}
+                  key={file.id ?? file.title}
+                  file={file}
                 />
               ))}
             </div>
@@ -157,6 +222,4 @@ export const ModalBackdrop = (): JSX.Element => {
       </section>
     </div>
   );
-};
-
-export default ModalBackdrop;
+}

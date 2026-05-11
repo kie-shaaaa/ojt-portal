@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Eye, Trash2 } from "lucide-react";
+import { Download, Eye, Pencil, Trash2 } from "lucide-react";
 import { JSX, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
@@ -272,11 +272,17 @@ export const ApplicationsTableSection = (): JSX.Element => {
                 </td>
 
                 {/* Status */}
-                <td className="px-6 py-6 align-top">
+                <td className="px-6 py-6 align-top min-w-[160px] whitespace-nowrap">
                   {String(application.status)
                     .toLowerCase()
                     .includes("pending") ? (
                     <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                      {application.status}
+                    </span>
+                  ) : String(application.status)
+                      .toLowerCase()
+                      .includes("review") ? (
+                    <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-600">
                       {application.status}
                     </span>
                   ) : String(application.status)
@@ -310,13 +316,23 @@ export const ApplicationsTableSection = (): JSX.Element => {
                     <button
                       className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
                       onClick={() => setSelectedApplication(application)}
+                      aria-label={`View application ${application.applicantName}`}
                     >
                       <Eye size={16} />
                     </button>
 
                     <button
+                      className="rounded-md bg-amber-50 p-2 text-amber-500 transition hover:bg-amber-100"
+                      onClick={() => setChangeStatusApplication(application)}
+                      aria-label={`Change status for ${application.applicantName}`}
+                    >
+                      <Pencil size={16} />
+                    </button>
+
+                    <button
                       className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
                       onClick={() => setApplicationToDelete(application)}
+                      aria-label={`Delete application ${application.applicantName}`}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -331,10 +347,6 @@ export const ApplicationsTableSection = (): JSX.Element => {
         <ApplicationDetails
           application={selectedApplication}
           onClose={() => setSelectedApplication(null)}
-          onChangeStatus={() => {
-            // Keep the details modal open and open the change-status modal on top
-            setChangeStatusApplication(selectedApplication);
-          }}
         />
       )}
       {applicationToDelete && (
@@ -357,11 +369,20 @@ export const ApplicationsTableSection = (): JSX.Element => {
           open={!!changeStatusApplication}
           application={changeStatusApplication}
           onClose={() => setChangeStatusApplication(null)}
-          onConfirm={(newStatus: string, id: string) => {
+          onConfirm={(newStatus: string, id: string, scheduleDate?: string, scheduleTime?: string) => {
             setApplicationsState((prev) => {
-              const next = prev.map((a) =>
-                a.id === id ? { ...a, status: newStatus } : a,
-              );
+              const next = prev.map((a) => {
+                if (a.id === id) {
+                  const updated = { ...a, status: newStatus };
+                  // Store schedule info if provided (can be extended to use these values)
+                  if (scheduleDate && scheduleTime) {
+                    // You can store these in the application object or pass to an API
+                    console.log(`Schedule set for ${newStatus}: ${scheduleDate} at ${scheduleTime}`);
+                  }
+                  return updated;
+                }
+                return a;
+              });
 
               setSelectedApplication((prevSelected) =>
                 prevSelected && prevSelected.id === id

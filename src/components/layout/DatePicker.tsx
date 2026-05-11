@@ -5,6 +5,7 @@ import { JSX, useEffect, useRef, useState } from "react";
 
 interface DatePickerProps {
   label?: string;
+  labelClassName?: string;
   value: string;
   onChange: (value: string) => void;
   error?: string;
@@ -15,12 +16,13 @@ interface DatePickerProps {
 
 export default function DatePicker({
   label = "Preferred Deployment Date",
+  labelClassName = "text-[#0047ab]",
   value,
   onChange,
   error,
   id = "deployment-date",
   required = false,
-  placeholder = "dd/mm/yyyy",
+  placeholder = "yyyy/mm/dd",
 }: DatePickerProps): JSX.Element {
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -101,7 +103,7 @@ export default function DatePicker({
       {label ? (
         <label
           htmlFor={id}
-          className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-sm tracking-[0] leading-5 text-[#0047ab]"
+          className={`relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-sm tracking-[0] leading-5 ${labelClassName}`}
         >
           {label}{" "}
           {required ? <span className="text-red-500">*</span> : null}

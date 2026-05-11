@@ -4,6 +4,7 @@ import { FilterInternsSection } from "./../../../components/layout/private/OJT-D
 import { InternStatsOverviewSection } from "./../../../components/layout/private/OJT-Data/InternStatsOverviewSection";
 import { OjtDataHeaderSection } from "./../../../components/layout/private/OJT-Data/OjtDataHeaderSection";
 import { VerifiedInternsTableSection } from "./../../../components/layout/private/OJT-Data/VerifiedInternsTableSection";
+import InternDetailsModal, { ModalInternData } from "./../../../components/layout/private/InternDetailsModal";
 
 // ============ MOCK DATA ============
 const mockInterns: Array<{
@@ -127,6 +128,8 @@ const schoolOptions = [
 // ============ MAIN COMPONENT ============
 export default function OJTDataPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [modalIntern, setModalIntern] = useState<ModalInternData | null>(null);
   const [filters, setFilters] = useState<{
     school: string;
     sortByDate: "Newest First" | "Oldest First";
@@ -180,6 +183,7 @@ export default function OJTDataPage() {
   };
 
   return (
+    <>
     <main
       className="relative flex w-full flex-col items-start gap-6 bg-white p-8"
       data-id="main-content-area"
@@ -189,6 +193,17 @@ export default function OJTDataPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
+      </section>
+      <section className="w-full">
+        <div className="pt-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-md bg-[#0038a8] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#002f8c]"
+            onClick={() => setShowModal(true)}
+          >
+            Show Intern Details
+          </button>
+        </div>
       </section>
       <section className="w-full" aria-label="Intern statistics overview">
         <InternStatsOverviewSection stats={currentStats} />
@@ -203,8 +218,22 @@ export default function OJTDataPage() {
       <section className="w-full" aria-label="Verified interns table">
         <VerifiedInternsTableSection 
           interns={filteredInterns}
+          onViewDetails={(intern) => {
+            setModalIntern(intern);
+            setShowModal(true);
+          }}
         />
       </section>
     </main>
+    {showModal && (
+      <InternDetailsModal
+        intern={modalIntern}
+        onClose={() => {
+          setShowModal(false);
+          setModalIntern(null);
+        }}
+      />
+    )}
+    </>
   );
 }
