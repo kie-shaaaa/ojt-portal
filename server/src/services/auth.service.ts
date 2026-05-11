@@ -169,6 +169,56 @@ export class AuthService {
   }
 
   /**
+   * Find user by id
+   * @param id User id
+   * @returns User account or null if not found
+   */
+  async findUserById(id: number): Promise<Account | null> {
+    if (!id) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const client = this.databaseService.getClient();
+    try {
+      const result = await client.query<Account>(
+        `
+          SELECT id, email, password, created_at, updated_at FROM user_accounts
+          WHERE email = $1;
+        `,
+        [id],
+      );
+
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error('findUser failed', error);
+      throw new InternalServerErrorException('Failed to find user');
+    }
+  }
+
+  /**
+   * Validate if user is admin
+   * @param id user id to search
+   * @returns boolean
+   */
+  async isAdmin(id: number) {
+    const client = this.databaseService.getClient();
+    try {
+      const user = await client.query(
+        `SELECT account_type FROM user_accounts
+        WHERE id = $1 AND account_type = $2`,
+        [id, 'admin'],
+      );
+      if (!user) {
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('findUser failed', error);
+      throw new InternalServerErrorException('Failed to find user');
+    }
+  }
+
+  /**
    * Validate email format
    * @param email Email to validate
    * @returns Boolean indicating if email is valid

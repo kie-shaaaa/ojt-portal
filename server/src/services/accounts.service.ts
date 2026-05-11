@@ -4,6 +4,7 @@ import {
   forwardRef,
   InternalServerErrorException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Account, AccountCreate } from '../data/types';
 import { AuthService } from './auth.service';
@@ -17,9 +18,25 @@ export class AccountsService {
     private readonly databaseService: DatabaseService,
   ) {}
 
-  async createAccount(account: AccountCreate): Promise<Account> {
+  async createAccount(id: number, account: AccountCreate): Promise<Account> {
     const client = this.databaseService.getClient();
     try {
+      const user = await client.query(
+        `
+          SELECT account_type FROM user_accounts
+          WHERE id = $1
+        `,
+        [id],
+      );
+
+      if (!user) {
+        throw new ForbiddenException('User not found');
+      }
+
+      if (user.rows[0] != 'admin') {
+        throw new ForbiddenException('Only admins can create an account');
+      }
+
       const exists = await this.authService.findUser(account.email);
       if (exists) {
         throw new Error('User already exists');

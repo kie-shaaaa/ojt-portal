@@ -21,6 +21,11 @@ import type {
 export class ApplicationsController {
   constructor(private readonly applicationService: ApplicationsService) {}
 
+  /**
+   * Paginated fetching of applicants
+   * @param count string, param string converted to number
+   * @returns array of applicants
+   * */
   @Get('/fetch-all')
   async getApplications(
     @Query('count') count?: string,
@@ -34,6 +39,11 @@ export class ApplicationsController {
     }
   }
 
+  /**  Singular fetching of user via two parameters, mainly used for application tracking
+   * @param id string, param id converted to number
+   * @param email string, email of the applicant
+   * @returns single array of an applicant
+   */
   @Get('/fetch')
   async getApplicationByIdOrEmail(
     @Query('id') id?: string,
@@ -51,6 +61,10 @@ export class ApplicationsController {
     }
   }
 
+  /**
+   * Used to fetch data for the calendar display
+   * @returns applicants with an application status of "for_interview"
+   */
   @Get('/calendar')
   async getApplicationForInterview(): Promise<GetApplicationStatusResponse> {
     try {
@@ -66,6 +80,11 @@ export class ApplicationsController {
     }
   }
 
+  /**
+   * Can be used for calendar aswell but more flexible for different target status of applicant
+   * @param status string/enum of ApplicationStatus
+   * @returns array of applicants based on the sent parameter
+   */
   @Get('/status')
   async getApplicationByStatus(
     @Query('status') status?: ApplicationStatus,
@@ -81,6 +100,13 @@ export class ApplicationsController {
     }
   }
 
+  /**
+   * Submission of applications with proper validation
+   * TODO - File bucket and validation (for service)
+   * @param createApplicationDto
+   * @returns application status (successful or not)
+   */
+
   @Post('/submit')
   async submitApplication(
     @Body() createApplicationDto: CreateApplicationDto,
@@ -95,6 +121,14 @@ export class ApplicationsController {
       throw new BadRequestException(message);
     }
   }
+
+  /**
+   * Generally used for correcting wrong information
+   * Mainly used for resubmitting files that are invalid or requires additional information (ie. MOA/MOU)
+   * @param id
+   * @param status
+   * @returns
+   */
   @Patch('/update')
   async updateApplication(
     @Body() id: number,
