@@ -1,13 +1,11 @@
+"use client";
+
 import { AccountRow } from "../../../../app/(private)/accounts/page";
 import { JSX, useState } from "react";
-import {
-  UserPlus,
-  KeyRound,
-  SquarePen,
-  Trash2,
-  CheckCircle,
-} from "lucide-react";
+import { UserPlus, KeyRound, SquarePen, Trash2 } from "lucide-react";
 import { EditAccountModal } from "../EditAccountModal";
+import { ResetPasswordModal } from "../ResetPasswordModal";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
 
 // Using lucide icons for row actions and buttons
 
@@ -48,18 +46,40 @@ export const AccountsTableSection = ({
   accounts: initialAccounts,
 }: AccountsTableSectionProps): JSX.Element => {
   const [accounts, setAccounts] = useState(initialAccounts);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
     null,
   );
 
   const handleEditClick = (account: AccountRow) => {
     setSelectedAccount(account);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleResetClick = (account: AccountRow) => {
+    setSelectedAccount(account);
+    setIsResetModalOpen(true);
+  };
+
+  const handleDeleteClick = (account: AccountRow) => {
+    setSelectedAccount(account);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handleCloseResetModal = () => {
+    setIsResetModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
     setSelectedAccount(null);
   };
 
@@ -69,6 +89,16 @@ export const AccountsTableSection = ({
         account.id === updatedAccount.id ? updatedAccount : account,
       ),
     );
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedAccount) return;
+
+    setAccounts((current) =>
+      current.filter((account) => account.id !== selectedAccount.id),
+    );
+    setIsDeleteModalOpen(false);
+    setSelectedAccount(null);
   };
   return (
     <>
@@ -170,13 +200,17 @@ export const AccountsTableSection = ({
                             <SquarePen className="w-4.5 h-4.5" />
                           </button>
                           <button
-                            aria-label={`View ${account.username}`}
+                            type="button"
+                            onClick={() => handleResetClick(account)}
+                            aria-label={`Reset password for ${account.username}`}
                             className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
                             title="Reset Password"
                           >
                             <KeyRound className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
+                            onClick={() => handleDeleteClick(account)}
                             aria-label={`Delete ${account.username}`}
                             className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
                             title="Delete Account"
@@ -193,13 +227,26 @@ export const AccountsTableSection = ({
           </div>
         </div>
       </section>
-      {isModalOpen && selectedAccount && (
+      {isEditModalOpen && selectedAccount && (
         <EditAccountModal
           account={selectedAccount}
-          onClose={handleCloseModal}
+          onClose={handleCloseEditModal}
           onUpdate={handleUpdateAccount}
         />
       )}
+      {isResetModalOpen && selectedAccount && (
+        <ResetPasswordModal
+          account={selectedAccount}
+          onClose={handleCloseResetModal}
+        />
+      )}
+      <ConfirmDeleteModal
+        open={isDeleteModalOpen && selectedAccount !== null}
+        title="Delete account"
+        message={`Are you sure you want to delete ${selectedAccount?.username}? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCloseDeleteModal}
+      />
     </>
   );
 };
