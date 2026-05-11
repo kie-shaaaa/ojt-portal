@@ -82,21 +82,27 @@ export const ApplicationsTableSection = (): JSX.Element => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRow | null>(null);
-  const [applicationsState, setApplicationsState] = useState<ApplicationRow[]>(
-    () => {
-      try {
-        const raw = localStorage.getItem("ojt_applications");
-        return raw ? (JSON.parse(raw) as ApplicationRow[]) : applications;
-      } catch (err) {
-        return applications;
-      }
-    },
-  );
+  const [applicationsState, setApplicationsState] =
+    useState<ApplicationRow[]>(applications);
   const mountedRef = useRef(false);
   const [applicationToDelete, setApplicationToDelete] =
     useState<ApplicationRow | null>(null);
   const [changeStatusApplication, setChangeStatusApplication] =
     useState<ApplicationRow | null>(null);
+
+  // Load applications from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("ojt_applications");
+      if (raw) {
+        setApplicationsState(JSON.parse(raw) as ApplicationRow[]);
+      } else {
+        localStorage.setItem("ojt_applications", JSON.stringify(applications));
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   const searchParams = useSearchParams();
   const statusParam = searchParams.get("status")?.toLowerCase() ?? null;
