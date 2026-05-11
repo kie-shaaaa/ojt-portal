@@ -12,11 +12,13 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+// use logo from public folder
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
-  { label: "Applications", icon: FileText, href: "/applications", badge: "1" },
+  { label: "Applications", icon: FileText, href: "/applications" },
   { label: "Calendar", icon: Calendar, href: "/calendar" },
   { label: "OJT Data", icon: GraduationCap, href: "/ojt-data" },
   { label: "Accounts", icon: Users, href: "/accounts" },
@@ -26,6 +28,34 @@ export const AsideSidebar = (): JSX.Element => {
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem("ojt_applications");
+        const parsed = raw ? JSON.parse(raw) : [];
+        const count = (parsed ?? []).filter((a: any) =>
+          String(a.status ?? "")
+            .toLowerCase()
+            .includes("pending"),
+        ).length;
+        setPendingCount(Number(count ?? 0));
+      } catch (err) {
+        setPendingCount(0);
+      }
+    };
+
+    load();
+
+    const onUpdate = () => load();
+    window.addEventListener("applications:update", onUpdate);
+    window.addEventListener("storage", onUpdate);
+    return () => {
+      window.removeEventListener("applications:update", onUpdate);
+      window.removeEventListener("storage", onUpdate);
+    };
+  }, []);
 
   const handleLogout = () => {
     router.push("/");
@@ -41,8 +71,14 @@ export const AsideSidebar = (): JSX.Element => {
 
         {/* Top brand */}
         <div className="flex items-center p-4 md:p-6 w-full border-b border-[#1e40af80]">
-          <div className="flex items-center justify-center w-10 h-10 p-1 bg-white rounded-full">
-            <div className="w-8 h-8 bg-[url('/ntc-logo.png')] bg-cover bg-center" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden">
+            <Image
+              src="/ntc-logo.png"
+              alt="NTC logo"
+              width={40}
+              height={40}
+              className="object-cover"
+            />
           </div>
           <div className="hidden md:flex flex-col pl-3">
             <div className="font-bold text-xl text-white">NTC Admin</div>
@@ -71,6 +107,13 @@ export const AsideSidebar = (): JSX.Element => {
               ? pathname?.startsWith(item.href)
               : false;
             const Icon = item.icon;
+            const displayBadge =
+              item.label === "Applications"
+                ? pendingCount > 0
+                  ? String(pendingCount)
+                  : ""
+                : ((item as any).badge ?? "");
+
             return (
               <Link
                 key={item.label}
@@ -85,9 +128,9 @@ export const AsideSidebar = (): JSX.Element => {
                   </span>
                 </div>
 
-                {item.badge ? (
+                {displayBadge ? (
                   <div className="ml-auto hidden md:flex items-center justify-center bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {item.badge}
+                    {displayBadge}
                   </div>
                 ) : null}
               </Link>

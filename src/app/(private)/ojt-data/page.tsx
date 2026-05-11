@@ -1,9 +1,25 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { FilterInternsSection } from "./../../../components/layout/private/OJT-Data/FilterInternSection";
 import { InternStatsOverviewSection } from "./../../../components/layout/private/OJT-Data/InternStatsOverviewSection";
 import { OjtDataHeaderSection } from "./../../../components/layout/private/OJT-Data/OjtDataHeaderSection";
 import { VerifiedInternsTableSection } from "./../../../components/layout/private/OJT-Data/VerifiedInternsTableSection";
+import InternDetailsModal, { ModalInternData } from "./../../../components/layout/private/InternDetailsModal";
+
+type CompletedInternRecord = {
+  id: string;
+  ojtId: string;
+  name: string;
+  email: string;
+  school: string;
+  startDate: string;
+  endDate: string;
+  status: "verified" | "completed";
+  verifiedDate: string;
+  gender?: string;
+  course?: string;
+  hoursNeeded?: string;
+};
 
 // ============ MOCK DATA ============
 const mockInterns: Array<{
@@ -127,6 +143,16 @@ const schoolOptions = [
 // ============ MAIN COMPONENT ============
 export default function OJTDataPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [modalIntern, setModalIntern] = useState<ModalInternData | null>(null);
+  const [completedInterns, setCompletedInterns] = useState<CompletedInternRecord[]>(() => {
+    try {
+      const raw = localStorage.getItem('ojt_completed_interns');
+      return raw ? (JSON.parse(raw) as CompletedInternRecord[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [filters, setFilters] = useState<{
     school: string;
     sortByDate: "Newest First" | "Oldest First";
@@ -135,9 +161,44 @@ export default function OJTDataPage() {
     sortByDate: 'Newest First'
   });
 
+  useEffect(() => {
+    const handleInternsUpdate = () => {
+      try {
+        const raw = localStorage.getItem('ojt_completed_interns');
+        setCompletedInterns(raw ? (JSON.parse(raw) as CompletedInternRecord[]) : []);
+      } catch {
+        setCompletedInterns([]);
+      }
+    };
+
+    window.addEventListener('interns:update', handleInternsUpdate);
+    return () => window.removeEventListener('interns:update', handleInternsUpdate);
+  }, []);
+
+  const allInterns = useMemo(() => {
+    const completedAsInterns = completedInterns.map((intern) => ({
+      ...intern,
+      status: 'completed' as const,
+    }));
+
+    const combined = [...mockInterns, ...completedAsInterns];
+    const uniqueByOjtId = new Map(combined.map((intern) => [intern.ojtId, intern]));
+    return Array.from(uniqueByOjtId.values());
+  }, [completedInterns]);
+
+  const verifiedInternsOnlyList = useMemo(
+    () => allInterns.filter((intern) => intern.status === 'verified'),
+    [allInterns],
+  );
+
+  const tableInternsList = useMemo(
+    () => allInterns.filter((intern) => intern.status === 'verified' || intern.status === 'completed'),
+    [allInterns],
+  );
+
   // Filter and search interns
   const filteredInterns = useMemo(() => {
-    let filtered = [...tableInterns];
+    let filtered = [...tableInternsList];
 
     if (filters.school !== 'All Schools') {
       filtered = filtered.filter(intern => intern.school === filters.school);
@@ -164,8 +225,8 @@ export default function OJTDataPage() {
   }, [filters, searchTerm]);
 
   // Calculate stats
-  const verifiedCount = verifiedInternsOnly.length;
-  const confirmedThisMonth = verifiedInternsOnly.filter(i => {
+  const verifiedCount = verifiedInternsOnlyList.length;
+  const confirmedThisMonth = verifiedInternsOnlyList.filter(i => {
     const verifiedDate = new Date(i.verifiedDate);
     const now = new Date();
     return verifiedDate.getMonth() === now.getMonth() &&
@@ -176,10 +237,11 @@ export default function OJTDataPage() {
     totalVerified: verifiedCount,
     confirmedThisMonth: confirmedThisMonth,
     pendingVerification: 0,
-    completionRate: Math.round((verifiedCount / mockInterns.length) * 100)
+    completionRate: Math.round((verifiedCount / allInterns.length) * 100)
   };
 
   return (
+    <>
     <main
       className="relative flex w-full flex-col items-start gap-6 bg-white p-8"
       data-id="main-content-area"
@@ -189,6 +251,17 @@ export default function OJTDataPage() {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
+      </section>
+      <section className="w-full">
+        <div className="pt-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-md bg-[#0038a8] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#002f8c]"
+            onClick={() => setShowModal(true)}
+          >
+            Show Intern Details
+          </button>
+        </div>
       </section>
       <section className="w-full" aria-label="Intern statistics overview">
         <InternStatsOverviewSection stats={currentStats} />
@@ -203,8 +276,22 @@ export default function OJTDataPage() {
       <section className="w-full" aria-label="Verified interns table">
         <VerifiedInternsTableSection 
           interns={filteredInterns}
+          onViewDetails={(intern) => {
+            setModalIntern(intern);
+            setShowModal(true);
+          }}
         />
       </section>
     </main>
+    {showModal && (
+      <InternDetailsModal
+        intern={modalIntern}
+        onClose={() => {
+          setShowModal(false);
+          setModalIntern(null);
+        }}
+      />
+    )}
+    </>
   );
 }
