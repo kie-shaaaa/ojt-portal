@@ -2,7 +2,7 @@
 import { ContactSection } from "./ContactSection";
 import { FaqSection } from "./FaqSection";
 import { HeroSection } from "./HeroSection";
-import { NavBar } from "./NavBar";
+import { NavBar } from "../NavBar";
 import { Footer } from "../Footer";
 import { JSX } from "react";
 

@@ -34,7 +34,7 @@ export const AsideSidebar = (): JSX.Element => {
   return (
     <>
       <aside
-        className="hidden md:flex flex-col w-64 min-h-screen items-start bg-[#0038a8]"
+        className="fixed top-0 left-0 hidden md:flex flex-col w-64 min-h-screen items-start bg-[#0038a8] z-10"
         aria-label="Sidebar navigation"
       >
         <div className="absolute inset-0 w-64 md:w-64 bg-[#ffffff01] shadow-[0px_8px_10px_-6px_#0000001a,0px_20px_25px_-5px_#0000001a] pointer-events-none" />

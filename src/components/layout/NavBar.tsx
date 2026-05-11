@@ -14,6 +14,7 @@ const navLinks = [
 export const NavBar = (): JSX.Element => {
   const pathname = usePathname();
   const isLandingPage = pathname === "/";
+  const isLoginPage = pathname === "/login";
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -73,37 +74,42 @@ export const NavBar = (): JSX.Element => {
           </Link>
         )}
       </div>
-      <nav
-        aria-label="Primary navigation"
-        className="inline-flex items-center gap-6 relative flex-[0_0_auto]"
-      >
-        {navLinks.map((link) => (
-          <button
-            key={link.label}
-            type="button"
-            onClick={() => scrollToSection(link.targetId)}
-            className="inline-flex flex-col items-start relative flex-[0_0_auto] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded-sm"
-          >
-            <div className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm tracking-[0] leading-5 whitespace-nowrap">
-              {link.label}
-            </div>
-          </button>
-        ))}
+      {!isLoginPage ? (
+        <nav
+          aria-label="Primary navigation"
+          className="inline-flex items-center gap-6 relative flex-[0_0_auto]"
+        >
+          {navLinks.map((link) => (
+            <button
+              key={link.label}
+              type="button"
+              onClick={() => scrollToSection(link.targetId)}
+              className="inline-flex flex-col items-start relative flex-[0_0_auto] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded-sm"
+            >
+              <div className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm tracking-[0] leading-5 whitespace-nowrap">
+                {link.label}
+              </div>
+            </button>
+          ))}
 
-        <Link href="/login" className="all-[unset] box-border inline-flex gap-3 px-5 py-2.5 rounded-full border border-white/90 bg-transparent text-white items-center relative flex-[0_0_auto] cursor-pointer hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-          <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-            <UserRound
-              className="relative w-5 h-5 text-white"
-              aria-hidden="true"
-            />
-          </div>
-          <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-            <div className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm text-center tracking-[0] leading-5 whitespace-nowrap relative w-fit">
-              Login
+          <Link
+            href="/login"
+            className="all-[unset] box-border inline-flex gap-3 px-5 py-2.5 rounded-full border border-white/90 bg-transparent text-white items-center relative flex-[0_0_auto] cursor-pointer hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
+              <UserRound
+                className="relative w-5 h-5 text-white"
+                aria-hidden="true"
+              />
             </div>
-          </div>
-        </Link>
-      </nav>
+            <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
+              <div className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm text-center tracking-[0] leading-5 whitespace-nowrap relative w-fit">
+                Login
+              </div>
+            </div>
+          </Link>
+        </nav>
+      ) : null}
     </header>
   );
 };
