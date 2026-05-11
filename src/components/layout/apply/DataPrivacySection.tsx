@@ -1,4 +1,4 @@
-import { JSX, useId } from "react";
+import { JSX, UIEvent, useId } from "react";
 import { AlertCircle, Lock } from "lucide-react";
 
 interface DataPrivacyData {
@@ -16,7 +16,10 @@ const agreementItems = [
   "I certify that all information provided in this application is true, correct, and complete to the best of my knowledge.",
   "I understand that any misrepresentation or omission of facts may be grounds for disqualification or termination.",
   "I authorize NTC to conduct background checks as necessary for the application process.",
-  "I understand that my information will be handled securely and in accordance with the Data Privacy Act of 2012.",
+  "I understand that my personal data will be retained only for as long as necessary for the application process and in compliance with the Data Privacy Act of 2012.",
+  "I have read and understood the NTC Privacy Policy available on the official website.",
+  "I authorize NTC to coordinate with my educational institution regarding my training requirements and progress.",
+  "I consent to the storage and processing of my uploaded documents (resume, enrollment proof, endorsement letter, vaccine card, MOA, and photograph) solely for OJT application review purposes.",
 ];
 
 export const DataPrivacySection = ({
@@ -26,11 +29,21 @@ export const DataPrivacySection = ({
 }: DataPrivacySectionProps): JSX.Element => {
   const checkboxId = useId();
 
+  const handleAgreementScroll = (event: UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    const scrolledToBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight <= 8;
+
+    if (scrolledToBottom && !data.agreed) {
+      onDataChange({ agreed: true });
+    }
+  };
+
   return (
     <section className="flex flex-col items-start gap-12 p-12 relative self-stretch w-full flex-[0_0_auto]">
       <div className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
         <div className="relative w-6 h-6" aria-hidden="true">
-          <Lock className="absolute inset-0 w-full h-full" />
+          <Lock className="absolute inset-0 w-full h-full text-blue-900" />
         </div>
         <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
           <h2 className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-900 text-lg tracking-[0.45px] leading-7 whitespace-nowrap">
@@ -38,11 +51,13 @@ export const DataPrivacySection = ({
           </h2>
         </div>
       </div>
-      <div className="flex flex-col items-start gap-6 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] border-t [border-top-style:solid] border">
+      <div className="relative self-stretch w-full h-px border-t [border-top-style:solid] border" />
+      <div className="flex flex-col items-start gap-6 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
         <div
           className="relative self-stretch w-full h-64 bg-[#eff6ff4c] rounded-xl overflow-y-auto overflow-x-hidden border-2 border-solid border-[#16a34a80] p-6"
           role="region"
           aria-label="Data Privacy Agreement content"
+          onScroll={handleAgreementScroll}
         >
           <div className="flex flex-col items-start gap-4 relative w-full flex-[0_0_auto]">
             <h3 className="relative flex items-center w-fit mt-0 [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-800 text-base tracking-[0] leading-6 whitespace-nowrap">
@@ -52,18 +67,19 @@ export const DataPrivacySection = ({
               By submitting this application form, you acknowledge and agree to
               the following terms:
             </p>
-            <div className="flex flex-col items-start gap-4 relative w-full flex-[0_0_auto]">
+            <ul className="flex flex-col items-start gap-4 relative w-full flex-[0_0_auto] list-disc pl-5">
               {agreementItems.map((item, index) => (
-                <div
+                <li
                   key={index}
-                  className="flex flex-col items-start gap-2 relative w-full flex-[0_0_auto]"
+                  className="relative w-full [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-700 text-sm tracking-[0] leading-[22.8px]"
                 >
-                  <p className="relative mt-0 [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-700 text-sm tracking-[0] leading-[22.8px] w-full">
-                    {index + 1}. {item}
-                  </p>
-                </div>
+                  {item}
+                </li>
               ))}
-            </div>
+            </ul>
+            <p className="relative mt-1 [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-gray-700 text-sm tracking-[0] leading-[22.8px] w-full">
+              For OJT Applicants: Please ensure all information provided is accurate for proper coordination with your school.
+            </p>
           </div>
         </div>
         <div className="relative self-stretch w-full h-5">
@@ -82,15 +98,15 @@ export const DataPrivacySection = ({
             />
             <label
               htmlFor={checkboxId}
-              className={`flex flex-col w-[22px] h-[22px] items-center justify-center relative mt-[-1.00px] mb-[-1.00px] rounded overflow-hidden border cursor-pointer peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
+              className={`flex flex-col w-[22px] h-[22px] items-center justify-center relative mt-[-1.00px] mb-[-1.00px] rounded overflow-hidden border cursor-pointer bg-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
                 errors.agreed
-                  ? "bg-red-500 border-red-500 peer-focus-visible:outline-red-500"
-                  : "bg-blue-900 border-blue-900 peer-focus-visible:outline-blue-900"
+                  ? "border-red-500 peer-focus-visible:outline-red-500"
+                  : "border-blue-900 peer-focus-visible:outline-blue-900"
               }`}
             >
               {data.agreed && (
                 <svg
-                  className="w-5 h-5 text-white"
+                  className="w-5 h-5 text-blue-700"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

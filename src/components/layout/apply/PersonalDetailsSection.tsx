@@ -27,12 +27,26 @@ export const PersonalDetailsSection = ({
   const phoneId = useId();
   const emailHintId = useId();
 
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  };
+
   const handleChange =
     (field: keyof PersonalDetailsData) =>
     (event: ChangeEvent<HTMLInputElement>) => {
+      const value =
+        field === "phone"
+          ? event.target.value.replace(/\D/g, "").slice(0, 10)
+          : event.target.value;
+
       onDataChange({
         ...data,
-        [field]: event.target.value,
+        [field]: value,
       });
     };
 
@@ -71,7 +85,7 @@ export const PersonalDetailsSection = ({
                 name="firstName"
                 value={data.firstName}
                 onChange={handleChange("firstName")}
-                 placeholder="Enter your first name"
+                placeholder="Enter your first name"
                 autoComplete="given-name"
                 required
                 aria-invalid={!!errors.firstName}
@@ -111,7 +125,7 @@ export const PersonalDetailsSection = ({
                 name="lastName"
                 value={data.lastName}
                 onChange={handleChange("lastName")}
-                 placeholder="Enter your last name"
+                placeholder="Enter your last name"
                 autoComplete="family-name"
                 required
                 aria-invalid={!!errors.lastName}
@@ -150,7 +164,7 @@ export const PersonalDetailsSection = ({
               name="email"
               value={data.email}
               onChange={handleChange("email")}
-               placeholder="you@example.com"
+              placeholder="you@example.com"
               aria-describedby={emailHintId}
               autoComplete="email"
               required
@@ -201,12 +215,14 @@ export const PersonalDetailsSection = ({
               <input
                 id={phoneId}
                 name="phone"
-                value={data.phone}
+                value={formatPhoneNumber(data.phone)}
                 onChange={handleChange("phone")}
-                 placeholder="123-456-7890"
+                placeholder="912 345 6789"
                 autoComplete="tel-national"
                 inputMode="numeric"
-                type="tel"
+                pattern="[0-9]*"
+                maxLength={12}
+                type="text"
                 aria-invalid={!!errors.phone}
                 aria-describedby={errors.phone ? `${phoneId}-error` : undefined}
                 className="relative flex items-center self-stretch w-full border-0 bg-transparent [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-black text-base tracking-[0] leading-6 p-0 outline-none"

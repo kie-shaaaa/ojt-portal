@@ -1,7 +1,7 @@
 "use client";
 
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { ChangeEvent, JSX, useEffect, useRef, useState } from "react";
+import { Calendar, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { JSX, useEffect, useRef, useState } from "react";
 
 interface DatePickerProps {
   label?: string;
@@ -89,41 +89,6 @@ export default function DatePicker({
   const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
   const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  // Format manual input as yyyy/mm/dd and convert to yyyy-mm-dd for storage
-  const handleManualDateInput = (event: ChangeEvent<HTMLInputElement>) => {
-    let input = event.target.value;
-    
-    // Remove all non-numeric characters
-    input = input.replace(/[^0-9]/g, "");
-    
-    // Limit to 8 digits (yyyymmdd)
-    input = input.slice(0, 8);
-    
-    // If complete date (8 digits), convert to yyyy-mm-dd format and validate
-    if (input.length === 8) {
-      const yyyy = input.slice(0, 4);
-      const mm = input.slice(4, 6);
-      const dd = input.slice(6, 8);
-      
-      // Basic validation
-      const month = parseInt(mm);
-      const day = parseInt(dd);
-      
-      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        const dateStr = `${yyyy}-${mm}-${dd}`;
-        // Only set if valid date and not disabled
-        if (!isDisabledDate(dateStr)) {
-          onChange(dateStr);
-          setShowPicker(false);
-          return;
-        }
-      }
-    }
-    
-    // Store numeric digits during typing (will be formatted in display)
-    onChange(input);
-  };
-
   const handleDayClick = (day: number) => {
     const date = new Date(activeYear, activeMonth, day);
     const dateStr = formatDate(date);
@@ -154,28 +119,19 @@ export default function DatePicker({
             id={id}
             name={id}
             type="text"
-            inputMode="numeric"
+            readOnly
             autoComplete="off"
             aria-required={required || undefined}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
-            placeholder="yyyy/mm/dd"
+            placeholder={placeholder}
             value={(() => {
-              // Format display: if complete date (yyyy-mm-dd), convert to yyyy/mm/dd
+              // Show selected date only; date is chosen from the calendar.
               if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
                 return value.replace(/-/g, "/");
               }
-              // If partial numeric input, format with slashes
-              let display = value;
-              if (display.length > 4) {
-                display = display.slice(0, 4) + "/" + display.slice(4, 6);
-              }
-              if (display.length > 7) {
-                display = display.slice(0, 4) + "/" + display.slice(4, 6) + "/" + display.slice(6, 8);
-              }
-              return display;
+              return "";
             })()}
-            onChange={handleManualDateInput}
             onClick={() => setShowPicker(!showPicker)}
             className="relative flex min-w-0 flex-1 items-center border-0 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-[0] leading-6 outline-none placeholder:text-gray-400"
           />
@@ -282,7 +238,7 @@ export default function DatePicker({
 
       {error ? (
         <div id={`${id}-error`} className="flex items-center gap-1 text-red-500 text-xs">
-          <span aria-hidden="true">!</span>
+          <AlertCircle size={14} />
           {error}
         </div>
       ) : null}

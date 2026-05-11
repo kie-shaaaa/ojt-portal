@@ -82,8 +82,8 @@ export const ApplicationForm = (): JSX.Element => {
     }
     if (!personalDetails.phone.trim()) {
       errors.phone = "Phone number is required";
-    } else if (!/^\d{7,}$/.test(personalDetails.phone.replace(/\D/g, ""))) {
-      errors.phone = "Please enter a valid phone number";
+    } else if (!/^\d{10}$/.test(personalDetails.phone.replace(/\D/g, ""))) {
+      errors.phone = "Please enter a valid 10-digit phone number";
     }
 
     setValidationErrors(errors);
@@ -195,7 +195,9 @@ export const ApplicationForm = (): JSX.Element => {
         aria-label="OJT application form"
         className="relative flex w-full max-w-4xl flex-col items-start overflow-hidden rounded-3xl bg-white shadow-[0px_25px_50px_-12px_#00000040]"
       >
-        <HeaderSection />
+        <div className="self-stretch w-full overflow-hidden rounded-t-3xl bg-[#002b80]">
+          <HeaderSection />
+        </div>
 
         {/* Step Indicator */}
         <FormStepper currentStep={currentStep} />

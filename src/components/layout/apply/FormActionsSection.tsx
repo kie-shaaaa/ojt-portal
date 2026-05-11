@@ -25,10 +25,10 @@ export const FormActionsSection = ({
       onClick: onPrevious,
       type: "button" as const,
       className:
-        "box-border inline-flex items-center gap-2 px-6 py-2.5 relative flex-[0_0_auto] bg-gray-100 rounded-lg border border-solid border-gray-300 shadow-[0px_1px_2px_#0000000d] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "box-border inline-flex items-center gap-2 px-10 py-3 relative flex-[0_0_auto] bg-gray-100 rounded-lg border border-solid border-gray-300 shadow-[0px_1px_2px_#0000000d] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
       textClassName:
         "justify-center [font-family:'Inter-Bold',Helvetica] font-bold text-gray-600 text-base text-center tracking-[0] leading-6 relative flex items-center w-fit whitespace-nowrap",
-      icon: <ArrowLeft size={16} />,
+      icon: <ArrowLeft size={18} strokeWidth={2} />,
       iconAfter: false,
       ariaLabel: previousLabel,
     },
@@ -39,10 +39,10 @@ export const FormActionsSection = ({
       onClick: onNext,
       type: "button" as const,
       className:
-        "box-border inline-flex items-center gap-2 px-8 py-2.5 relative flex-[0_0_auto] bg-[#003da5] rounded-lg transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "box-border inline-flex items-center gap-2 px-10 py-3 relative flex-[0_0_auto] bg-[#003da5] rounded-lg transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
       textClassName:
-        "justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-base text-center tracking-[0] leading-6 relative flex items-center w-fit whitespace-nowrap",
-      icon: <ArrowRight size={16} />,
+        "justify-center [font-family:'Inter-Bold',Helvetica] font-bold text-white text-base text-center tracking-[0] leading-6 relative flex items-center w-fit whitespace-nowrap",
+      icon: <ArrowRight size={18} color="white" strokeWidth={2} />,
       iconAfter: true,
       ariaLabel: nextLabel,
       overlay: (
