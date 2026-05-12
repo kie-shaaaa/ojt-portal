@@ -8,7 +8,7 @@ import {
   GetApplicationResponse,
   GetApplicationStatusResponse,
 } from '../data/types';
-import { CreateApplicationDto } from '../data/create-application.dto';
+import { CreateApplicationDto } from '../data/dto/create-application.dto';
 
 @Injectable()
 export class ApplicationsService {

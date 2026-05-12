@@ -53,7 +53,7 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() credentials: AccountCreate,
-    @Body() id: number
+    @Body() id: number,
   ): Promise<RegisterResponse> {
     try {
       // Register new user

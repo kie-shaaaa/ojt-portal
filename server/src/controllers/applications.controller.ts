@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApplicationsService } from '../services/applications.service';
-import { CreateApplicationDto } from '../data/create-application.dto';
+import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import type {
   ApplicationStatus,
   GetApplicationsResponse,

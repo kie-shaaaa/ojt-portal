@@ -82,7 +82,7 @@ export type Response = {
   status: number;
   message: string;
   ok: boolean;
-  error?: [];
+  error?: typeof Error;
   data?: any;
 };
 
@@ -150,3 +150,8 @@ export type AllOjt = {
 };
 
 export type AccountType = 'admin' | 'employee';
+export type Token = {
+  sub: number;
+  email: string;
+  role: AccountType;
+};
