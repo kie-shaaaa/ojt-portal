@@ -47,9 +47,9 @@ export class AccountsController {
     @Param('createdDate') createdDate?: Date,
   ) {
     return await this.accountsService.fetchActiveAccounts(
-      count,
+      Number(count),
       type,
-      createdDate,
+      createdDate ? new Date(createdDate) : undefined,
     );
   }
 

@@ -38,11 +38,10 @@ export const MainContentArea = (): JSX.Element => {
       try {
         setLoading(true);
 
-        const result: AccountsResponse = await apiCall("/accounts/active", {
+        const result: AccountsResponse = await apiCall(`/accounts/active`, {
           method: "GET",
         });
 
-        console.log(result.data);
         setAccounts(result.data);
       } catch (err) {
         console.error("Error fetching accounts:", err);
@@ -53,9 +52,16 @@ export const MainContentArea = (): JSX.Element => {
     };
 
     fetchAccounts();
-  }, []);
-  // Filter + sort
+  }, []); // fetch once on mount — all filtering is client-side
+
   const filteredAccounts = useMemo(() => {
+    console.log("[Filter Change]", {
+      accountType: filters.accountType,
+      sortByDate: filters.sortByDate,
+      searchTerm,
+      totalAccounts: accounts.length,
+    });
+
     let result = [...accounts];
 
     if (searchTerm.trim() !== "") {
@@ -77,12 +83,16 @@ export const MainContentArea = (): JSX.Element => {
     result.sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
-
       return filters.sortByDate === "newest" ? dateB - dateA : dateA - dateB;
     });
 
     return result;
   }, [accounts, filters, searchTerm]);
+
+  // Lifted mutation handler — keeps accounts state as single source of truth
+  const handleAccountsChange = (updated: AccountRow[]) => {
+    setAccounts(updated);
+  };
 
   return (
     <main
@@ -101,7 +111,10 @@ export const MainContentArea = (): JSX.Element => {
       {loading ? (
         <p className="text-sm text-gray-500">Loading accounts...</p>
       ) : (
-        <AccountsTableSection accounts={filteredAccounts} />
+        <AccountsTableSection
+          accounts={filteredAccounts}
+          onAccountsChange={handleAccountsChange}
+        />
       )}
     </main>
   );

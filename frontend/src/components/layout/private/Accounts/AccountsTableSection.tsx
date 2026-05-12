@@ -8,8 +8,6 @@ import { ResetPasswordModal } from "../ResetPasswordModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { CreateAccountModal } from "../CreateAccountModal";
 
-// Using lucide icons for row actions and buttons
-
 const columns = [
   { key: "id", label: "ID", width: "w-[68.98px]", align: "items-start" },
   {
@@ -41,19 +39,20 @@ const columns = [
 
 interface AccountsTableSectionProps {
   accounts: AccountRow[];
+  onAccountsChange: (accounts: AccountRow[]) => void;
 }
 
 export const AccountsTableSection = ({
-  accounts: initialAccounts,
+  accounts,
+  onAccountsChange,
 }: AccountsTableSectionProps): JSX.Element => {
-  const [accounts, setAccounts] = useState(initialAccounts);
+  // ✅ No local accounts state — use prop directly so filter changes reflect immediately
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
-    null,
-  );
+  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(null);
 
   const handleEditClick = (account: AccountRow) => {
     setSelectedAccount(account);
@@ -85,8 +84,9 @@ export const AccountsTableSection = ({
     setSelectedAccount(null);
   };
 
+  // ✅ Mutations lifted to parent via onAccountsChange
   const handleUpdateAccount = (updatedAccount: AccountRow) => {
-    setAccounts(
+    onAccountsChange(
       accounts.map((account) =>
         account.id === updatedAccount.id ? updatedAccount : account,
       ),
@@ -95,10 +95,7 @@ export const AccountsTableSection = ({
 
   const handleConfirmDelete = () => {
     if (!selectedAccount) return;
-
-    setAccounts((current) =>
-      current.filter((account) => account.id !== selectedAccount.id),
-    );
+    onAccountsChange(accounts.filter((account) => account.id !== selectedAccount.id));
     setIsDeleteModalOpen(false);
     setSelectedAccount(null);
   };
@@ -112,14 +109,14 @@ export const AccountsTableSection = ({
   };
 
   const handleAccountCreated = (newAccount: AccountRow) => {
-    setAccounts((current) => {
-      const updated = [newAccount, ...current];
-      return updated.sort((a, b) => a.id - b.id);
-    });
+    onAccountsChange(
+      [newAccount, ...accounts].sort((a, b) => a.id - b.id),
+    );
   };
 
   const nextId =
     accounts.length > 0 ? Math.max(...accounts.map((a) => a.id)) + 1 : 1;
+
   return (
     <>
       <section className="flex flex-col items-start pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-xl overflow-hidden border border-solid border-gray-100 shadow-sm">
@@ -255,6 +252,7 @@ export const AccountsTableSection = ({
           </div>
         </div>
       </section>
+
       {isEditModalOpen && selectedAccount && (
         <EditAccountModal
           account={selectedAccount}
