@@ -1,22 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
-import type {
-  AccountCreate,
-  AccountRegister,
-  RegisterResponse,
-  ChangePasswordResponse,
-} from '../data/types';
+import type { AccountRegister, ChangePasswordResponse } from '../data/types';
 import { AuthService } from '../services/auth.service';
-import { AccountsService } from '../services/accounts.service';
-import { JwtService } from '@nestjs/jwt';
-
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly accountService: AccountsService,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signin')
   async signIn(@Body() body: AccountRegister): Promise<{
@@ -27,7 +15,10 @@ export class AuthController {
       throw new BadRequestException('Email and password are required');
     }
 
-    const result = await this.authService.signInAccount(body.email, body.password);
+    const result = await this.authService.signInAccount(
+      body.email,
+      body.password,
+    );
 
     if (result.user.id === undefined) {
       throw new BadRequestException('Invalid user id');
@@ -41,34 +32,6 @@ export class AuthController {
         role: result.user.role,
       },
     };
-  }
-
-  @Post('register')
-  async register(
-    @Body() credentials: AccountCreate,
-    @Body() id: number,
-  ): Promise<RegisterResponse> {
-    try {
-      // Register new user
-      const user = await this.accountService.createAccount(id, credentials);
-
-      // Create JWT token
-      const payload = {
-        sub: user.id,
-        email: user.email,
-      };
-      const token = await this.jwtService.signAsync(payload);
-
-      return {
-        token,
-        user,
-        message: 'User registered successfully',
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Registration failed';
-      throw new BadRequestException(message);
-    }
   }
 
   @Post('change-password')
