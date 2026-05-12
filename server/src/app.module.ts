@@ -8,10 +8,11 @@ import { ApplicationsModule } from './modules/applications.module';
 import { OjtModule } from './modules/ojt.module';
 import { DashboardController } from './controllers/dashboard.controller';
 import { DashboardService } from './services/dashboard.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [AccountsModule, AuthModule, ApplicationsModule, OjtModule],
   controllers: [AppController, DashboardController],
-  providers: [AppService, DatabaseService, DashboardService],
+  providers: [AppService, DatabaseService, DashboardService, JwtService],
 })
 export class AppModule {}

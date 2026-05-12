@@ -22,6 +22,7 @@ export class AccountsController {
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   testGuard(@Req() req: Request & { user?: unknown }) {
+    console.log('Hello from the test guard endpoint!');
     return {
       message: 'Guard passed successfully',
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

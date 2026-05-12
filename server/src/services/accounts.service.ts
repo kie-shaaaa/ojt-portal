@@ -102,7 +102,7 @@ export class AccountsService {
         );
       }
 
-      if (exists.rows[0].account_type != newType) {
+      if (exists.rows[0].role != newType) {
         await client.query(
           `
           UPDATE user_accounts

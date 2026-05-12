@@ -3,12 +3,12 @@ import { AccountsController } from '../controllers/accounts.controller';
 import { AccountsService } from '../services/accounts.service';
 import { DatabaseModule } from './database.module';
 import { AuthModule } from './auth.module';
-import { DashboardModule } from './dashboard.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   controllers: [AccountsController],
   providers: [AccountsService],
-  imports: [DatabaseModule, forwardRef(() => AuthModule), DashboardModule],
+  imports: [DatabaseModule, forwardRef(() => AuthModule), JwtModule],
   exports: [AccountsService],
 })
 export class AccountsModule {}

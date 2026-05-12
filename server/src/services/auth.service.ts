@@ -7,10 +7,14 @@ import {
 import * as argon2 from 'argon2';
 import type { Account } from '../data/types';
 import { DatabaseService } from './database/database.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   /**
    * Sign in user with email and password
@@ -19,36 +23,32 @@ export class AuthService {
    * @returns User account without password
    * @throws UnauthorizedException if credentials are invalid
    */
-  async signInAccount(
-    email: string,
-    password: string,
-  ): Promise<Omit<Account, 'password'>> {
-    if (!email || !password) {
-      throw new BadRequestException('Email and password are required');
-    }
 
-    console.log(`[AUTH] Attempting sign-in for email: ${email}`);
+  async signInAccount(email: string, password: string) {
     const user = await this.findUser(email);
-    if (!user) {
-      console.log(`[AUTH] User not found for email: ${email}`);
-      throw new UnauthorizedException('Invalid email or password');
-    }
 
-    console.log(`[AUTH] User found for email: ${email}, verifying password...`);
+    if (!user) throw new UnauthorizedException('Invalid email or password');
+
     const isValid = await this.verifyPassword(user.password, password);
-    if (!isValid) {
-      console.log(`[AUTH] Password verification failed for email: ${email}`);
-      throw new UnauthorizedException('Invalid email or password');
-    }
 
-    console.log(`[AUTH] Password verified successfully for email: ${email}`);
-    // Log successful sign-in
-    await this.logSignIn(email, true, null, user.id);
+    if (!isValid) throw new UnauthorizedException('Invalid email or password');
 
-    // Return user without password
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      access_token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 
   /**
@@ -182,9 +182,10 @@ export class AuthService {
     try {
       const result = await client.query<Account>(
         `
-          SELECT id, email, password, created_at, updated_at FROM user_accounts
-          WHERE email = $1;
-        `,
+    SELECT id, email, password, account_type as role, created_at, updated_at
+    FROM user_accounts
+    WHERE id = $1;
+  `,
         [id],
       );
 
