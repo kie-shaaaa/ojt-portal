@@ -164,3 +164,9 @@ export type ApplicationSettings = {
   state: 'open' | 'closed';
   openingDate: Date;
 };
+
+export type AccountPagination = {
+  count?: number;
+  type?: AccountType;
+  createdDate?: Date;
+};

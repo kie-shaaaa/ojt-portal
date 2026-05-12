@@ -129,6 +129,64 @@ export class AccountsService {
     }
   }
 
+  async fetchAccounts(count: number, type?: string, createdDate?: Date) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const values: any[] = [];
+      let query = `
+      SELECT id, email, account_type, created_at
+      FROM user_accounts
+      WHERE 1=1
+    `;
+
+      if (type) {
+        values.push(type);
+        query += ` AND account_type = $${values.length}`;
+      }
+
+      if (createdDate) {
+        values.push(createdDate);
+        query += ` AND created_at >= $${values.length}`;
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      if (count && count > 0) {
+        values.push(count);
+        query += ` LIMIT $${values.length}`;
+      }
+
+      const accounts = await client.query<
+        Omit<Account, 'password' | 'updated_at'>
+      >(query, values);
+
+      if (accounts.rows.length === 0) {
+        return {
+          success: true,
+          message: 'No accounts found matching criteria',
+          data: [],
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Successfully fetched accounts',
+        data: accounts.rows,
+      };
+    } catch (error) {
+      console.error('[ACCOUNTS] Error fetching accounts:', error);
+
+      if (
+        error instanceof Error &&
+        error.message.includes('User already exists')
+      ) {
+        throw new BadRequestException('User with this email already exists');
+      }
+
+      throw new InternalServerErrorException('Failed to fetch user accounts');
+    }
+  }
   async deleteAccount() {}
 
   async disableAccount(id: number) {

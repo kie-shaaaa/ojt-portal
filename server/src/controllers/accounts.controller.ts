@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
   Post,
   Req,
@@ -28,6 +29,16 @@ export class AccountsController {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       user: req.user,
     };
+  }
+
+  @Get('')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async getAccounts(
+    @Param('count') count: number,
+    @Param('type') type?: string,
+    @Param('createdDate') createdDate?: Date,
+  ) {
+    return await this.accountsService.fetchAccounts(count, type, createdDate);
   }
 
   @Post('create')
