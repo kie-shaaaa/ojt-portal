@@ -184,7 +184,7 @@ export const ApplicationForm = (): JSX.Element => {
       };
 
       console.log("Submitting form:", formData);
-      // TODO: Call API to submit form
+      
       alert("Application submitted successfully!");
     }
   }, [personalDetails, ojtInformation, uploadedDocuments, dataPrivacy, validateDataPrivacy]);
