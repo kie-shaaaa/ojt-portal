@@ -11,7 +11,7 @@ import {
   ValidateIf,
   IsDateString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 // Helper regex
 const NAME_REGEX = /^[A-Za-z\s'-]+$/;
@@ -116,5 +116,12 @@ export class CreateApplicationDto {
   // Agreement
   // ---------------------------
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      return ['true', '1', 'on', 'yes'].includes(value.toLowerCase());
+    }
+    return false;
+  })
   agreed_terms?: boolean;
 }

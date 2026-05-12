@@ -8,18 +8,29 @@ import * as XLSX from "xlsx";
 import { apiCall } from "@/lib/api";
 
 interface Intern {
-  id: string;
-  ojtId: string;
-  name: string;
+  id: number;
+  ojt_id: string;
+  application_id: number;
+  application_type: string;
+  first_name: string;
+  last_name: string;
+  gender: "Male" | "Female" | null;
   email: string;
-  school: string;
-  startDate: string;
-  endDate: string;
-  status: "verified" | "completed";
-  verifiedDate: string;
-  gender?: string;
-  ojtDetails?: string;
-  deploymentDate?: string;
+  phone: string;
+  school_name: string | null;
+  hours_needed: number | null;
+  course: string | null;
+  deployment_date: string | null;
+  end_date: string | null;
+  certificate_issuance_date: string | null;
+  orientation_date: string | null;
+  confirmed_at: string | null;
+  confirmation_ip: string | null;
+  second_chance: number;
+  submission_date: string;
+  original_status: string | null;
+  moved_to_ojt_at: string;
+  admin_notes: string | null;
 }
 
 interface VerifiedInternsTableSectionProps {
@@ -31,7 +42,7 @@ export const VerifiedInternsTableSection = ({
   interns,
   onViewDetails,
 }: VerifiedInternsTableSectionProps): JSX.Element => {
-  const [selectedInterns, setSelectedInterns] = useState<string[]>([]);
+  const [selectedInterns, setSelectedInterns] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [viewingIntern, setViewingIntern] = useState<ModalInternData | null>(
     null,
@@ -53,10 +64,27 @@ export const VerifiedInternsTableSection = ({
         });
 
         if (response && Array.isArray(response)) {
+          console.log("API Response (array):", response[0]); // Log first item to see structure
+          // Check for duplicate IDs
+          const ids = response.map((r: any) => r.id);
+          const duplicates = ids.filter(
+            (id: any, idx: number) => ids.indexOf(id) !== idx,
+          );
+          if (duplicates.length > 0) {
+            console.warn("Duplicate IDs found:", duplicates);
+          }
           setRows(response);
         } else if (response && typeof response === "object") {
           // Handle case where response is wrapped
           const data = response.data || response.interns || [];
+          console.log("API Response (wrapped):", data[0]); // Log first item to see structure
+          const ids = data.map((r: any) => r.id);
+          const duplicates = ids.filter(
+            (id: any, idx: number) => ids.indexOf(id) !== idx,
+          );
+          if (duplicates.length > 0) {
+            console.warn("Duplicate IDs found:", duplicates);
+          }
           setRows(Array.isArray(data) ? data : []);
         }
       } catch (err) {
@@ -72,13 +100,25 @@ export const VerifiedInternsTableSection = ({
     fetchInterns();
   }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return "Not set";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Not set";
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
+  };
+
+  const getInternName = (intern: Intern) => {
+    return `${intern.first_name} ${intern.last_name}`.trim();
+  };
+
+  const getOjtId = (intern: Intern) => {
+    if (intern.ojt_id) return intern.ojt_id;
+    // Fallback: construct from ID if ojt_id is missing
+    return `OJT-${new Date(intern.moved_to_ojt_at).getFullYear()}-${String(intern.id).padStart(4, "0")}`;
   };
 
   const handleSelectAll = () => {
@@ -90,13 +130,13 @@ export const VerifiedInternsTableSection = ({
     setSelectAll(!selectAll);
   };
 
-  const handleSelectIntern = (id: string) => {
+  const handleSelectIntern = (id: number) => {
     if (selectedInterns.includes(id)) {
       setSelectedInterns(selectedInterns.filter((internId) => internId !== id));
       setSelectAll(false);
     } else {
       setSelectedInterns([...selectedInterns, id]);
-      if (selectedInterns.length + 1 === interns.length) {
+      if (selectedInterns.length + 1 === rows.length) {
         setSelectAll(true);
       }
     }
@@ -104,16 +144,16 @@ export const VerifiedInternsTableSection = ({
 
   const exportToExcel = (dataToExport: Intern[]) => {
     const excelData = dataToExport.map((intern) => ({
-      "OJT ID": intern.ojtId,
-      "Intern Name": intern.name,
+      "OJT ID": getOjtId(intern),
+      "Intern Name": getInternName(intern),
       Gender: intern.gender || "Not set",
-      School: intern.school,
-      "OJT Details": intern.ojtDetails || "—",
-      "Deployment Date": formatDate(intern.startDate),
-      "End Date": formatDate(intern.endDate),
+      School: intern.school_name || "Not set",
+      "OJT Details": intern.course || "—",
+      "Deployment Date": formatDate(intern.deployment_date),
+      "End Date": formatDate(intern.end_date),
       Email: intern.email,
-      Status: intern.status,
-      "Verified Date": formatDate(intern.verifiedDate),
+      Status: intern.original_status || "Not set",
+      "Verified Date": formatDate(intern.confirmed_at),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -179,18 +219,19 @@ export const VerifiedInternsTableSection = ({
       { id: "1x1-picture", title: "1X1 PICTURE", fileType: "JPG/PNG" as const },
     ];
 
+    const internName = getInternName(intern);
     const modalData: ModalInternData = {
-      ojtId: intern.ojtId,
-      portalId: intern.ojtId.replace("NTC-", "OJT-"),
-      name: intern.name,
+      ojtId: getOjtId(intern),
+      portalId: getOjtId(intern).replace("OJT-", "OJT-"),
+      name: internName,
       gender: intern.gender || "Not specified",
       email: intern.email,
-      phone: "N/A",
-      school: intern.school,
-      course: intern.ojtDetails || "Not specified",
-      hoursNeeded: "N/A",
-      deploymentDate: intern.startDate,
-      endDate: intern.endDate,
+      phone: intern.phone || "N/A",
+      school: intern.school_name || "Not specified",
+      course: intern.course || "Not specified",
+      hoursNeeded: intern.hours_needed?.toString() || "N/A",
+      deploymentDate: intern.deployment_date || undefined,
+      endDate: intern.end_date || undefined,
       requirementFiles,
     };
 
@@ -216,7 +257,7 @@ export const VerifiedInternsTableSection = ({
     <>
       <section className="flex relative self-stretch w-full flex-col items-start rounded-xl border border-solid border-slate-200 bg-white shadow-lg overflow-hidden">
         {/* Header with title and export button */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 pb-4 w-full border-b border-slate-100 bg-gradient-to-r from-slate-50 to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 pb-4 w-full border-b border-slate-100 bg-linear-to-r from-slate-50 to-transparent">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
@@ -235,7 +276,7 @@ export const VerifiedInternsTableSection = ({
             <button
               onClick={handleExportExcel}
               disabled={isLoading || rows.length === 0}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-sm font-semibold text-white bg-linear-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Download size={16} />
               Export
@@ -357,7 +398,7 @@ export const VerifiedInternsTableSection = ({
               {!isLoading &&
                 rows.map((intern, idx) => (
                   <tr
-                    key={intern.id}
+                    key={`intern-${intern.id}`}
                     className={`border-b border-slate-100 transition-all ${
                       selectedInterns.includes(intern.id)
                         ? "bg-blue-50"
@@ -373,15 +414,15 @@ export const VerifiedInternsTableSection = ({
                           checked={selectedInterns.includes(intern.id)}
                           onChange={() => handleSelectIntern(intern.id)}
                           className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
-                          aria-label={`Select intern ${intern.name}`}
+                          aria-label={`Select intern ${getInternName(intern)}`}
                         />
                       </label>
                     </td>
                     <td className="px-6 py-4 font-mono font-semibold text-blue-600">
-                      {intern.ojtId}
+                      {getOjtId(intern)}
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-900">
-                      {intern.name}
+                      {getInternName(intern)}
                     </td>
                     <td className="px-6 py-4 text-slate-700">
                       <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
@@ -389,18 +430,18 @@ export const VerifiedInternsTableSection = ({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-slate-700 text-sm">
-                      {intern.school}
+                      {intern.school_name}
                     </td>
                     <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
-                      {intern.ojtDetails || (
+                      {intern.course || (
                         <span className="text-slate-400 italic">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                      {formatDate(intern.startDate)}
+                      {formatDate(intern.deployment_date)}
                     </td>
                     <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                      {formatDate(intern.endDate)}
+                      {formatDate(intern.end_date)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
@@ -435,7 +476,7 @@ export const VerifiedInternsTableSection = ({
 
         {/* Footer with selection info */}
         {selectedInterns.length > 0 && (
-          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
+          <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
             <p className="text-sm font-semibold text-blue-900">
               ✓ {selectedInterns.length} intern
               {selectedInterns.length !== 1 ? "s" : ""} selected
@@ -465,7 +506,7 @@ export const VerifiedInternsTableSection = ({
         <ConfirmDeleteModal
           open={!!internToDelete}
           title="Delete intern"
-          message={`Are you sure you want to delete ${internToDelete.name}? This action cannot be undone.`}
+          message={`Are you sure you want to delete ${getInternName(internToDelete)}? This action cannot be undone.`}
           onCancel={() => setInternToDelete(null)}
           onConfirm={() => {
             setRows((prev) => prev.filter((r) => r.id !== internToDelete.id));
@@ -480,26 +521,29 @@ export const VerifiedInternsTableSection = ({
       {editingIntern && (
         <ChangeInterDetailsModal
           intern={{
-            id: editingIntern.id,
-            name: editingIntern.name,
+            id: editingIntern.id.toString(),
+            name: getInternName(editingIntern),
             ojtYear:
-              new Date(editingIntern.startDate).getFullYear().toString() ||
-              "2026",
+              (editingIntern.deployment_date
+                ? new Date(editingIntern.deployment_date)
+                    .getFullYear()
+                    .toString()
+                : null) || "2026",
             ojtNumber: (() => {
-              const parts = editingIntern.ojtId?.split("-") || [];
+              const parts = getOjtId(editingIntern)?.split("-") || [];
               const last = parts.length
                 ? parts[parts.length - 1]
-                : editingIntern.ojtId;
+                : getOjtId(editingIntern);
               return (last || "001").slice(-3).padStart(3, "0");
             })(),
             gender: editingIntern.gender || "Female",
-            deploymentDate: editingIntern.startDate,
-            endDate: editingIntern.endDate,
+            deploymentDate: editingIntern.deployment_date || undefined,
+            endDate: editingIntern.end_date || undefined,
           }}
           onClose={() => setEditingIntern(null)}
           onSave={(payload) => {
             // Apply changes to the local rows state so the table reflects edits
-            const computeNewOjtId = (oldId: string | undefined, p: any) => {
+            const computeNewOjtId = (oldId: string, p: any) => {
               const parts = (oldId || "").split("-").filter(Boolean);
               if (parts.length >= 2) {
                 // replace last with number
@@ -518,9 +562,10 @@ export const VerifiedInternsTableSection = ({
                   ? {
                       ...r,
                       gender: payload.gender ?? r.gender,
-                      startDate: payload.deploymentDate ?? r.startDate,
-                      endDate: payload.endDate ?? r.endDate,
-                      ojtId: computeNewOjtId(r.ojtId, payload),
+                      deployment_date:
+                        payload.deploymentDate ?? r.deployment_date,
+                      end_date: payload.endDate ?? r.end_date,
+                      ojt_id: computeNewOjtId(getOjtId(r), payload),
                     }
                   : r,
               ),

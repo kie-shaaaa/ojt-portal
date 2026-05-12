@@ -12,8 +12,6 @@ export async function createOjtData(client: Client) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS ojt_data (
             id SERIAL PRIMARY KEY,
-            ojt_id VARCHAR(10) UNIQUE,
-            application_id INTEGER NOT NULL,
             application_type VARCHAR(50) NOT NULL,
             first_name VARCHAR(100) NOT NULL,
             last_name VARCHAR(100) NOT NULL,

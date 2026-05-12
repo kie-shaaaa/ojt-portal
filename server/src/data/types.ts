@@ -156,3 +156,13 @@ export type AccountPagination = {
   type?: AccountType;
   createdDate?: Date;
 };
+
+export type Schools = {
+  id: number;
+  schoolName: string;
+}
+
+export type Courses = {
+  id: number;
+  courseName: string;
+}

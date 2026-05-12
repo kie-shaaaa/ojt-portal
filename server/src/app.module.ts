@@ -12,6 +12,8 @@ import { JwtService } from '@nestjs/jwt';
 import { AppointmentsController } from './controllers/appointments.controller';
 import { AppointmentsService } from './services/appointments.service';
 import { AppointmentsModule } from './modules/appointments.module';
+import { SchoolsModule } from './modules/schools.module';
+import { CoursesModule } from './modules/courses.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { AppointmentsModule } from './modules/appointments.module';
     ApplicationsModule,
     OjtModule,
     AppointmentsModule,
+    SchoolsModule,
+    CoursesModule
   ],
   controllers: [AppController, DashboardController, AppointmentsController],
   providers: [
