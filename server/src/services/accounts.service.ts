@@ -15,7 +15,7 @@ export class AccountsService {
   async createAccount(account: AccountCreate): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
     try {
-      const exists = await this.authService.findUser(account.email);
+      const exists = await this.authService.findActiveUser(account.email);
       if (exists) {
         throwAppError('conflict', 'User with this email already exists');
       }
@@ -49,18 +49,23 @@ export class AccountsService {
     }
   }
 
-  async updateAccount(id: number, newEmail?: string, newType?: string) {
+  async updateAccount(
+    id: number,
+    newEmail?: string,
+    newUser?: string,
+    newType?: string,
+  ) {
     const client = this.databaseService.getClient();
     try {
       const exists = await client.query<Account>(
         `
-        SELECT id, email, account_type FROM user_accounts
+        SELECT id, email, username, account_type FROM user_accounts
         WHERE id = $1
         `,
         [id],
       );
 
-      if (!exists || exists.rows.length === 0) {
+      if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
 
@@ -72,6 +77,17 @@ export class AccountsService {
           WHERE id = $2
           `,
           [newEmail, id],
+        );
+      }
+
+      if (newUser && exists.rows[0].username !== newUser) {
+        await client.query(
+          `
+          UPDATE user_accounts
+          SET username = $1
+          WHERE id = $2
+          `,
+          [newUser, id],
         );
       }
 
@@ -101,7 +117,7 @@ export class AccountsService {
       let query = `
         SELECT id, email, account_type, created_at
         FROM user_accounts
-        WHERE account_status = 'active' 1=1
+        WHERE account_status = 'active' AND 1=1
       `;
 
       if (type) {
@@ -197,9 +213,8 @@ export class AccountsService {
   }
 
   async disableAccount(id: number) {
+    const client = this.databaseService.getClient();
     try {
-      const client = this.databaseService.getClient();
-
       const exists = await client.query<Account>(
         `
         SELECT id, email, account_type FROM user_accounts
@@ -213,7 +228,7 @@ export class AccountsService {
 
       const res = await client.query(
         `UPDATE user_accounts
-        SET account_status = "disabled"
+        SET account_status = 'disabled'
         WHERE id = $1`,
         [id],
       );

@@ -52,6 +52,7 @@ export type Application = {
 export type Account = {
   id?: number;
   email: string;
+  username: string;
   account_type: AccountType;
   password: string;
   created_at: Date;
