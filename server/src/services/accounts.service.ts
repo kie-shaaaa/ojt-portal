@@ -115,7 +115,7 @@ export class AccountsService {
     try {
       const values: any[] = [];
       let query = `
-        SELECT id, email, account_type, created_at
+        SELECT id, email, username, account_type, created_at
         FROM user_accounts
         WHERE account_status = 'active' AND 1=1
       `;

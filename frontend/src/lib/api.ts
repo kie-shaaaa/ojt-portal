@@ -3,7 +3,9 @@ import getBaseUrl from "@/lib/GetBaseUrl";
 const API_URL = getBaseUrl();
 
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("access_token");
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
   const isFormData = options.body instanceof FormData;
   const headers = new Headers(options.headers);
 
@@ -21,10 +23,19 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     credentials: "include",
   });
 
+  const data = await response.json();
+
   if (response.status === 401) {
-    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
     window.location.href = "/login";
   }
 
-  return response.json();
+  if (!response.ok) {
+    throw new Error(data?.message || "API Error");
+  }
+
+  // DEBUG ONLY
+  console.log("API Response:", response.json);
+
+  return data;
 }

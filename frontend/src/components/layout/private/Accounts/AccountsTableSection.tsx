@@ -175,7 +175,7 @@ export const AccountsTableSection = ({
               </thead>
               <tbody className="bg-white">
                 {accounts.map((account) => {
-                  const isAdmin = account.accountType === "Admin";
+                  const isAdmin = account.account_type === "Admin";
 
                   return (
                     <tr
@@ -204,11 +204,18 @@ export const AccountsTableSection = ({
                             color: isAdmin ? "#4338ca" : "#15803D",
                           }}
                         >
-                          {account.accountType}
+                          {account.account_type}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {account.dateCreated}
+                        {new Date(account.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-right">
                         <div className="flex items-center justify-end gap-3">
