@@ -25,13 +25,12 @@ import { CoursesModule } from './modules/courses.module';
     SchoolsModule,
     CoursesModule
   ],
-  controllers: [AppController, DashboardController, AppointmentsController],
+  controllers: [AppController, DashboardController],
   providers: [
     AppService,
     DatabaseService,
     DashboardService,
     JwtService,
-    AppointmentsService,
   ],
 })
 export class AppModule {}

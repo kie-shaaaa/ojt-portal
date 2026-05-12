@@ -160,9 +160,11 @@ export type AccountPagination = {
 export type Schools = {
   id: number;
   schoolName: string;
-}
+};
 
 export type Courses = {
   id: number;
   courseName: string;
-}
+};
+
+export type AppointmentType = 'interview' | 'orientation';
