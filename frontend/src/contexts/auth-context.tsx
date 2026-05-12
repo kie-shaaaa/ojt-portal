@@ -22,7 +22,7 @@ export interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -38,8 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("access_token");
-    const storedUser = localStorage.getItem("user");
+    // Check localStorage first (remember me), then sessionStorage
+    const storedToken =
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token");
+    const storedUser =
+      localStorage.getItem("user") || sessionStorage.getItem("user");
 
     if (storedToken) setToken(storedToken);
     if (storedUser) {
@@ -47,44 +51,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(JSON.parse(storedUser));
       } catch {
         localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
       }
     }
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await apiCall("/auth/signin", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+  const login = useCallback(
+    async (email: string, password: string, rememberMe: boolean = false) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await apiCall("/auth/signin", {
+          method: "POST",
+          body: JSON.stringify({ email, password }),
+        });
 
-      if (data.access_token) {
-        localStorage.setItem("access_token", data.access_token);
-        setToken(data.access_token);
-        console.log(data.access_token);
-      }
+        const storage = rememberMe ? localStorage : sessionStorage;
 
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
-        console.log(data.user);
+        if (data.access_token) {
+          storage.setItem("access_token", data.access_token);
+          setToken(data.access_token);
+        }
+
+        if (data.user) {
+          storage.setItem("user", JSON.stringify(data.user));
+          setUser(data.user);
+        }
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "An error occurred during login";
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An error occurred during login";
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("user");
     setToken(null);
     setUser(null);
     setError(null);

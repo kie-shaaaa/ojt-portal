@@ -27,7 +27,7 @@ export const LoginFormSection = (): JSX.Element => {
     }
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Login failed:", err);

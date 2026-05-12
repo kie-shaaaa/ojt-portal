@@ -146,4 +146,22 @@ export class ApplicationsController {
       throw new BadRequestException(message);
     }
   }
+
+  /**
+   * Get notifications/pending count endpoint
+   * @returns count of pending applications
+   */
+  @Get('notifications')
+  async getNotifications(): Promise<{ count: number }> {
+    try {
+      const count = await this.applicationService.getPendingCount();
+      return { count };
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch pending count';
+      throw new BadRequestException(message);
+    }
+  }
 }

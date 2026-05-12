@@ -137,4 +137,17 @@ export class ApplicationsService {
 
     return res.rows[0] ?? null;
   }
+
+  async getPendingCount(): Promise<number> {
+    const client = this.databaseService.getClient();
+
+    const res = await client.query<{ count: string }>(
+      `
+      SELECT COUNT(*) as count FROM applications
+      WHERE status = 'pending'
+      `,
+    );
+
+    return parseInt(res.rows[0]?.count || '0', 10);
+  }
 }

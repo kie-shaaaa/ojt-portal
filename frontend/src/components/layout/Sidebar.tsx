@@ -12,9 +12,10 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingApplications } from "@/hooks/usePendingApplication";
 // use logo from public folder
 
 const navigationItems = [
@@ -29,35 +30,8 @@ export const AsideSidebar = (): JSX.Element => {
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [pendingCount, setPendingCount] = useState<number>(0);
   const { logout } = useAuth();
-
-  useEffect(() => {
-    const load = () => {
-      try {
-        const raw = localStorage.getItem("ojt_applications");
-        const parsed = raw ? JSON.parse(raw) : [];
-        const count = (parsed ?? []).filter((a: any) =>
-          String(a.status ?? "")
-            .toLowerCase()
-            .includes("pending"),
-        ).length;
-        setPendingCount(Number(count ?? 0));
-      } catch (err) {
-        setPendingCount(0);
-      }
-    };
-
-    load();
-
-    const onUpdate = () => load();
-    window.addEventListener("applications:update", onUpdate);
-    window.addEventListener("storage", onUpdate);
-    return () => {
-      window.removeEventListener("applications:update", onUpdate);
-      window.removeEventListener("storage", onUpdate);
-    };
-  }, []);
+  const { pendingCount } = usePendingApplications();
 
   const handleLogout = () => {
     logout();
