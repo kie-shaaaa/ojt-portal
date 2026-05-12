@@ -184,7 +184,11 @@ const ChangeStatusModal = ({
     try {
       setIsUpdating(true);
       const backendStatus = idToBackendStatus(selectedStatus);
-      const applicationId = Number(application?.id) || 0;
+        const applicationId = application?.id
+          ? Number(application.id.replace("NTC-", ""))
+          : undefined;
+
+      console.log(applicationId)
 
       // Call the PATCH endpoint to update application status
       await apiCall("/applications/update", {

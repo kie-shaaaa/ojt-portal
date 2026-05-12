@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
   Post,
   Query,
@@ -12,6 +13,7 @@ import { plainToInstance } from 'class-transformer';
 import { validateOrReject, ValidationError } from 'class-validator';
 import type { FastifyRequest } from 'fastify';
 import { ApplicationsService } from '../services/applications.service';
+import { FileUploadsService } from '../services/file-uploads.service';
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import type {
@@ -24,7 +26,10 @@ import type {
 
 @Controller('applications')
 export class ApplicationsController {
-  constructor(private readonly applicationService: ApplicationsService) {}
+  constructor(
+    private readonly applicationService: ApplicationsService,
+    private readonly fileUploadsService: FileUploadsService,
+  ) {}
 
   /**
    * Paginated fetching of applicants
@@ -288,19 +293,16 @@ export class ApplicationsController {
    */
   @Patch('update')
   async updateApplication(
-    @Body() id: number,
-    @Body() status: ApplicationStatus,
+    @Body() body: { id: number; status: ApplicationStatus },
   ): Promise<GetApplicationStatusResponse> {
     try {
-      const result = await this.applicationService.updateApplication(
-        id,
-        status,
-      );
-      return result;
+      const { id, status } = body;
+
+      return await this.applicationService.updateApplication(id, status);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to update application';
-      throw new BadRequestException(message);
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to update application',
+      );
     }
   }
 
@@ -318,6 +320,54 @@ export class ApplicationsController {
         error instanceof Error
           ? error.message
           : 'Failed to fetch pending count';
+      throw new BadRequestException(message);
+    }
+  }
+
+  /**
+   * Fetch all files for an application with signed URLs
+   * @param id application ID
+   * @returns array of files with metadata and signed URLs
+   */
+  @Get(':id/files')
+  async getApplicationFiles(@Param('id') id: string): Promise<
+    Array<{
+      id: number;
+      application_id: number;
+      file_type: string;
+      document_key: string | null;
+      file_name: string;
+      file_extension: string;
+      file_path: string;
+      file_size: number;
+      uploaded_at: string;
+      signedUrl: string;
+    }>
+  > {
+    try {
+      const applicationId = Number(id);
+      if (!applicationId) {
+        throw new BadRequestException('Application ID is required');
+      }
+
+      const files =
+        await this.fileUploadsService.getApplicationFiles(applicationId);
+
+      // Enrich files with signed URLs for download
+      const enrichedFiles = await Promise.all(
+        files.map(async (file) => ({
+          ...file,
+          signedUrl: await this.fileUploadsService.getSignedUrl(
+            file.file_path,
+            3600, // 1 hour expiry
+          ),
+        })),
+      );
+
+      return enrichedFiles;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch files';
       throw new BadRequestException(message);
     }
   }
