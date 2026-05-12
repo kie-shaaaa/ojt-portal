@@ -4,11 +4,11 @@ import {
   forwardRef,
   InternalServerErrorException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { Account, AccountCreate } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
+import { throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class AccountsService {
@@ -18,28 +18,12 @@ export class AccountsService {
     private readonly databaseService: DatabaseService,
   ) {}
 
-  async createAccount(id: number, account: AccountCreate): Promise<Account> {
+  async createAccount(account: AccountCreate): Promise<Account> {
     const client = this.databaseService.getClient();
     try {
-      const user = await client.query(
-        `
-          SELECT account_type FROM user_accounts
-          WHERE id = $1
-        `,
-        [id],
-      );
-
-      if (!user) {
-        throw new ForbiddenException('User not found');
-      }
-
-      if (user.rows[0] != 'admin') {
-        throw new ForbiddenException('Only admins can create an account');
-      }
-
       const exists = await this.authService.findUser(account.email);
       if (exists) {
-        throw new Error('User already exists');
+        throwAppError('conflict', 'User with this email already exists');
       }
       const hash = await this.authService.hashPassword(account.password);
 
@@ -67,13 +51,7 @@ export class AccountsService {
       return res.rows[0] || null;
     } catch (error) {
       console.error('[ACCOUNTS] Error creating account:', error);
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-      throw new InternalServerErrorException('Failed to create user account');
+      throwAppError('server_error', 'Failed to create user account');
     }
   }
 
@@ -88,7 +66,7 @@ export class AccountsService {
         [id],
       );
       if (!exists) {
-        throw new Error('User account does not exist');
+        throwAppError('not_found', 'User account does not exist');
       }
 
       if (exists.rows[0].email != newEmail) {

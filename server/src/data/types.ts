@@ -148,7 +148,7 @@ export type DashboardData = {
 
 export type ApplicationSettings = {
   state: 'open' | 'closed';
-  openingDate: Date;
+  openingDate?: Date;
 };
 
 export type AccountPagination = {

@@ -19,6 +19,7 @@ import { Roles } from '../data/decorators/roles.decorator';
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
+  // DEVELOPMENT ONLY: This endpoint is for testing the AuthGuard and RolesGuard functionality.
   @Get('test-guard')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -31,6 +32,13 @@ export class AccountsController {
     };
   }
 
+  /**
+   * Account fetching controller
+   * @param count Number of fetched accounts
+   * @param type Type/Role of fetched accounts
+   * @param createdDate Date of fetched accounts creation
+   * @returns Array of accounts matching the provided criteria
+   */
   @Get('')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async getAccounts(
@@ -41,16 +49,25 @@ export class AccountsController {
     return await this.accountsService.fetchAccounts(count, type, createdDate);
   }
 
+  /**
+   * Accounts creation controller
+   * @param account Account data for the new account
+   * @return Created account data
+   */
   @Post('create')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async createAccount(
-    @Body('id') id: number,
-    @Body('account') account: AccountCreate,
-  ) {
-    return await this.accountsService.createAccount(id, account);
+  async createAccount(@Body('account') account: AccountCreate) {
+    return await this.accountsService.createAccount(account);
   }
 
+  /**
+   * Accounts update controller
+   * @param id ID of the account to update
+   * @param newEmail New email for the account (optional)
+   * @param newType New type/role for the account (optional)
+   * @return Updated account data
+   */
   @Patch('update')
   async updateAccount(
     @Body('id') id: number,
@@ -60,6 +77,12 @@ export class AccountsController {
     return this.accountsService.updateAccount(id, newEmail, newType);
   }
 
+  /**
+   * @param id account id of the account to be disabled
+   * @return success message if the account was successfully disabled
+   * @throws BadRequestException if the account with the provided id does not exist
+   * @throws InternalServerErrorException if there was an error disabling the account
+   */
   @Patch('disable')
   async disableAccount(@Body('id') id: number) {
     return this.accountsService.disableAccount(id);
