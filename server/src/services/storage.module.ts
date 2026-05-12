@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { SupabaseStorageService } from './supabase-storage.service';
+import { SupabaseStorage } from './supabase-storage.service';
 import { FileUploadsService } from './file-uploads.service';
 import { DatabaseService } from './database/database.service';
 
 @Module({
-  providers: [SupabaseStorageService, FileUploadsService, DatabaseService],
-  exports: [SupabaseStorageService, FileUploadsService],
+  providers: [SupabaseStorage, FileUploadsService, DatabaseService],
+  exports: [SupabaseStorage, FileUploadsService],
 })
 export class StorageModule {}
