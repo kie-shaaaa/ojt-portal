@@ -52,7 +52,7 @@ export type Application = {
 export type Account = {
   id?: number;
   email: string;
-  role: AccountType;
+  account_type: AccountType;
   password: string;
   created_at: Date;
   updated_at: Date;
@@ -66,12 +66,11 @@ export type AccountCreate = {
   account_type: string;
 };
 
-export type Response = {
-  status: number;
-  message: string;
+export type SuccessResponse = {
+  status: string;
   ok: boolean;
-  error?: typeof Error;
-  data?: any;
+  message: string;
+  data: any;
 };
 
 // Submit application response
@@ -139,7 +138,7 @@ export type AccountType = 'admin' | 'employee';
 export type Token = {
   sub: number;
   email: string;
-  role: AccountType;
+  account_type: AccountType;
 };
 
 export type DashboardData = {

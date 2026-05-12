@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
-import type { ApplicationSettings, Response } from '../data/types';
+import type { ApplicationSettings } from '../data/types';
 
 @Injectable()
 export class DashboardService {

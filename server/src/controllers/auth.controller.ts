@@ -9,7 +9,7 @@ export class AuthController {
   @Post('signin')
   async signIn(@Body() body: AccountRegister): Promise<{
     access_token: string;
-    user: { id: number; email: string; role: string };
+    user: { id: number; email: string; account_type: string };
   }> {
     if (!body?.email || !body?.password) {
       throw new BadRequestException('Email and password are required');
@@ -29,7 +29,7 @@ export class AuthController {
       user: {
         id: result.user.id,
         email: result.user.email,
-        role: result.user.role,
+        account_type: result.user.account_type,
       },
     };
   }

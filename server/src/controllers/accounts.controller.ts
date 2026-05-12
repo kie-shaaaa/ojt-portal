@@ -33,7 +33,7 @@ export class AccountsController {
   }
 
   /**
-   * Account fetching controller
+   * Account fetching controller (Active accounts only)
    * @param count Number of fetched accounts
    * @param type Type/Role of fetched accounts
    * @param createdDate Date of fetched accounts creation
@@ -41,12 +41,37 @@ export class AccountsController {
    */
   @Get('')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async getAccounts(
+  async getActiveAccounts(
     @Param('count') count: number,
     @Param('type') type?: string,
     @Param('createdDate') createdDate?: Date,
   ) {
-    return await this.accountsService.fetchAccounts(count, type, createdDate);
+    return await this.accountsService.fetchActiveAccounts(
+      count,
+      type,
+      createdDate,
+    );
+  }
+
+  /**
+   * Account fetching controller (Active and disabled accounts)
+   * @param count Number of fetched accounts
+   * @param type Type/Role of fetched accounts
+   * @param createdDate Date of fetched accounts creation
+   * @returns Array of accounts matching the provided criteria
+   */
+  @Get('all')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async getAllAccounts(
+    @Param('count') count: number,
+    @Param('type') type?: string,
+    @Param('createdDate') createdDate?: Date,
+  ) {
+    return await this.accountsService.fetchAllAccounts(
+      count,
+      type,
+      createdDate,
+    );
   }
 
   /**

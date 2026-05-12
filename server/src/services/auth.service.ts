@@ -5,9 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import type { Account } from '../data/types';
+import type { Account, SuccessResponse } from '../data/types';
 import { DatabaseService } from './database/database.service';
 import { JwtService } from '@nestjs/jwt';
+import { SuccessHandler } from '../../utils/handlers';
 
 @Injectable()
 export class AuthService {
@@ -36,7 +37,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      account_type: user.account_type,
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -46,7 +47,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role,
+        account_type: user.account_type,
       },
     };
   }
@@ -155,7 +156,7 @@ export class AuthService {
     try {
       const result = await client.query<Account>(
         `
-          SELECT id, email, password, account_type as role, created_at, updated_at FROM user_accounts
+          SELECT id, email, password, account_type, created_at, updated_at FROM user_accounts
           WHERE email = $1;
         `,
         [email.toLowerCase()],
@@ -173,23 +174,23 @@ export class AuthService {
    * @param id User id
    * @returns User account or null if not found
    */
-  async findUserById(id: number): Promise<Account | null> {
+  async findUserById(id: number): Promise<SuccessResponse> {
     if (!id) {
       throw new BadRequestException('Email is required');
     }
 
     const client = this.databaseService.getClient();
     try {
-      const result = await client.query<Account>(
+      const result = await client.query<Omit<Account, 'password'>>(
         `
-    SELECT id, email, password, account_type as role, created_at, updated_at
-    FROM user_accounts
-    WHERE id = $1;
-  `,
+          SELECT *
+          FROM user_accounts
+          WHERE id = $1;
+        `,
         [id],
       );
 
-      return result.rows[0] || null;
+      return SuccessHandler('User found successfully', result.rows[0] || null);
     } catch (error) {
       console.error('findUser failed', error);
       throw new InternalServerErrorException('Failed to find user');

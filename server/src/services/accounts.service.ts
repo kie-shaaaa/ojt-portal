@@ -1,14 +1,8 @@
-import {
-  Injectable,
-  Inject,
-  forwardRef,
-  InternalServerErrorException,
-  BadRequestException,
-} from '@nestjs/common';
-import { Account, AccountCreate } from '../data/types';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import type { Account, AccountCreate, SuccessResponse } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
-import { throwAppError } from '../../utils/handlers';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class AccountsService {
@@ -18,7 +12,7 @@ export class AccountsService {
     private readonly databaseService: DatabaseService,
   ) {}
 
-  async createAccount(account: AccountCreate): Promise<Account> {
+  async createAccount(account: AccountCreate): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
     try {
       const exists = await this.authService.findUser(account.email);
@@ -34,11 +28,11 @@ export class AccountsService {
         account_type: account.account_type,
       };
 
-      const res = await client.query<Account>(
+      const res = await client.query<Omit<Account, 'password'>>(
         `
         INSERT INTO user_accounts (email, password, username, account_type)
         VALUES($1, $2, $3, $4)
-        RETURNING id, email, password, username, account_type, created_at, updated_at
+        RETURNING id, email, username, account_type, created_at, updated_at
         `,
         [
           newUser.email,
@@ -48,7 +42,7 @@ export class AccountsService {
         ],
       );
 
-      return res.rows[0] || null;
+      return SuccessHandler('Successfully created account', res.rows[0]);
     } catch (error) {
       console.error('[ACCOUNTS] Error creating account:', error);
       throwAppError('server_error', 'Failed to create user account');
@@ -65,11 +59,12 @@ export class AccountsService {
         `,
         [id],
       );
-      if (!exists) {
+
+      if (!exists || exists.rows.length === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
 
-      if (exists.rows[0].email != newEmail) {
+      if (newEmail && exists.rows[0].email !== newEmail) {
         await client.query(
           `
           UPDATE user_accounts
@@ -80,43 +75,34 @@ export class AccountsService {
         );
       }
 
-      if (exists.rows[0].role != newType) {
+      if (newType && exists.rows[0].account_type !== newType) {
         await client.query(
           `
           UPDATE user_accounts
           SET account_type = $1
           WHERE id = $2
           `,
-          [newEmail, id],
+          [newType, id],
         );
       }
 
-      return {
-        success: true,
-        message: 'Successfully updated account',
-      };
+      return SuccessHandler('Successfully updated account');
     } catch (error) {
       console.error('[ACCOUNTS] Error updating account:', error);
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-      throw new InternalServerErrorException('Failed to create user account');
+      throwAppError('server_error', 'Failed to update user account');
     }
   }
 
-  async fetchAccounts(count: number, type?: string, createdDate?: Date) {
+  async fetchActiveAccounts(count: number, type?: string, createdDate?: Date) {
     const client = this.databaseService.getClient();
 
     try {
       const values: any[] = [];
       let query = `
-      SELECT id, email, account_type, created_at
-      FROM user_accounts
-      WHERE 1=1
-    `;
+        SELECT id, email, account_type, created_at
+        FROM user_accounts
+        WHERE account_status = 'active' 1=1
+      `;
 
       if (type) {
         values.push(type);
@@ -140,32 +126,75 @@ export class AccountsService {
       >(query, values);
 
       if (accounts.rows.length === 0) {
-        return {
-          success: true,
-          message: 'No accounts found matching criteria',
-          data: [],
-        };
+        throwAppError('not_found', 'No accounts found matching the criteria');
       }
 
-      return {
-        success: true,
-        message: 'Successfully fetched accounts',
-        data: accounts.rows,
-      };
+      return SuccessHandler('Successfully fetched accounts', accounts.rows);
     } catch (error) {
       console.error('[ACCOUNTS] Error fetching accounts:', error);
-
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-
-      throw new InternalServerErrorException('Failed to fetch user accounts');
+      throwAppError('server_error', 'Failed to fetch accounts');
     }
   }
-  async deleteAccount() {}
+
+  async fetchAllAccounts(count: number, type?: string, createdDate?: Date) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const values: any[] = [];
+      let query = `
+        SELECT id, email, account_type, created_at
+        FROM user_accounts
+        WHERE 1=1
+      `;
+
+      if (type) {
+        values.push(type);
+        query += ` AND account_type = $${values.length}`;
+      }
+
+      if (createdDate) {
+        values.push(createdDate);
+        query += ` AND created_at >= $${values.length}`;
+      }
+
+      query += ` ORDER BY created_at DESC`;
+
+      if (count && count > 0) {
+        values.push(count);
+        query += ` LIMIT $${values.length}`;
+      }
+
+      const accounts = await client.query<
+        Omit<Account, 'password' | 'updated_at'>
+      >(query, values);
+
+      if (accounts.rows.length === 0) {
+        throwAppError('not_found', 'No accounts found matching the criteria');
+      }
+
+      return SuccessHandler('Successfully fetched accounts', accounts.rows);
+    } catch (error) {
+      console.error('[ACCOUNTS] Error fetching accounts:', error);
+      throwAppError('server_error', 'Failed to fetch accounts');
+    }
+  }
+
+  async deleteAccount(id: number) {
+    try {
+      const client = this.databaseService.getClient();
+
+      const res = await client.query(
+        `DELETE FROM user_accounts
+        WHERE id = $1`,
+        [id],
+      );
+
+      return SuccessHandler('Successfully deactivated account', res || null);
+    } catch (error) {
+      console.error('[ACCOUNTS] Error deactivating account:', error);
+      throwAppError('server_error', 'Failed to deactivate account');
+    }
+  }
 
   async disableAccount(id: number) {
     try {
@@ -179,10 +208,9 @@ export class AccountsService {
         [id],
       );
       if (!exists) {
-        throw new Error('User account does not exist');
+        throwAppError('not_found', 'User account does not exist');
       }
 
-      // Model column not yet initialized
       const res = await client.query(
         `UPDATE user_accounts
         SET account_status = "disabled"
@@ -190,20 +218,10 @@ export class AccountsService {
         [id],
       );
 
-      return {
-        success: true,
-        message: 'Successfully deactivated account',
-        data: res || null,
-      };
+      return SuccessHandler('Successfully deactivated account', res || null);
     } catch (error) {
       console.error('[ACCOUNTS] Error deactivating account:', error);
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-      throw new InternalServerErrorException('Failed to create user account');
+      throwAppError('server_error', 'Failed to deactivate account');
     }
   }
 
@@ -219,7 +237,7 @@ export class AccountsService {
         [id],
       );
       if (!exists) {
-        throw new Error('User account does not exist');
+        throwAppError('not_found', 'User account does not exist');
       }
 
       const newHash = await this.authService.hashPassword(newPassword);
@@ -233,20 +251,10 @@ export class AccountsService {
         [newHash, id],
       );
 
-      return {
-        success: true,
-        message: 'Successfully updated user accounts',
-        data: res || null,
-      };
+      return SuccessHandler('Successfully updated user account', res || null);
     } catch (error) {
       console.error('[ACCOUNTS] Error changing account password:', error);
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-      throw new InternalServerErrorException('Failed to create user account');
+      throwAppError('server_error', 'Failed to update user account password');
     }
   }
 }

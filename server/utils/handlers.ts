@@ -7,6 +7,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { SuccessResponse } from '../src/data/types';
 
 export type ErrorType =
   | 'bad_request'
@@ -38,7 +39,7 @@ export function throwAppError(type: ErrorType, message: string): never {
   }
 }
 
-export function SuccessHandler(message: string, data?: any) {
+export function SuccessHandler(message: string, data?: any): SuccessResponse {
   return {
     status: 'success',
     ok: true,

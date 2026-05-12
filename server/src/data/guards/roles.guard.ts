@@ -21,8 +21,8 @@ export class RolesGuard implements CanActivate {
     const user = request.user as Token;
 
     if (!user) return false;
-    if (!user.role) return false;
+    if (!user.account_type) return false;
 
-    return requiredRoles.includes(user.role);
+    return requiredRoles.includes(user.account_type);
   }
 }
