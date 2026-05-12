@@ -27,15 +27,12 @@ export type Application = {
   school_name: string | null;
   hours_needed: number | null;
   course: string | null;
-  ojt_resume_path: string | null;
   deployment_date: string | null;
 
   // Job Fields
   position_applied: string | null;
   years_experience: number | null;
   current_company: string | null;
-  job_resume_path: string | null;
-  cover_letter_path: string | null;
   salary_expectation: number | null;
   available_date: string | null;
 
@@ -50,15 +47,6 @@ export type Application = {
   admin_notes: string | null;
   reviewed_by: number | null;
   reviewed_date: string | null;
-
-  // File Metadata
-  ojt_resume_size: number | null;
-  job_resume_size: number | null;
-  cover_letter_size: number | null;
-
-  ojt_resume_name: string | null;
-  job_resume_name: string | null;
-  cover_letter_name: string | null;
 };
 
 export type Account = {
@@ -134,8 +122,6 @@ export type AllOjt = {
   school_name: string | null;
   hours_needed: number | null;
   course: string | null;
-  ojt_resume_path: string | null;
-  ojt_resume_name: string | null;
   deployment_date: string | null;
   end_date: string | null;
   certificate_issuance_date: string | null;

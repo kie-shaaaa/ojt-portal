@@ -23,8 +23,6 @@ export async function createOjtData(client: Client) {
             school_name VARCHAR(200),
             hours_needed INTEGER,
             course VARCHAR(200),
-            ojt_resume_path VARCHAR(500),
-            ojt_resume_name VARCHAR(255),
             deployment_date DATE,
             end_date DATE,
             certificate_issuance_date DATE,

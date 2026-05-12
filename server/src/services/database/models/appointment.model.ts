@@ -14,6 +14,7 @@ export async function createAppointment(client: Client) {
             id SERIAL PRIMARY KEY,
             type appointment_type,
             is_done BOOLEAN DEFAULT FALSE,
+            application_id INT REFERENCES applications(id),
             appointment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
