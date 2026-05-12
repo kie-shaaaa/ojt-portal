@@ -6,7 +6,6 @@ import {
 } from '@nestjs/platform-fastify';
 
 import cookie from '@fastify/cookie';
-import csrf from '@fastify/csrf-protection';
 import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
 
@@ -32,16 +31,8 @@ async function bootstrap() {
     timeWindow: '1 minute',
   });
 
-  await app.register(csrf as any, {
-    cookieOpts: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    },
-  });
-
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5000',
+    origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
   });
 

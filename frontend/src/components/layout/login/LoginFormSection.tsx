@@ -1,19 +1,38 @@
 "use client";
 import Image from "next/image";
 import { type FormEvent, JSX, useId, useState } from "react";
-import { User, Lock, ArrowRight } from "lucide-react";
+import { User, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export const LoginFormSection = (): JSX.Element => {
-  const usernameId = useId();
+  const { login, isLoading } = useAuth();
+  const router = useRouter();
+  const emailId = useId();
   const passwordId = useId();
   const rememberId = useId();
 
-  const [username, setUsername] = useState("");
+  const [email, setemail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setLocalError(null);
+
+    if (!email || !password) {
+      setLocalError("Please enter both email and password");
+      return;
+    }
+
+    try {
+      await login(email, password, rememberMe);
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      console.error("Login failed:", err);
+      setLocalError("Invalid email or password");
+    }
   };
 
   return (
@@ -54,24 +73,29 @@ export const LoginFormSection = (): JSX.Element => {
           onSubmit={handleSubmit}
         >
           <div className="flex flex-col items-start gap-6 relative self-stretch w-full flex-[0_0_auto]">
+            {localError && (
+              <div className="w-full p-3 text-sm text-red-500 bg-red-50 rounded-lg border border-red-200">
+                {localError}
+              </div>
+            )}
             <div className="flex flex-col items-start gap-1.5 relative self-stretch w-full flex-[0_0_auto]">
               <label
                 className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Public_Sans-SemiBold',Helvetica] font-semibold text-[#444653] text-xs tracking-[0.24px] leading-4 whitespace-nowrap"
-                htmlFor={usernameId}
+                htmlFor={emailId}
               >
-                Username
+                Email
               </label>
               <div className="flex items-center justify-center relative self-stretch w-full flex-[0_0_auto]">
                 <div className="flex flex-col items-start pl-10 pr-4 py-3.5 relative flex-1 grow bg-[#eff4ff] rounded overflow-hidden border border-solid border-[#c4c5d5]">
                   <input
-                    autoComplete="username"
+                    autoComplete="email"
                     className="relative self-stretch w-full border-[none] [background:none] mt-[-1.00px] [font-family:'Public_Sans-Regular',Helvetica] font-normal text-[#6b7280] placeholder:text-gray-500 text-sm tracking-[0] leading-[normal] p-0 focus:outline-none"
-                    id={usernameId}
-                    name="username"
-                    placeholder="Enter your username"
-                    type="text"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
+                    id={emailId}
+                    name="email"
+                    placeholder="Enter your email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setemail(event.target.value)}
                   />
                 </div>
                 <User
@@ -144,7 +168,8 @@ export const LoginFormSection = (): JSX.Element => {
               </label>
             </div>
             <button
-              className="all-[unset] box-border flex items-center justify-center gap-2 px-0 py-4 relative self-stretch w-full flex-[0_0_auto] bg-[#002068] rounded-xl cursor-pointer"
+              className="all-[unset] box-border flex items-center justify-center gap-2 px-0 py-4 relative self-stretch w-full flex-[0_0_auto] bg-[#002068] rounded-xl cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              disabled={isLoading}
               type="submit"
             >
               <div
@@ -152,13 +177,17 @@ export const LoginFormSection = (): JSX.Element => {
                 className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-xl shadow-[0px_2px_4px_-2px_#0000001a,0px_4px_6px_-1px_#0000001a]"
               />
               <span className="flex items-center justify-center [font-family:'Public_Sans-Bold',Helvetica] font-bold text-white text-xs text-center tracking-[0.24px] leading-4 whitespace-nowrap relative w-fit mt-[-1.00px]">
-                Login
+                {isLoading ? "Logging in..." : "Login"}
               </span>
               <span className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                <ArrowRight
-                  className="relative w-[13.33px] h-[13.33px]"
-                  aria-hidden="true"
-                />
+                {isLoading ? (
+                  <Loader2 className="relative w-[13.33px] h-[13.33px] animate-spin text-white" />
+                ) : (
+                  <ArrowRight
+                    className="relative w-[13.33px] h-[13.33px]"
+                    aria-hidden="true"
+                  />
+                )}
               </span>
             </button>
           </div>

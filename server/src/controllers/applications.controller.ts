@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApplicationsService } from '../services/applications.service';
-import { CreateApplicationDto } from '../data/create-application.dto';
+import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import type {
   ApplicationStatus,
   GetApplicationsResponse,
@@ -26,7 +26,7 @@ export class ApplicationsController {
    * @param count string, param string converted to number
    * @returns array of applicants
    * */
-  @Get('/fetch-all')
+  @Get('fetch-all')
   async getApplications(
     @Query('count') count?: string,
   ): Promise<GetApplicationsResponse> {
@@ -44,7 +44,7 @@ export class ApplicationsController {
    * @param email string, email of the applicant
    * @returns single array of an applicant
    */
-  @Get('/fetch')
+  @Get('fetch')
   async getApplicationByIdOrEmail(
     @Query('id') id?: string,
     @Query('email') email?: string,
@@ -65,7 +65,7 @@ export class ApplicationsController {
    * Used to fetch data for the calendar display
    * @returns applicants with an application status of "for_interview"
    */
-  @Get('/calendar')
+  @Get('calendar')
   async getApplicationForInterview(): Promise<GetApplicationStatusResponse> {
     try {
       return await this.applicationService.getApplicationByStatus(
@@ -85,7 +85,7 @@ export class ApplicationsController {
    * @param status string/enum of ApplicationStatus
    * @returns array of applicants based on the sent parameter
    */
-  @Get('/status')
+  @Get('status')
   async getApplicationByStatus(
     @Query('status') status?: ApplicationStatus,
   ): Promise<GetApplicationStatusResponse> {
@@ -107,7 +107,7 @@ export class ApplicationsController {
    * @returns application status (successful or not)
    */
 
-  @Post('/submit')
+  @Post('submit')
   async submitApplication(
     @Body() createApplicationDto: CreateApplicationDto,
   ): Promise<SubmitApplicationResponse> {
@@ -129,7 +129,7 @@ export class ApplicationsController {
    * @param status
    * @returns
    */
-  @Patch('/update')
+  @Patch('update')
   async updateApplication(
     @Body() id: number,
     @Body() status: ApplicationStatus,
@@ -143,6 +143,24 @@ export class ApplicationsController {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to update application';
+      throw new BadRequestException(message);
+    }
+  }
+
+  /**
+   * Get notifications/pending count endpoint
+   * @returns count of pending applications
+   */
+  @Get('notifications')
+  async getNotifications(): Promise<{ count: number }> {
+    try {
+      const count = await this.applicationService.getPendingCount();
+      return { count };
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch pending count';
       throw new BadRequestException(message);
     }
   }
