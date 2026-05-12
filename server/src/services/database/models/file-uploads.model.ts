@@ -1,5 +1,15 @@
 import { Client } from 'pg';
 
+/**
+ * FILE_UPLOADS MODEL - Supabase Migration
+ *
+ * This table is the single source of truth for document metadata.
+ * Files are stored in Supabase with naming convention: {file_type}-{application_id}.{extension}
+ *
+ * Legacy file_path values will be migrated to Supabase bucket paths:
+ * Old: /uploads/applications/abc123.pdf
+ * New: documents/applicant-{application_id}/{file_type}-{application_id}.{extension}
+ */
 export async function createFileUploads(client: Client) {
   await client.query(`
         DO $$
@@ -15,6 +25,7 @@ export async function createFileUploads(client: Client) {
             application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
             file_type file_type NOT NULL,
             file_name VARCHAR(255) NOT NULL,
+            file_extension VARCHAR(10),
             file_path VARCHAR(500) NOT NULL,
             file_size INTEGER NOT NULL,
             uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

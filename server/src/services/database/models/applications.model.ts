@@ -32,13 +32,7 @@ export async function createApplications(client: Client) {
             status application_status DEFAULT 'pending',
             admin_notes TEXT,
             reviewed_by INTEGER REFERENCES user_accounts(id) ON DELETE SET NULL,
-            reviewed_date TIMESTAMP,
-            ojt_resume_size INTEGER,
-            job_resume_size INTEGER,
-            cover_letter_size INTEGER,
-            ojt_resume_name VARCHAR(255),
-            job_resume_name VARCHAR(255),
-            cover_letter_name VARCHAR(255)
+            reviewed_date TIMESTAMP
         ); 
     `);
 
