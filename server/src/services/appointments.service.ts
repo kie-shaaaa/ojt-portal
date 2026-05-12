@@ -5,46 +5,38 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
-import { ApplicationStatus } from '../data/types';
+import { AppointmentType } from '../data/types';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async addAppointment(type: ApplicationStatus, appointmentDate: Date) {
+  async addAppointment(type: AppointmentType, appointmentDate: Date) {
     const client = this.databaseService.getClient();
+
     try {
-      const appointment = await client.query(
+      const result = await client.query(
         `
-            INSERT INTO appointments (type, appointment_date)
-            VALUES ($1, $2)
-            RETURNING *
-            `,
+      INSERT INTO appointments (type, appointment_date)
+      VALUES ($1, $2)
+      RETURNING *
+      `,
         [type, appointmentDate],
       );
 
-      if (appointment.rows.length === 0) {
+      if (result.rows.length === 0) {
         throw new InternalServerErrorException('Failed to create appointment');
       }
 
       return {
         success: true,
-        ok: true,
         message: 'Appointment created successfully',
-        data: null,
-        error: null,
+        data: result.rows[0],
       };
     } catch (error) {
-      console.error('[APPOINTMENT] Error fetching accounts:', error);
+      console.error('[APPOINTMENT] Error:', error);
 
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-
-      throw new InternalServerErrorException('Failed to fetch user accounts');
+      throw new InternalServerErrorException('Failed to create appointment');
     }
   }
 

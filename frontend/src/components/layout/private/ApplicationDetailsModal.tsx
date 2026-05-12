@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  X,
-  Eye,
-  FileText,
-} from "lucide-react";
+import { X, Eye, FileText, Download } from "lucide-react";
 import { JSX, useEffect, useState } from "react";
+import { useApplicationFiles } from "@/hooks/useApplicationFiles";
 
 type DetailRow = {
   label: string;
@@ -23,9 +20,16 @@ export type ModalApplicationData = {
   submissionDate?: string[];
   status?: string;
   fileUploads?: Array<{
-    id?: string;
-    title: string;
-    fileType?: "PDF" | "JPG/PNG" | string;
+    id: number;
+    application_id: number;
+    file_type: string;
+    document_key: string | null;
+    file_name: string;
+    file_extension: string;
+    file_path: string;
+    file_size: number;
+    uploaded_at: string;
+    signedUrl: string;
   }>;
 };
 
@@ -34,20 +38,45 @@ interface ApplicationDetailsProps {
   onClose: () => void;
 }
 
-const FileCard = ({ file }: { file: { id?: string; title: string; fileType?: string } }): JSX.Element => {
-  const { title } = file;
+const FileCard = ({
+  file,
+}: {
+  file: {
+    id: number;
+    application_id: number;
+    file_type: string;
+    document_key: string | null;
+    file_name: string;
+    file_extension: string;
+    file_path: string;
+    file_size: number;
+    uploaded_at: string;
+    signedUrl: string;
+  };
+}): JSX.Element => {
+  const { file_name, file_size, file_extension, signedUrl, document_key } =
+    file;
+  const title = document_key?.toUpperCase() || file_name.toUpperCase();
 
-  const handleView = () => {
-    const content = `Preview of ${title}`;
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = signedUrl;
+    link.download = file_name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const handleReject = () => {
-    alert(`Rejected file upload: ${title}`);
-    // Rejection logic can be added here (e.g., update status, trigger callback)
+  const handlePreview = () => {
+    window.open(signedUrl, "_blank");
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
   return (
@@ -60,27 +89,30 @@ const FileCard = ({ file }: { file: { id?: string; title: string; fileType?: str
         <span className="block break-words text-sm font-medium uppercase leading-5 text-gray-900">
           {title}
         </span>
+        <span className="text-xs text-gray-500">
+          {formatFileSize(file_size)} • {file_extension.toUpperCase()}
+        </span>
       </div>
 
       <div className="flex items-center gap-2 justify-self-end">
         <button
           type="button"
-          onClick={handleView}
+          onClick={handlePreview}
           className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3 text-xs font-medium text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-50"
+          title="Preview file"
         >
           <Eye size={14} />
-          <span className="sr-only">View</span>
-          <span className="ml-2 text-xs">View</span>
+          <span className="sr-only">Preview</span>
         </button>
 
         <button
           type="button"
-          onClick={handleReject}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
+          onClick={handleDownload}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-50 px-3 text-xs font-medium text-green-700 ring-1 ring-green-200 transition hover:bg-green-100"
+          title="Download file"
         >
-          <X size={14} />
-          <span className="sr-only">Reject</span>
-          <span className="ml-2 text-xs">Reject</span>
+          <Download size={14} />
+          <span className="sr-only">Download</span>
         </button>
       </div>
     </div>
@@ -92,6 +124,10 @@ export const ApplicationDetails = ({
   onClose,
 }: ApplicationDetailsProps): JSX.Element => {
   const [isVisible, setIsVisible] = useState(false);
+  const applicationId = application?.id
+    ? Number(application.id.replace("NTC-", ""))
+    : undefined;
+  const { files, loading: filesLoading } = useApplicationFiles(applicationId);
 
   useEffect(() => {
     requestAnimationFrame(() => setIsVisible(true));
@@ -178,12 +214,7 @@ export const ApplicationDetails = ({
     },
   ];
 
-  const fileUploads = application?.fileUploads ?? [
-    { id: "resume-or-cv", title: "RESUME OR CV", fileType: "PDF" },
-    { id: "proof-of-enrollment", title: "PROOF OF ENROLLMENT", fileType: "PDF" },
-    { id: "endorsement-letter", title: "ENDORSEMENT LETTER", fileType: "PDF" },
-    { id: "1x1-picture", title: "1X1 PICTURE", fileType: "JPG/PNG" },
-  ];
+  const fileUploads = files.length > 0 ? files : [];
 
   return (
     <div
@@ -198,7 +229,9 @@ export const ApplicationDetails = ({
         aria-labelledby="application-details-title"
         onClick={(e) => e.stopPropagation()}
         className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out ${
-          isVisible ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-2 opacity-0"
+          isVisible
+            ? "scale-100 translate-y-0 opacity-100"
+            : "scale-95 translate-y-2 opacity-0"
         }`}
       >
         {/* Header */}
@@ -224,22 +257,15 @@ export const ApplicationDetails = ({
         <div className="flex-1 overflow-y-auto px-8 py-4">
           {/* Details */}
           {detailRows.map((row) => (
-            <div
-              key={row.label}
-              className="flex border-b border-gray-100 py-3"
-            >
+            <div key={row.label} className="flex border-b border-gray-100 py-3">
               <div className="w-1/3">
-                <dt className="text-sm text-gray-700">
-                  {row.label}
-                </dt>
+                <dt className="text-sm text-gray-700">{row.label}</dt>
               </div>
 
               <div className="w-2/3">
                 <dd
                   className={`text-sm ${
-                    row.bold
-                      ? "font-bold text-gray-900"
-                      : "text-gray-600"
+                    row.bold ? "font-bold text-gray-900" : "text-gray-600"
                   }`}
                 >
                   {row.value}
@@ -251,9 +277,7 @@ export const ApplicationDetails = ({
           {/* Current Status */}
           <div className="flex border-b border-gray-100 py-3">
             <div className="w-1/3">
-              <dt className="text-sm text-gray-700">
-                Current Status:
-              </dt>
+              <dt className="text-sm text-gray-700">Current Status:</dt>
             </div>
 
             <div className="w-2/3">
@@ -273,18 +297,19 @@ export const ApplicationDetails = ({
           {/* File Uploads */}
           <div className="flex py-4">
             <div className="w-1/3">
-              <span className="text-sm text-gray-700">
-                File Uploads:
-              </span>
+              <span className="text-sm text-gray-700">File Uploads:</span>
             </div>
 
             <div className="flex w-2/3 flex-col gap-4">
-              {fileUploads.map((file) => (
-                <FileCard
-                  key={file.id ?? file.title}
-                  file={file}
-                />
-              ))}
+              {filesLoading ? (
+                <div className="text-sm text-gray-500">Loading files...</div>
+              ) : fileUploads.length > 0 ? (
+                fileUploads.map((file) => (
+                  <FileCard key={file.id} file={file} />
+                ))
+              ) : (
+                <div className="text-sm text-gray-500">No files uploaded</div>
+              )}
             </div>
           </div>
         </div>

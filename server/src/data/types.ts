@@ -171,3 +171,6 @@ export type UpdateApplicationSettingsDto = {
   status: boolean;
   opening_date?: Date;
 };
+;
+
+export type AppointmentType = 'interview' | 'orientation';

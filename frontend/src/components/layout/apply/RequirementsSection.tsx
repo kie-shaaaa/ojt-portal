@@ -135,10 +135,12 @@ const UploadCardItem = ({
   card,
   fileName,
   onSelectFile,
+  validateFile,
 }: {
   card: UploadCard;
   fileName: string;
   onSelectFile: (cardId: string, file: File | null) => void;
+  validateFile: (file: File) => Promise<boolean>;
 }) => {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -259,112 +261,69 @@ export const DocumentUploadSection = ({
       contentClassName:
         "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200",
       iconWrapperClassName:
-      const validateFile = async (file: File): Promise<boolean> => {
-        // Check file size
-        const maxSize = card.id === "picture-1x1" ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
-        if (file.size > maxSize) {
-          alert(
-            `File size exceeds the maximum limit of ${maxSize / (1024 * 1024)} MB`
-          );
-          return false;
-        }
-
-        // For 1x1 picture, validate aspect ratio
-        if (card.id === "picture-1x1" && file.type.startsWith("image/")) {
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const img = new Image();
-              img.onload = () => {
-                const isSquare = img.width === img.height;
-                if (!isSquare) {
-                  alert(
-                    `Image must be square (1:1 ratio). Current dimensions: ${img.width}x${img.height}`
-                  );
-                  resolve(false);
-                } else {
-                  resolve(true);
-                }
-              };
-              img.onerror = () => {
-                alert("Failed to read image");
-                resolve(false);
-              };
-              img.src = e.target?.result as string;
-            };
-            reader.onerror = () => {
-              alert("Failed to read file");
-              resolve(false);
-            };
-            reader.readAsDataURL(file);
-          });
-        }
-
-        return true;
-      };
         "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
       icon: "mail",
       accept: ".pdf,application/pdf",
     },
     {
-      id: "vaccine-card",
-      number: "4",
-      title: "Vaccine Card / Medical Cert.",
+      id: "endorsement-letter",
+      number: "3",
+      title: "Endorsement Letter",
       optional: true,
-      description: "Xerox copy • PDF • Max 5 MB",
-      areaClassName: "relative row-[2_/_3] col-[2_/_3] w-full h-fit",
+      description: "Addressed to CHIEF, FLORA R. RALAR • PDF • Max 5 MB",
+      areaClassName: "relative row-[2_/_3] col-[1_/_2] w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200",
       iconWrapperClassName:
         "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "medical",
+      icon: "mail",
       accept: ".pdf,application/pdf",
-    },
-    {
-      id: "draft-moa",
-      number: "5",
-      title: "Draft Memorandum of Agreement",
-      optional: true,
-      description: "PDF only • Max 5 MB",
-      areaClassName: "relative row-[3_/_4] col-[1_/_2] w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 pt-6 pb-12 px-6 rounded-xl border-2 border-dashed border-blue-200",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "agreement",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "resume-cv",
-      number: "1",
-      title: "Resume / CV",
-      required: true,
-      description: "PDF only • Max 5 MB",
-      error: errors["resume-cv"],
-      areaClassName: "relative row-[1_/_2] col-[1_/_2] w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 bg-red-50 rounded-xl border-2 border-dashed border-red-400",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-white rounded-lg shadow-[0px_1px_2px_#0000000d]",
-      icon: "resume",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "picture-1x1",
-      number: "6",
-      title: "1×1 Picture",
-      required: true,
-      description: "JPG / PNG only • Square (1:1) • Max 2 MB",
-      error: errors["picture-1x1"],
-      areaClassName: "relative row-[3_/_4] col-[2_/_3] w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 bg-red-50 rounded-xl border-2 border-dashed border-red-400",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-red-50 rounded-lg",
-      icon: "image",
-      accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
     },
   ];
+
+  const validateFile = async (file: File): Promise<boolean> => {
+    // Check file size
+    const maxSize = file.type.startsWith("image/") ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(
+        `File size exceeds the maximum limit of ${maxSize / (1024 * 1024)} MB`
+      );
+      return false;
+    }
+
+    // For 1x1 picture, validate aspect ratio
+    if (file.type.startsWith("image/")) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new globalThis.Image();
+          img.onload = () => {
+            const isSquare = img.width === img.height;
+            if (!isSquare) {
+              alert(
+                `Image must be square (1:1 ratio). Current dimensions: ${img.width}x${img.height}`
+              );
+              resolve(false);
+            } else {
+              resolve(true);
+            }
+          };
+          img.onerror = () => {
+            alert("Failed to read image");
+            resolve(false);
+          };
+          img.src = e.target?.result as string;
+        };
+        reader.onerror = () => {
+          alert("Failed to read file");
+          resolve(false);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    return true;
+  };
 
   const orderedCards = [
     uploadCards[4],
@@ -439,6 +398,7 @@ export const DocumentUploadSection = ({
             card={card}
             fileName={documents[card.id]?.name ?? ""}
             onSelectFile={handleSelectFile}
+            validateFile={validateFile}
           />
         ))}
       </div>
