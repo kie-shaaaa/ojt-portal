@@ -14,6 +14,7 @@ import {
 
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import DatePicker from "@/components/layout/DatePicker";
+import { apiCall } from "@/lib/api";
 
 export const ApplicationDetailsSection = (): JSX.Element => {
   const [isOpen, setIsOpen] = useState(true);
@@ -22,39 +23,42 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
   // Load saved settings on mount
   useEffect(() => {
-    const saved = localStorage.getItem("portalSettings");
-    if (saved) {
+    const fetchSettings = async () => {
       try {
-        const { isOpen: savedIsOpen, scheduledDate: savedDate } = JSON.parse(
-          saved,
-        );
-        setIsOpen(savedIsOpen);
-        setScheduledDate(savedDate || "");
+        const data = await apiCall("/applications/settings", {
+          method: "GET",
+          body: JSON.stringify({
+            status: isOpen,
+            opening_date: scheduledDate || undefined,
+          }),
+        });
       } catch (error) {
-        console.error("Failed to load portal settings:", error);
+        console.error("Raw fetch error:", error);
       }
-    }
+    };
+
+    fetchSettings();
   }, []);
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // Hold the saving state long enough to accommodate a future backend request.
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await apiCall("/applications/settings", {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: isOpen,
+          opening_date: scheduledDate || undefined,
+        }),
+      });
 
-      // Save to localStorage
+      // Persist locally after confirmed save
       localStorage.setItem(
         "portalSettings",
-        JSON.stringify({
-          isOpen,
-          scheduledDate,
-        }),
+        JSON.stringify({ isOpen, scheduledDate }),
       );
-
-      // Here you would normally make an API call to save to backend
-      // Example: await updatePortalSettings({ isOpen, scheduledDate });
     } catch (error) {
       console.error("Failed to save portal settings:", error);
+      // Optionally surface an error toast/alert here
     } finally {
       setIsSaving(false);
     }

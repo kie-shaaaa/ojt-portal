@@ -16,11 +16,14 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
+  const { body, method, ...rest } = options;
 
   const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
+    ...rest,
+    method,
     headers,
     credentials: "include",
+    ...(method !== "GET" && method !== "HEAD" && body ? { body } : {}),
   });
 
   const data = await response.json();
