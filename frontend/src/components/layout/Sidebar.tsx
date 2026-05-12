@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useAuth } from "@/hooks/useAuth";
 // use logo from public folder
 
 const navigationItems = [
@@ -29,6 +30,7 @@ export const AsideSidebar = (): JSX.Element => {
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const { logout } = useAuth();
 
   useEffect(() => {
     const load = () => {
@@ -58,6 +60,7 @@ export const AsideSidebar = (): JSX.Element => {
   }, []);
 
   const handleLogout = () => {
+    logout();
     router.push("/");
   };
 
