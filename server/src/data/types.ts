@@ -155,3 +155,12 @@ export type Token = {
   email: string;
   role: AccountType;
 };
+
+export type DashboardData = {
+  totalApplications: number;
+};
+
+export type ApplicationSettings = {
+  state: 'open' | 'closed';
+  openingDate: Date;
+};

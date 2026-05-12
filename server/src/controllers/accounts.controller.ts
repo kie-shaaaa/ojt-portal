@@ -18,7 +18,7 @@ import { Roles } from '../data/decorators/roles.decorator';
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
-  @Get('/test-guard')
+  @Get('test-guard')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   testGuard(@Req() req: Request & { user?: unknown }) {
@@ -29,7 +29,7 @@ export class AccountsController {
     };
   }
 
-  @Post('/create')
+  @Post('create')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async createAccount(
@@ -39,12 +39,17 @@ export class AccountsController {
     return await this.accountsService.createAccount(id, account);
   }
 
-  @Patch('/update')
+  @Patch('update')
   async updateAccount(
     @Body('id') id: number,
     @Body('newEmail') newEmail?: string,
     @Body('newType') newType?: string,
   ) {
     return this.accountsService.updateAccount(id, newEmail, newType);
+  }
+
+  @Patch('disable')
+  async disableAccount(@Body('id') id: number) {
+    return this.accountsService.disableAccount(id);
   }
 }

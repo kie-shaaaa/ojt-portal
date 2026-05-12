@@ -6,10 +6,12 @@ import { AuthModule } from './modules/auth.module';
 import { DatabaseService } from './services/database/database.service';
 import { ApplicationsModule } from './modules/applications.module';
 import { OjtModule } from './modules/ojt.module';
+import { DashboardController } from './controllers/dashboard.controller';
+import { DashboardService } from './services/dashboard.service';
 
 @Module({
   imports: [AccountsModule, AuthModule, ApplicationsModule, OjtModule],
-  controllers: [AppController],
-  providers: [AppService, DatabaseService],
+  controllers: [AppController, DashboardController],
+  providers: [AppService, DatabaseService, DashboardService],
 })
 export class AppModule {}

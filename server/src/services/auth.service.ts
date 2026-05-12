@@ -155,7 +155,7 @@ export class AuthService {
     try {
       const result = await client.query<Account>(
         `
-          SELECT id, email, password, created_at, updated_at FROM user_accounts
+          SELECT id, email, password, account_type as role, created_at, updated_at FROM user_accounts
           WHERE email = $1;
         `,
         [email.toLowerCase()],

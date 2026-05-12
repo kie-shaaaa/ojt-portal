@@ -131,8 +131,7 @@ export class AccountsService {
 
   async deleteAccount() {}
 
-  // TODO
-  async archiveAccount(id: number) {
+  async disableAccount(id: number) {
     try {
       const client = this.databaseService.getClient();
 
@@ -150,7 +149,7 @@ export class AccountsService {
       // Model column not yet initialized
       const res = await client.query(
         `UPDATE user_accounts
-        SET status = "disabled"
+        SET account_status = "disabled"
         WHERE id = $1`,
         [id],
       );
