@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("access_token");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken) setToken(storedToken);
@@ -61,10 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setToken(data.token);
-        console.log(data.token);
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        setToken(data.access_token);
+        console.log(data.access_token);
       }
 
       if (data.user) {

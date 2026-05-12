@@ -4,7 +4,7 @@ export async function createAppointment(client: Client) {
   await client.query(`
         DO $$
         BEGIN
-            CREATE TYPE appointment_type AS ENUM ('services', 'interview', 'complaints');
+            CREATE TYPE appointment_type AS ENUM ('services', 'interview', 'complaints', 'orientation');
         EXCEPTION WHEN duplicate_object THEN null;
         END $$;
     `);

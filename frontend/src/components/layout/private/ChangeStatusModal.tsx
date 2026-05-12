@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import DatePicker from "../DatePicker";
 import TimePicker from "../TimePicker";
+import { apiCall } from "@/lib/api";
 
 type StatusOption = {
   id: string;
@@ -24,7 +25,12 @@ interface ChangeStatusModalProps {
   open: boolean;
   application?: { id?: string; applicantName?: string; status?: string } | null;
   onClose: () => void;
-  onConfirm: (newStatus: string, id: string, scheduleDate?: string, scheduleTime?: string) => void;
+  onConfirm: (
+    newStatus: string,
+    id: string,
+    scheduleDate?: string,
+    scheduleTime?: string,
+  ) => void;
 }
 
 const statusOptions: StatusOption[] = [
@@ -93,6 +99,23 @@ const idToStatus = (id: string) => {
   }
 };
 
+const idToBackendStatus = (id: string): string => {
+  switch (id) {
+    case "pending-review":
+      return "pending";
+    case "for-interview":
+      return "for_interview";
+    case "under-review":
+      return "under_review";
+    case "rejected":
+      return "rejected";
+    case "accepted":
+      return "accepted";
+    default:
+      return id;
+  }
+};
+
 const ChangeStatusModal = ({
   open,
   application,
@@ -108,7 +131,8 @@ const ChangeStatusModal = ({
 
   const [selectedStatus, setSelectedStatus] = useState<string>(currentStatusId);
   const [isVisible, setIsVisible] = useState(false);
-  
+  const [isUpdating, setIsUpdating] = useState(false);
+
   // For interview and accepted schedules
   const [interviewDate, setInterviewDate] = useState<string>("");
   const [interviewTime, setInterviewTime] = useState<string>("09:00");
@@ -129,46 +153,87 @@ const ChangeStatusModal = ({
 
   // Auto-scroll to show the schedule section when selected
   useEffect(() => {
-    if (selectedStatus === "for-interview" && interviewSectionRef.current && bodyRef.current) {
+    if (
+      selectedStatus === "for-interview" &&
+      interviewSectionRef.current &&
+      bodyRef.current
+    ) {
       setTimeout(() => {
-        interviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        interviewSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       }, 100);
-    } else if (selectedStatus === "accepted" && acceptedSectionRef.current && bodyRef.current) {
+    } else if (
+      selectedStatus === "accepted" &&
+      acceptedSectionRef.current &&
+      bodyRef.current
+    ) {
       setTimeout(() => {
-        acceptedSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        acceptedSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       }, 100);
     }
   }, [selectedStatus]);
 
   if (!open) return null;
 
-  const handleConfirm = () => {
-    const mappedStatus = idToStatus(selectedStatus);
-    let scheduleDate = undefined;
-    let scheduleTime = undefined;
+  const handleConfirm = async () => {
+    try {
+      setIsUpdating(true);
+      const backendStatus = idToBackendStatus(selectedStatus);
+      const applicationId = Number(application?.id) || 0;
 
-    if (selectedStatus === "for-interview" && interviewDate) {
-      scheduleDate = interviewDate;
-      scheduleTime = interviewTime;
-    } else if (selectedStatus === "accepted" && acceptedDate) {
-      scheduleDate = acceptedDate;
-      scheduleTime = acceptedTime;
+      // Call the PATCH endpoint to update application status
+      await apiCall("/applications/update", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: applicationId,
+          status: backendStatus,
+        }),
+      });
+
+      // Get display status for local state update
+      const mappedStatus = idToStatus(selectedStatus);
+      let scheduleDate = undefined;
+      let scheduleTime = undefined;
+
+      if (selectedStatus === "for-interview" && interviewDate) {
+        scheduleDate = interviewDate;
+        scheduleTime = interviewTime;
+      } else if (selectedStatus === "accepted" && acceptedDate) {
+        scheduleDate = acceptedDate;
+        scheduleTime = acceptedTime;
+      }
+
+      // Update local state
+      onConfirm(
+        mappedStatus,
+        application?.id ?? "",
+        scheduleDate,
+        scheduleTime,
+      );
+      onClose();
+    } catch (error) {
+      console.error("Failed to update application status:", error);
+      alert("Failed to update application status. Please try again.");
+    } finally {
+      setIsUpdating(false);
     }
-
-    onConfirm(mappedStatus, application?.id ?? "", scheduleDate, scheduleTime);
-    onClose();
   };
 
   return (
     <div
       className={`fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
-        isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
+        isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       onClick={() => onClose()}
     >
       <section
-        className={`flex flex-col max-w-lg w-[512px] max-h-[90vh] bg-white rounded-xl overflow-hidden shadow-2xl transition-all duration-200 ease-out ${
-          isVisible ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-2 opacity-0"
+        className={`flex flex-col max-w-lg w-[512px] max-h-[90vh] bg-white rounded-xl overflow-hidden shadow-2xl transition-opacity duration-200 ease-out ${
+          isVisible ? "opacity-100" : "opacity-0"
         }`}
         role="dialog"
         aria-modal="true"
@@ -255,12 +320,16 @@ const ChangeStatusModal = ({
 
           {/* Schedule Sections at Bottom */}
           {selectedStatus === "for-interview" && (
-            <div ref={interviewSectionRef} className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4">
+            <div
+              ref={interviewSectionRef}
+              className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4"
+            >
               <h3 className="text-sm font-semibold text-gray-800">
                 Set Interview Schedule
               </h3>
               <p className="text-xs text-gray-600">
-                This date will be included in the interview invitation email sent to the applicant.
+                This date will be included in the interview invitation email
+                sent to the applicant.
               </p>
               <DatePicker
                 value={interviewDate}
@@ -277,12 +346,16 @@ const ChangeStatusModal = ({
           )}
 
           {selectedStatus === "accepted" && (
-            <div ref={acceptedSectionRef} className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-4">
+            <div
+              ref={acceptedSectionRef}
+              className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-4"
+            >
               <h3 className="text-sm font-semibold text-gray-800">
                 Set Orientation Schedule
               </h3>
               <p className="text-xs text-gray-600">
-                This date will be included in the acceptance and orientation invitation email sent to the applicant.
+                This date will be included in the acceptance and orientation
+                invitation email sent to the applicant.
               </p>
               <DatePicker
                 value={acceptedDate}
@@ -303,18 +376,23 @@ const ChangeStatusModal = ({
         <div className="flex justify-end gap-3 p-6 border-t border-gray-100 flex-shrink-0">
           <button
             type="button"
-            className="px-6 py-2.5 text-base font-bold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            className="px-6 py-2.5 text-base font-bold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onClose}
+            disabled={isUpdating}
           >
             Cancel
           </button>
 
           <button
             type="button"
-            className="px-6 py-2.5 text-base font-bold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition"
+            className="px-6 py-2.5 text-base font-bold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             onClick={handleConfirm}
+            disabled={isUpdating}
           >
-            Update Status
+            {isUpdating && (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            )}
+            {isUpdating ? "Updating..." : "Update Status"}
           </button>
         </div>
       </section>

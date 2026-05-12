@@ -3,7 +3,7 @@ import getBaseUrl from "@/lib/GetBaseUrl"
 const API_URL = getBaseUrl();
 
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,

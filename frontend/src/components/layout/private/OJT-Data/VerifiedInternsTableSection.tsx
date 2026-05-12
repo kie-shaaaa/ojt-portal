@@ -5,6 +5,7 @@ import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useState, useEffect } from "react";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { apiCall } from "@/lib/api";
 
 interface Intern {
   id: string;
@@ -38,10 +39,38 @@ export const VerifiedInternsTableSection = ({
   const [editingIntern, setEditingIntern] = useState<Intern | null>(null);
   const [internToDelete, setInternToDelete] = useState<Intern | null>(null);
   const [rows, setRows] = useState<Intern[]>(interns);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch interns from backend on mount
   useEffect(() => {
-    setRows(interns);
-  }, [interns]);
+    const fetchInterns = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await apiCall("/ojt/fetch-all?count=100", {
+          method: "GET",
+        });
+
+        if (response && Array.isArray(response)) {
+          setRows(response);
+        } else if (response && typeof response === "object") {
+          // Handle case where response is wrapped
+          const data = response.data || response.interns || [];
+          setRows(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch interns:", err);
+        setError("Failed to load interns from server");
+        // Fall back to provided interns prop
+        setRows(interns);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInterns();
+  }, []);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Not set";
@@ -185,181 +214,235 @@ export const VerifiedInternsTableSection = ({
 
   return (
     <>
-      <section className="flex relative self-stretch w-full flex-col items-start gap-4 rounded-lg border border-solid border-slate-200 bg-white shadow-[0px_1px_2px_#0000000d] overflow-hidden">
+      <section className="flex relative self-stretch w-full flex-col items-start rounded-xl border border-solid border-slate-200 bg-white shadow-lg overflow-hidden">
         {/* Header with title and export button */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 pb-0 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 pb-4 w-full border-b border-slate-100 bg-gradient-to-r from-slate-50 to-transparent">
           <div>
-            <h3 className="text-lg font-semibold text-slate-800">
-              Verified Interns (OJT Data)
-            </h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Showing {rows.length} of {rows.length} interns
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+              <h3 className="text-xl font-bold text-slate-900">
+                Verified Interns
+              </h3>
+            </div>
+            <p className="text-sm text-slate-500 ml-4">
+              {isLoading
+                ? "Loading..."
+                : `${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {/* Export to Excel Button */}
             <button
               onClick={handleExportExcel}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+              disabled={isLoading || rows.length === 0}
+              className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Download size={16} />
-              Export to Excel
+              Export
             </button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200">
+        <div className="overflow-x-auto w-full flex-1">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-100 border-b border-slate-200 sticky top-0">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700 w-12"
+                  className="px-6 py-4 font-bold text-slate-800 w-12"
                 >
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 rounded border border-slate-300 bg-white accent-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
                   OJT ID
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
-                  INTERN NAME
+                  Name
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
-                  GENDER
+                  Gender
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
-                  SCHOOL
+                  School
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
                 >
-                  OJT DETAILS
+                  Details
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
                 >
-                  DEPLOYMENT DATE
+                  Start Date
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700 whitespace-nowrap"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
                 >
-                  END DATE
+                  End Date
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 text-sm font-semibold text-slate-700"
+                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
-                  ACTIONS
+                  Actions
                 </th>
               </tr>
             </thead>
             <tbody>
-              {interns.length === 0 ? (
+              {error && (
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="px-6 py-12 text-center text-slate-500"
-                  >
-                    No interns found
+                  <td colSpan={9} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <span className="text-xl">⚠️</span>
+                      </div>
+                      <p className="text-red-600 font-semibold">{error}</p>
+                    </div>
                   </td>
                 </tr>
-              ) : (
-                rows.map((intern) => (
+              )}
+              {isLoading && (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative w-8 h-8">
+                        <div className="absolute inset-0 bg-blue-500 rounded-full opacity-10 animate-pulse"></div>
+                        <div className="absolute inset-1 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+                      </div>
+                      <p className="text-slate-600 font-medium">
+                        Loading interns...
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {!isLoading && interns.length === 0 && rows.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                        <span className="text-xl">📋</span>
+                      </div>
+                      <p className="text-slate-600 font-semibold">
+                        No interns found
+                      </p>
+                      <p className="text-slate-500 text-xs">
+                        Try adjusting your search or filters
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {!isLoading &&
+                rows.map((intern, idx) => (
                   <tr
                     key={intern.id}
-                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    className={`border-b border-slate-100 transition-all ${
+                      selectedInterns.includes(intern.id)
+                        ? "bg-blue-50"
+                        : idx % 2 === 0
+                          ? "bg-white hover:bg-slate-50"
+                          : "bg-slate-50 hover:bg-slate-100"
+                    }`}
                   >
                     <td className="px-6 py-4">
-                      <label className="inline-flex items-center">
+                      <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedInterns.includes(intern.id)}
                           onChange={() => handleSelectIntern(intern.id)}
-                          className="w-4 h-4 rounded border border-slate-300 bg-white accent-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
                           aria-label={`Select intern ${intern.name}`}
                         />
                       </label>
                     </td>
-                    <td className="px-6 py-4 text-sm font-mono text-slate-600">
+                    <td className="px-6 py-4 font-mono font-semibold text-blue-600">
                       {intern.ojtId}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                    <td className="px-6 py-4 font-semibold text-slate-900">
                       {intern.name}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 ">
-                      {intern.gender || "Not set"}
+                    <td className="px-6 py-4 text-slate-700">
+                      <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
+                        {intern.gender || "Not set"}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
+                    <td className="px-6 py-4 text-slate-700 text-sm">
                       {intern.school}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {intern.ojtDetails || "—"}
+                    <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
+                      {intern.ojtDetails || (
+                        <span className="text-slate-400 italic">—</span>
+                      )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
+                    <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
                       {formatDate(intern.startDate)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
+                    <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
                       {formatDate(intern.endDate)}
                     </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex items-center gap-2">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleViewDetails(intern)}
-                          className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
+                          title="View details"
+                          className="rounded-lg bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100 hover:scale-105 active:scale-95"
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           onClick={() => handleEdit(intern)}
-                          className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100"
+                          title="Edit intern"
+                          className="rounded-lg bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95"
                         >
                           <SquarePen size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(intern)}
-                          className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
+                          title="Delete intern"
+                          className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
                         >
                           <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
+                ))}
             </tbody>
           </table>
         </div>
 
         {/* Footer with selection info */}
         {selectedInterns.length > 0 && (
-          <div className="px-6 py-4 bg-blue-50 border-t border-blue-100 flex items-center justify-between w-full">
-            <p className="text-sm text-blue-700">
-              Selected {selectedInterns.length} intern(s)
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
+            <p className="text-sm font-semibold text-blue-900">
+              ✓ {selectedInterns.length} intern
+              {selectedInterns.length !== 1 ? "s" : ""} selected
             </p>
             <button
               onClick={handleExportExcel}
-              className="px-3 py-1 text-sm text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
             >
               Export Selected
             </button>
