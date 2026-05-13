@@ -25,7 +25,6 @@ export async function createOjtData(client: Pool) {
             end_date DATE,
             certificate_issuance_date DATE,
             confirmed_at TIMESTAMP,
-            confirmation_ip VARCHAR(45),
             submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             moved_to_ojt_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             admin_notes TEXT
