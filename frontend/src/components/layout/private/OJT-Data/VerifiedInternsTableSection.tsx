@@ -157,35 +157,9 @@ export const VerifiedInternsTableSection = ({
   };
 
   const handleViewDetails = (intern: Intern) => {
-    const requirementFiles = [
-      { id: "resume-or-cv", title: "RESUME OR CV", fileType: "PDF" as const },
-      {
-        id: "proof-of-enrollment",
-        title: "PROOF OF ENROLLMENT",
-        fileType: "PDF" as const,
-      },
-      {
-        id: "draft-endorsement-letter",
-        title: "DRAFT ENDORSEMENT LETTER",
-        subtitle: "(ADDRESS TO CHIEF. FLORA R. RALAR)",
-        fileType: "PDF" as const,
-      },
-      {
-        id: "vaccine-card-or-medical-cert",
-        title: "VACCINE CARD OR MEDICAL CERT.",
-        subtitle: "(XEROX COPY)",
-        fileType: "PDF" as const,
-      },
-      {
-        id: "draft-memorandum-of-agreement",
-        title: "DRAFT MEMORANDUM OF AGREEMENT",
-        fileType: "PDF" as const,
-      },
-      { id: "1x1-picture", title: "1X1 PICTURE", fileType: "JPG/PNG" as const },
-    ];
-
     const internName = getInternName(intern);
     const modalData: ModalInternData = {
+      applicationId: intern.application_id,
       ojtId: getOjtId(intern),
       portalId: getOjtId(intern).replace("OJT-", "OJT-"),
       name: internName,
@@ -197,7 +171,6 @@ export const VerifiedInternsTableSection = ({
       hoursNeeded: intern.hours_needed?.toString() || "N/A",
       deploymentDate: intern.deployment_date || undefined,
       endDate: intern.end_date || undefined,
-      requirementFiles,
     };
 
     console.log("Opening inline modal for:", modalData.name);

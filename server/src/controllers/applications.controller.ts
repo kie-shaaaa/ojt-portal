@@ -356,7 +356,7 @@ export class ApplicationsController {
    * @param id application ID
    * @returns array of files with metadata and signed URLs
    */
-  @Get(':id/files')
+  @Get(':id/files') 
   async getApplicationFiles(@Param('id') id: string): Promise<
     Array<{
       id: number;
