@@ -4,7 +4,7 @@ export async function createOjtData(client: Pool) {
   await client.query(`
         DO $$
         BEGIN
-            CREATE TYPE gender AS ENUM ('Male', 'Female');
+            CREATE TYPE gender AS ENUM ('Male', 'Female', 'Not Set');
         EXCEPTION WHEN duplicate_object THEN null;
         END $$;
     `);
