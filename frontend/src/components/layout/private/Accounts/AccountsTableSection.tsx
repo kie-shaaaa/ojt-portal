@@ -115,14 +115,57 @@ export const AccountsTableSection = ({
     );
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!selectedAccount) return;
+    try {
+      const result = await apiCall("/accounts/disable", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: selectedAccount.id
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed")
+      }
+
+      // Modal success
+      console.log("Successfully updated account")
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
     onAccountsChange(
       accounts.filter((account) => account.id !== selectedAccount.id),
     );
     setIsDeleteModalOpen(false);
     setSelectedAccount(null);
   };
+
+  const handlePasswordReset = async (newPassword: string) => {    
+    if (!selectedAccount) return;
+    try {
+      const result = await apiCall("/accounts/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          id: selectedAccount.id,
+          newPassword: newPassword
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed")
+      }
+
+      // Modal success
+      console.log("Successfully updated account")
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+    setIsResetModalOpen(false)
+    setSelectedAccount(null);
+  }
 
   const handleCreateClick = () => {
     setIsCreateModalOpen(true);
@@ -194,7 +237,7 @@ export const AccountsTableSection = ({
               </thead>
               <tbody className="bg-white">
                 {accounts.map((account) => {
-                  const isAdmin = account.account_type === "Admin";
+                  const isAdmin = account.account_type === "admin";
 
                   return (
                     <tr
@@ -285,6 +328,7 @@ export const AccountsTableSection = ({
       {isResetModalOpen && selectedAccount && (
         <ResetPasswordModal
           account={selectedAccount}
+          onReset={handlePasswordReset}
           onClose={handleCloseResetModal}
         />
       )}

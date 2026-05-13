@@ -6,6 +6,9 @@ import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class AccountsService {
+  resetPassword(id: number, newPassword: string) {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
@@ -225,9 +228,8 @@ export class AccountsService {
   }
 
   async updatePassword(id: number, newPassword: string) {
+    const client = this.databaseService.getClient();
     try {
-      const client = this.databaseService.getClient();
-
       const exists = await client.query<Account>(
         `
         SELECT id, email, account_type FROM user_accounts
@@ -235,7 +237,7 @@ export class AccountsService {
         `,
         [id],
       );
-      if (!exists) {
+      if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
 
@@ -244,7 +246,7 @@ export class AccountsService {
       const res = await client.query<Account>(
         `
           UPDATE user_accounts
-          SET password = $1,
+          SET password = $1
           WHERE id = $2
         `,
         [newHash, id],

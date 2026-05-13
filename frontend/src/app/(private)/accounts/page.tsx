@@ -10,7 +10,7 @@ export type AccountRow = {
   id: number;
   username: string;
   email: string;
-  account_type: "Admin" | "Employee";
+  account_type: "admin" | "employee";
   created_at: string;
   isCurrentUser?: boolean;
 };

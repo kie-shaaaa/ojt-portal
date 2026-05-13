@@ -111,6 +111,13 @@ export class AccountsController {
     );
   }
 
+  @Post('reset-password')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async updatePassword(@Body() body: { id: number; newPassword: string }) {
+    return await this.accountsService.updatePassword(body.id, body.newPassword);
+  }
+
   /**
    * @param id account id of the account to be disabled
    * @return success message if the account was successfully disabled

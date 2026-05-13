@@ -41,8 +41,8 @@ export const CreateAccountModal = ({
   });
 
   const accountTypes: AccountTypeOption[] = [
-    { value: "Admin", label: "Admin" },
-    { value: "Employee", label: "Employee" },
+    { value: "admin", label: "Admin" },
+    { value: "employee", label: "Employee" },
   ];
 
   const passwordRequirements = useMemo(
@@ -99,8 +99,8 @@ export const CreateAccountModal = ({
       id: nextId,
       username: formData.username,
       email: formData.email,
-      accountType: formData.accountType as "Admin" | "Employee",
-      dateCreated: new Date().toLocaleDateString("en-US", {
+      account_type: formData.accountType as "admin" | "employee",
+      created_at: new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -117,7 +117,7 @@ export const CreateAccountModal = ({
       email: "",
       password: "",
       confirmPassword: "",
-      accountType: "Admin",
+      accountType: "admin",
     });
     onClose();
   };
