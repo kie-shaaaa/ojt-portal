@@ -65,8 +65,8 @@ export class AppointmentsService {
       const query = `
       SELECT *
       FROM appointments
-      WHERE appointment_date >= ?
-        AND appointment_date < ?
+      WHERE appointment_date >= $1
+        AND appointment_date < $2
       ORDER BY appointment_date ASC
     `;
 
