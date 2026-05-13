@@ -47,7 +47,6 @@ export const AccountsTableSection = ({
   accounts,
   onAccountsChange,
 }: AccountsTableSectionProps): JSX.Element => {
-
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -93,16 +92,16 @@ export const AccountsTableSection = ({
         body: JSON.stringify({
           id: updatedAccount.id,
           newUser: updatedAccount.username,
-          newType: updatedAccount.account_type
+          newType: updatedAccount.account_type,
         }),
       });
 
       if (!result.ok) {
-        throw new Error("Updating account data failed")
+        throw new Error("Updating account data failed");
       }
 
       // Modal success
-      console.log("Successfully updated account")
+      console.log("Successfully updated account");
     } catch (error) {
       console.error("Error updating account information", error);
       throw new Error("Error updating account information");
@@ -121,16 +120,16 @@ export const AccountsTableSection = ({
       const result = await apiCall("/accounts/disable", {
         method: "PATCH",
         body: JSON.stringify({
-          id: selectedAccount.id
+          id: selectedAccount.id,
         }),
       });
 
       if (!result.ok) {
-        throw new Error("Updating account data failed")
+        throw new Error("Updating account data failed");
       }
 
       // Modal success
-      console.log("Successfully updated account")
+      console.log("Successfully updated account");
     } catch (error) {
       console.error("Error updating account information", error);
       throw new Error("Error updating account information");
@@ -142,30 +141,30 @@ export const AccountsTableSection = ({
     setSelectedAccount(null);
   };
 
-  const handlePasswordReset = async (newPassword: string) => {    
+  const handlePasswordReset = async (newPassword: string) => {
     if (!selectedAccount) return;
     try {
       const result = await apiCall("/accounts/reset-password", {
         method: "POST",
         body: JSON.stringify({
           id: selectedAccount.id,
-          newPassword: newPassword
+          newPassword: newPassword,
         }),
       });
 
       if (!result.ok) {
-        throw new Error("Updating account data failed")
+        throw new Error("Updating account data failed");
       }
 
       // Modal success
-      console.log("Successfully updated account")
+      console.log("Successfully updated account");
     } catch (error) {
       console.error("Error updating account information", error);
       throw new Error("Error updating account information");
     }
-    setIsResetModalOpen(false)
+    setIsResetModalOpen(false);
     setSelectedAccount(null);
-  }
+  };
 
   const handleCreateClick = () => {
     setIsCreateModalOpen(true);
@@ -175,7 +174,26 @@ export const AccountsTableSection = ({
     setIsCreateModalOpen(false);
   };
 
-  const handleAccountCreated = (newAccount: AccountRow) => {
+  const handleAccountCreated = async (newAccount: AccountRow & { password: string }) => {
+    try {
+      const result = await apiCall("/accounts/create", {
+        method: "POST",
+        body: JSON.stringify({
+          newAccount
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error creating account", error);
+      throw new Error("Error creating account");
+    }
+
     onAccountsChange([newAccount, ...accounts].sort((a, b) => a.id - b.id));
   };
 

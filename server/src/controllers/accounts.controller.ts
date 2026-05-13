@@ -82,7 +82,7 @@ export class AccountsController {
   @Post('create')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async createAccount(@Body() account: AccountCreate) {
+  async createAccount(@Body('newAccount') account: AccountCreate) {
     return await this.accountsService.createAccount(account);
   }
 

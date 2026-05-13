@@ -33,7 +33,7 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     window.location.href = "/login";
   }
 
-  if (!response.ok) {
+  if (response.ok !== true) {
     throw new Error(data?.message || "API Error");
   }
 

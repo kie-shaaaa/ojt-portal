@@ -13,7 +13,7 @@ type AccountTypeOption = {
 interface CreateAccountModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (newAccount: AccountRow) => void;
+  onCreate: (newAccount: AccountRow & { password: string }) => void;
   nextId: number;
 }
 
@@ -106,8 +106,10 @@ export const CreateAccountModal = ({
         day: "numeric",
       }),
     };
-
-    onCreate(newAccount);
+    onCreate({
+      ...newAccount,
+      password: formData.password,
+    });
     handleCancel();
   };
 

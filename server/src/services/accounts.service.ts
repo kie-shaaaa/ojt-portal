@@ -22,27 +22,18 @@ export class AccountsService {
       if (exists) {
         throwAppError('conflict', 'User with this email already exists');
       }
-      const hash = await this.authService.hashPassword(account.password);
 
-      const newUser: AccountCreate = {
-        email: account.email,
-        password: hash,
-        username: account.username,
-        account_type: account.account_type,
-      };
+      const hashedPassword = await this.authService.hashPassword(
+        account.password,
+      );
 
       const res = await client.query<Omit<Account, 'password'>>(
         `
-        INSERT INTO user_accounts (email, password, username, account_type)
-        VALUES($1, $2, $3, $4)
-        RETURNING id, email, username, account_type, created_at, updated_at
-        `,
-        [
-          newUser.email,
-          newUser.password,
-          newUser.username,
-          newUser.account_type,
-        ],
+  INSERT INTO user_accounts (email, password, username, account_type)
+  VALUES($1, $2, $3, $4)
+  RETURNING id, email, username, account_type, created_at, updated_at
+  `,
+        [account.email, hashedPassword, account.username, account.account_type],
       );
 
       return SuccessHandler('Successfully created account', res.rows[0]);
