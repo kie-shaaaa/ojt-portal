@@ -49,12 +49,7 @@ export class AccountsService {
     }
   }
 
-  async updateAccount(
-    id: number,
-    newEmail?: string,
-    newUser?: string,
-    newType?: string,
-  ) {
+  async updateAccount(id: number, newUser?: string, newType?: string) {
     const client = this.databaseService.getClient();
     try {
       const exists = await client.query<Account>(
@@ -67,17 +62,6 @@ export class AccountsService {
 
       if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
-      }
-
-      if (newEmail && exists.rows[0].email !== newEmail) {
-        await client.query(
-          `
-          UPDATE user_accounts
-          SET email = $1
-          WHERE id = $2
-          `,
-          [newEmail, id],
-        );
       }
 
       if (newUser && exists.rows[0].username !== newUser) {

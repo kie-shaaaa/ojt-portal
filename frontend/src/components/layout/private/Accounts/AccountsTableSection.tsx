@@ -7,6 +7,7 @@ import { EditAccountModal } from "../EditAccountModal";
 import { ResetPasswordModal } from "../ResetPasswordModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { CreateAccountModal } from "../CreateAccountModal";
+import { apiCall } from "@/lib/api";
 
 const columns = [
   { key: "id", label: "ID", width: "w-[68.98px]", align: "items-start" },
@@ -46,13 +47,14 @@ export const AccountsTableSection = ({
   accounts,
   onAccountsChange,
 }: AccountsTableSectionProps): JSX.Element => {
-  // ✅ No local accounts state — use prop directly so filter changes reflect immediately
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
+    null,
+  );
 
   const handleEditClick = (account: AccountRow) => {
     setSelectedAccount(account);
@@ -84,8 +86,28 @@ export const AccountsTableSection = ({
     setSelectedAccount(null);
   };
 
-  // ✅ Mutations lifted to parent via onAccountsChange
-  const handleUpdateAccount = (updatedAccount: AccountRow) => {
+  const handleUpdateAccount = async (updatedAccount: AccountRow) => {
+    try {
+      const result = await apiCall("/accounts/update", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: updatedAccount.id,
+          newUser: updatedAccount.username,
+          newType: updatedAccount.account_type
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed")
+      }
+
+      // Modal success
+      console.log("Successfully updated account")
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+
     onAccountsChange(
       accounts.map((account) =>
         account.id === updatedAccount.id ? updatedAccount : account,
@@ -95,7 +117,9 @@ export const AccountsTableSection = ({
 
   const handleConfirmDelete = () => {
     if (!selectedAccount) return;
-    onAccountsChange(accounts.filter((account) => account.id !== selectedAccount.id));
+    onAccountsChange(
+      accounts.filter((account) => account.id !== selectedAccount.id),
+    );
     setIsDeleteModalOpen(false);
     setSelectedAccount(null);
   };
@@ -109,9 +133,7 @@ export const AccountsTableSection = ({
   };
 
   const handleAccountCreated = (newAccount: AccountRow) => {
-    onAccountsChange(
-      [newAccount, ...accounts].sort((a, b) => a.id - b.id),
-    );
+    onAccountsChange([newAccount, ...accounts].sort((a, b) => a.id - b.id));
   };
 
   const nextId =

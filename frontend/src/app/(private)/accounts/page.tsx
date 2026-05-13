@@ -55,13 +55,6 @@ export const MainContentArea = (): JSX.Element => {
   }, []); // fetch once on mount — all filtering is client-side
 
   const filteredAccounts = useMemo(() => {
-    console.log("[Filter Change]", {
-      accountType: filters.accountType,
-      sortByDate: filters.sortByDate,
-      searchTerm,
-      totalAccounts: accounts.length,
-    });
-
     let result = [...accounts];
 
     if (searchTerm.trim() !== "") {

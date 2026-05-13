@@ -37,8 +37,5 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     throw new Error(data?.message || "API Error");
   }
 
-  // DEBUG ONLY
-  console.log("API Response:", response.json);
-
   return data;
 }

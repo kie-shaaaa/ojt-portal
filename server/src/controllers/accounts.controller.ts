@@ -94,18 +94,18 @@ export class AccountsController {
    * @return Updated account data
    */
   @Patch('update')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async updateAccount(
     @Body()
     body: {
       id: number;
-      newEmail?: string;
       newUser?: string;
       newType?: string;
     },
   ) {
     return this.accountsService.updateAccount(
       body.id,
-      body.newEmail,
       body.newUser,
       body.newType,
     );

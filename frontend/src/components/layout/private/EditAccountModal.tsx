@@ -5,11 +5,11 @@ import type { FormEvent, JSX } from "react";
 import { useEffect, useId, useState } from "react";
 import { ChevronDown, Shield, X } from "lucide-react";
 
-type AccountType = AccountRow["accountType"];
+type AccountType = AccountRow["account_type"];
 
 const accountTypes = [
-  { label: "Admin", value: "Admin" },
-  { label: "Employee", value: "Employee" },
+  { label: "Admin", value: "admin" },
+  { label: "Employee", value: "employee" },
 ];
 
 interface EditAccountModalProps {
@@ -28,8 +28,8 @@ export const EditAccountModal = ({
 
   const [username, setUsername] = useState(account.username);
 
-  const [accountType, setAccountType] = useState<AccountType>(
-    account.accountType,
+  const [account_type, setAccountType] = useState<AccountType>(
+    account.account_type,
   );
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export const EditAccountModal = ({
     onUpdate({
       ...account,
       username,
-      accountType,
+      account_type,
     });
 
     onClose();
@@ -142,7 +142,7 @@ export const EditAccountModal = ({
               <select
                 id={accountTypeId}
                 name="accountType"
-                value={accountType}
+                value={account_type}
                 onChange={(event) =>
                   setAccountType(event.target.value as AccountType)
                 }
