@@ -15,8 +15,11 @@ export const ApplicationsHeaderSection = (): JSX.Element => {
     <header className="flex w-full items-center justify-between gap-4 max-[767px]:flex-col max-[767px]:items-start">
       <div className="flex flex-col">
         <h1 className="text-2xl font-bold leading-8 text-[#003366]">
-          Manage Applications
+          Applications
         </h1>
+        <h3>
+          Manage all of the applicants
+        </h3>
       </div>
 
     </header>

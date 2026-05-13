@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
 /**
  * FILE_UPLOADS MODEL - Supabase Migration
@@ -10,7 +10,7 @@ import { Client } from 'pg';
  * Old: /uploads/applications/abc123.pdf
  * New: documents/applicant-{application_id}/{file_type}-{application_id}.{extension}
  */
-export async function createFileUploads(client: Client) {
+export async function createFileUploads(client: Pool) {
   await client.query(`
         DO $$
         BEGIN

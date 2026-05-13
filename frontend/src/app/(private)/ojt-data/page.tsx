@@ -93,7 +93,16 @@ export default function OJTDataPage() {
               })
               .filter((name: string) => name.trim())
           : [];
-        setSchoolOptions(["All Schools", ...schoolNames]);
+
+        const seen = new Set<string>();
+        const uniqueSchoolNames = schoolNames.filter((name: string) => {
+          const normalized = name.trim().toLowerCase();
+          if (!normalized || seen.has(normalized)) return false;
+          seen.add(normalized);
+          return true;
+        });
+
+        setSchoolOptions(["All Schools", ...uniqueSchoolNames]);
       } catch (error) {
         console.error("Error fetching schools:", error);
         setSchoolOptions(["All Schools"]);
@@ -107,28 +116,29 @@ export default function OJTDataPage() {
     return interns;
   }, [interns]);
 
-  const verifiedInternsOnlyList = useMemo(
-    () => allInterns.filter((intern) => intern.original_status === "verified"),
-    [allInterns],
-  );
+  const normalizeStatus = (status: string | null) => {
+    return (status || "").trim().toLowerCase();
+  };
 
-  const tableInternsList = useMemo(
+  const verifiedInternsOnlyList = useMemo(
     () =>
       allInterns.filter(
-        (intern) =>
-          intern.original_status === "verified" ||
-          intern.original_status === "completed",
+        (intern) => normalizeStatus(intern.original_status) === "verified",
       ),
     [allInterns],
   );
+
+  const tableInternsList = useMemo(() => allInterns, [allInterns]);
 
   // Filter and search interns
   const filteredInterns = useMemo(() => {
     let filtered = [...tableInternsList];
 
     if (filters.school !== "All Schools") {
+      const selectedSchool = filters.school.trim().toLowerCase();
       filtered = filtered.filter(
-        (intern) => intern.school_name === filters.school,
+        (intern) =>
+          (intern.school_name || "").trim().toLowerCase() === selectedSchool,
       );
     }
 
@@ -136,8 +146,10 @@ export default function OJTDataPage() {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (intern) =>
-          intern.id ||
+          String(intern.id).includes(searchLower) ||
+          intern.ojt_id.toLowerCase().includes(searchLower) ||
           intern.first_name.toLowerCase().includes(searchLower) ||
+          intern.last_name.toLowerCase().includes(searchLower) ||
           intern.email.toLowerCase().includes(searchLower),
       );
     }
@@ -155,7 +167,7 @@ export default function OJTDataPage() {
     });
 
     return filtered;
-  }, [filters, searchTerm]);
+  }, [filters, searchTerm, tableInternsList]);
 
   // Calculate stats
   const verifiedCount = verifiedInternsOnlyList.length;
@@ -173,7 +185,10 @@ export default function OJTDataPage() {
     totalVerified: verifiedCount,
     confirmedThisMonth: confirmedThisMonth,
     pendingVerification: 0,
-    completionRate: Math.round((verifiedCount / allInterns.length) * 100),
+    completionRate:
+      allInterns.length > 0
+        ? Math.round((verifiedCount / allInterns.length) * 100)
+        : 0,
   };
 
   return (

@@ -1,6 +1,6 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createSchool(client: Client) {
+export async function createSchool(client: Pool) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS schools (
             id SERIAL PRIMARY KEY,
@@ -8,7 +8,7 @@ export async function createSchool(client: Client) {
         );
     `);
 
-    await client.query(`
+  await client.query(`
         INSERT INTO schools (school_name) VALUES
         ('Abra State Institute of Science and Technology'),
         ('Adamson University'),

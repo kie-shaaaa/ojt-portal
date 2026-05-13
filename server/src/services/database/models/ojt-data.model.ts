@@ -1,6 +1,6 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createOjtData(client: Client) {
+export async function createOjtData(client: Pool) {
   await client.query(`
         DO $$
         BEGIN

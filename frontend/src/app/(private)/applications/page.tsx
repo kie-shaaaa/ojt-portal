@@ -216,8 +216,6 @@ export default function ApplicationPage(): JSX.Element {
     >
       <ApplicationsHeaderSection />
 
-      <ApplicationStatsSection />
-
       <ApplicationsFilterSection
         filters={filters}
         setFilters={setFilters}
