@@ -4,11 +4,14 @@ import { Download, Eye, Pencil, Trash2, Search } from "lucide-react";
 import { JSX, useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { apiCall } from "@/lib/api";
+
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import ApplicationDetails from "../ApplicationDetailsModal";
 import ChangeStatusModal from "../ChangeStatusModal";
 
 type ApplicationRow = {
+  applicationId: number;
   id: string;
   applicantName: string;
   applicantEmail: string;
@@ -43,6 +46,8 @@ type Application = {
 type Props = {
   applications: Application[];
   isLoading: boolean;
+  onDeleteApplication: (applicationId: number) => void;
+  onStatusChange: (applicationId: number, status: string) => void;
 };
 
 const columns = [
@@ -99,6 +104,7 @@ const normalizeFilterText = (value: string) =>
 
 const mapApplications = (applications: Application[]): ApplicationRow[] => {
   return applications.map((app) => ({
+    applicationId: app.id,
     id: `NTC-${String(app.id).padStart(6, "0")}`,
 
     applicantName: `${app.first_name} ${app.last_name}`,
@@ -140,6 +146,8 @@ const mapApplications = (applications: Application[]): ApplicationRow[] => {
 export const ApplicationsTableSection = ({
   applications,
   isLoading,
+  onDeleteApplication,
+  onStatusChange,
 }: Props): JSX.Element => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
@@ -153,6 +161,7 @@ export const ApplicationsTableSection = ({
     useState<ApplicationRow | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -218,6 +227,42 @@ export const ApplicationsTableSection = ({
   useEffect(() => {
     setSelectedRows(new Set());
   }, [searchQuery, normalizedStatusParam]);
+
+  const handleDeleteApplication = async () => {
+    if (!applicationToDelete || isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+
+      await apiCall("/applications/delete", {
+        method: "DELETE",
+        body: JSON.stringify(applicationToDelete.applicationId),
+      });
+
+      onDeleteApplication(applicationToDelete.applicationId);
+
+      setSelectedRows((current) => {
+        const next = new Set(current);
+        next.delete(applicationToDelete.id);
+        return next;
+      });
+
+      if (selectedApplication?.id === applicationToDelete.id) {
+        setSelectedApplication(null);
+      }
+
+      if (changeStatusApplication?.id === applicationToDelete.id) {
+        setChangeStatusApplication(null);
+      }
+
+      setApplicationToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete application:", error);
+      alert("Failed to delete application. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -482,10 +527,7 @@ export const ApplicationsTableSection = ({
           title="Delete application"
           message={`Are you sure you want to delete application from ${applicationToDelete.applicantName}? This action cannot be undone.`}
           onCancel={() => setApplicationToDelete(null)}
-          onConfirm={() => {
-            setApplicationToDelete(null);
-            setSelectedRows(new Set());
-          }}
+          onConfirm={handleDeleteApplication}
         />
       )}
 
@@ -494,7 +536,8 @@ export const ApplicationsTableSection = ({
           open={!!changeStatusApplication}
           application={changeStatusApplication}
           onClose={() => setChangeStatusApplication(null)}
-          onConfirm={() => {
+          onConfirm={(newStatus) => {
+            onStatusChange(changeStatusApplication.applicationId, newStatus);
             setChangeStatusApplication(null);
           }}
         />

@@ -51,6 +51,54 @@ export default function ApplicationPage(): JSX.Element {
     { value: "all-schools", label: "All Schools" },
   ]);
 
+  const normalizeStatusForStorage = (status: string) => {
+    const normalized = status.toLowerCase();
+
+    if (normalized.includes("pending")) return "pending";
+    if (normalized.includes("under")) return "under_review";
+    if (normalized.includes("interview")) return "for_interview";
+    if (normalized.includes("accept")) return "accepted";
+    if (normalized.includes("reject")) return "rejected";
+
+    return status;
+  };
+
+  const handleDeleteApplication = (applicationId: number) => {
+    setApplications((currentApplications) => {
+      const nextApplications = currentApplications.filter(
+        (application) => application.id !== applicationId,
+      );
+
+      window.localStorage.setItem(
+        "ojt_applications",
+        JSON.stringify(nextApplications),
+      );
+      window.dispatchEvent(new Event("applications:update"));
+
+      return nextApplications;
+    });
+  };
+
+  const handleStatusChange = (applicationId: number, status: string) => {
+    const nextStatus = normalizeStatusForStorage(status);
+
+    setApplications((currentApplications) => {
+      const nextApplications = currentApplications.map((application) =>
+        application.id === applicationId
+          ? { ...application, status: nextStatus }
+          : application,
+      );
+
+      window.localStorage.setItem(
+        "ojt_applications",
+        JSON.stringify(nextApplications),
+      );
+      window.dispatchEvent(new Event("applications:update"));
+
+      return nextApplications;
+    });
+  };
+
   // FETCH APPLICATIONS
   useEffect(() => {
     const fetchApplications = async () => {
@@ -68,7 +116,6 @@ export default function ApplicationPage(): JSX.Element {
           data = response.data;
         }
 
-        console.log("Fetched applications:", data);
         setApplications(data);
 
         // Sync to localStorage for dashboard stats
@@ -114,9 +161,15 @@ export default function ApplicationPage(): JSX.Element {
           })
           .filter((school) => school.label.trim());
 
+        const uniqueSchoolOptions = Array.from(
+          new Map(
+            formattedSchools.map((school) => [school.value, school]),
+          ).values(),
+        );
+
         setSchoolOptions([
           { value: "all-schools", label: "All Schools" },
-          ...formattedSchools,
+          ...uniqueSchoolOptions,
         ]);
       } catch (error) {
         console.error("Error fetching schools:", error);
@@ -225,6 +278,8 @@ export default function ApplicationPage(): JSX.Element {
       <ApplicationsTableSection
         applications={filteredApplications}
         isLoading={isLoading}
+        onDeleteApplication={handleDeleteApplication}
+        onStatusChange={handleStatusChange}
       />
     </main>
   );
