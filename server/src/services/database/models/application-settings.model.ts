@@ -5,10 +5,12 @@ export async function createApplicationSettings(client: Client) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS application_settings (
             id SERIAL PRIMARY KEY,
-            setting_key VARCHAR(50) UNIQUE NOT NULL,
-            setting_value TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_by_name VARCHAR(100)
+            portal_status BOOLEAN DEFAULT FALSE,
+            opening_date TIMESTAMPTZ,
+            closing_date TIMESTAMP,
+            created_by INTEGER REFERENCES user_accounts(id) ON DELETE SET NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
@@ -23,11 +25,9 @@ export async function createApplicationSettings(client: Client) {
     });
 
   await client.query(`
-        INSERT INTO application_settings (setting_key, setting_value) VALUES
-            ('portal_status', 'closed'),
-            ('opening_date', NULL),
-            ('last_updated_by', NULL)
-        ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value;
+        INSERT INTO application_settings (portal_status)
+        SELECT FALSE
+        WHERE NOT EXISTS (SELECT 1 FROM application_settings);
     `);
 
   // Hash passwords using Argon2

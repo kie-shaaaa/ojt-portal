@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountsModule } from './modules/accounts.module';
 import { AuthModule } from './modules/auth.module';
-import { DatabaseService } from './services/database/database.service';
 import { ApplicationsModule } from './modules/applications.module';
 import { OjtModule } from './modules/ojt.module';
 import { DashboardController } from './controllers/dashboard.controller';
@@ -14,23 +13,20 @@ import { AppointmentsService } from './services/appointments.service';
 import { AppointmentsModule } from './modules/appointments.module';
 import { SchoolsModule } from './modules/schools.module';
 import { CoursesModule } from './modules/courses.module';
+import { DatabaseModule } from './modules/database.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     AccountsModule,
     AuthModule,
     ApplicationsModule,
     OjtModule,
     AppointmentsModule,
     SchoolsModule,
-    CoursesModule
+    CoursesModule,
   ],
   controllers: [AppController, DashboardController],
-  providers: [
-    AppService,
-    DatabaseService,
-    DashboardService,
-    JwtService,
-  ],
+  providers: [AppService, DashboardService, JwtService],
 })
 export class AppModule {}
