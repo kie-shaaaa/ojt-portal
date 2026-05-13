@@ -8,7 +8,8 @@ export type ApplicationStatus =
   | 'under_review'
   | 'rejected'
   | 'for_interview'
-  | 'accepted';
+  | 'accepted'
+  | 'pending accept';
 
 export type Application = {
   id: number;

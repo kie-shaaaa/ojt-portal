@@ -24,10 +24,8 @@ export async function createOjtData(client: Pool) {
             deployment_date DATE,
             end_date DATE,
             certificate_issuance_date DATE,
-            orientation_date VARCHAR(100),
             confirmed_at TIMESTAMP,
             confirmation_ip VARCHAR(45),
-            second_chance SMALLINT DEFAULT 0,
             submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             moved_to_ojt_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             admin_notes TEXT

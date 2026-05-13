@@ -78,7 +78,7 @@ const statusToId = (status?: string) => {
   if (s.includes("interview")) return "for-interview";
   if (s.includes("under")) return "under-review";
   if (s.includes("reject")) return "rejected";
-  if (s.includes("accept")) return "accepted";
+  if (s.includes("accept")) return "pending-accept";
   return "pending-review";
 };
 
@@ -110,7 +110,7 @@ const idToBackendStatus = (id: string): string => {
     case "rejected":
       return "rejected";
     case "accepted":
-      return "accepted";
+      return "pending accept";
     default:
       return id;
   }
