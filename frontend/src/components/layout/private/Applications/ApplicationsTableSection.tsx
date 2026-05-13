@@ -1,19 +1,12 @@
 "use client";
 
-import {
-  Download,
-  Eye,
-  Pencil,
-  Trash2,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
-import { JSX, useEffect, useState, useRef, useMemo } from "react";
+import { Download, Eye, Pencil, Trash2, Search } from "lucide-react";
+import { JSX, useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import ApplicationDetails from "../ApplicationDetailsModal";
 import ChangeStatusModal from "../ChangeStatusModal";
-import { apiCall } from "@/lib/api";
 
 type ApplicationRow = {
   id: string;
@@ -26,28 +19,30 @@ type ApplicationRow = {
   status: string;
 };
 
-// Re-using the same icons/colors mapping logic based on standard statuses
-const formatStatus = (status: string) => {
-  const s = status.toLowerCase();
-  if (s === "pending") return "Pending";
-  if (s === "under_review") return "Under Review";
-  if (s === "for_interview") return "For interview";
-  if (s === "accepted") return "Accepted";
-  if (s === "rejected") return "Rejected";
-  return status;
+type Application = {
+  id: number;
+
+  first_name: string;
+  last_name: string;
+
+  email: string;
+  phone: string;
+
+  application_type: string;
+
+  school_name: string | null;
+  course: string | null;
+  hours_needed: number | null;
+
+  deployment_date: string | null;
+  submission_date: string;
+
+  status: string;
 };
 
-const getStatusStyles = (status: string) => {
-  const s = status.toLowerCase();
-  if (s.includes("pending"))
-    return "bg-amber-50 text-amber-700 border-amber-100";
-  if (s.includes("review")) return "bg-sky-50 text-sky-700 border-sky-100";
-  if (s.includes("interview"))
-    return "bg-purple-50 text-purple-700 border-purple-100";
-  if (s.includes("accept"))
-    return "bg-green-50 text-green-700 border-green-100";
-  if (s.includes("reject")) return "bg-red-50 text-red-700 border-red-100";
-  return "bg-slate-50 text-slate-700 border-slate-100";
+type Props = {
+  applications: Application[];
+  isLoading: boolean;
 };
 
 const columns = [
@@ -61,249 +56,218 @@ const columns = [
   "ACTIONS",
 ];
 
-export const ApplicationsTableSection = (): JSX.Element => {
-  // State to track selected rows by application ID
+const formatStatus = (status: string) => {
+  const s = status.toLowerCase();
+
+  if (s === "pending") return "Pending";
+  if (s === "under_review") return "Under Review";
+  if (s === "for_interview") return "For Interview";
+  if (s === "accepted") return "Accepted";
+  if (s === "rejected") return "Rejected";
+
+  return status;
+};
+
+const getStatusStyles = (status: string) => {
+  const s = status.toLowerCase();
+
+  if (s.includes("pending")) {
+    return "bg-amber-50 text-amber-700 border-amber-100";
+  }
+
+  if (s.includes("review")) {
+    return "bg-sky-50 text-sky-700 border-sky-100";
+  }
+
+  if (s.includes("interview")) {
+    return "bg-purple-50 text-purple-700 border-purple-100";
+  }
+
+  if (s.includes("accept")) {
+    return "bg-green-50 text-green-700 border-green-100";
+  }
+
+  if (s.includes("reject")) {
+    return "bg-red-50 text-red-700 border-red-100";
+  }
+
+  return "bg-slate-50 text-slate-700 border-slate-100";
+};
+
+const normalizeFilterText = (value: string) =>
+  value.toLowerCase().replace(/[\_\s-]+/g, "");
+
+const mapApplications = (applications: Application[]): ApplicationRow[] => {
+  return applications.map((app) => ({
+    id: `NTC-${String(app.id).padStart(6, "0")}`,
+
+    applicantName: `${app.first_name} ${app.last_name}`,
+
+    applicantEmail: app.email,
+
+    applicantPhone: app.phone,
+
+    applicationType: [app.application_type, "Application"],
+
+    details: [
+      app.school_name || "N/A",
+      app.course || "N/A",
+      app.hours_needed ? `${app.hours_needed} hours` : "N/A",
+      `Deploy: ${
+        app.deployment_date
+          ? new Date(app.deployment_date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "N/A"
+      }`,
+    ],
+
+    submissionDate: [
+      new Date(app.submission_date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      "",
+    ],
+
+    status: formatStatus(app.status),
+  }));
+};
+
+export const ApplicationsTableSection = ({
+  applications,
+  isLoading,
+}: Props): JSX.Element => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRow | null>(null);
-  const [applicationsState, setApplicationsState] = useState<ApplicationRow[]>(
-    [],
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+
   const [applicationToDelete, setApplicationToDelete] =
     useState<ApplicationRow | null>(null);
+
   const [changeStatusApplication, setChangeStatusApplication] =
     useState<ApplicationRow | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const searchParams = useSearchParams();
-  const statusParam = searchParams.get("status")?.toLowerCase() ?? null;
-  const [searchResults, setSearchResults] = useState<ApplicationRow[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
-  // Search using the /fetch endpoint
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  const statusParam = searchParams.get("status");
+  const normalizedStatusParam = statusParam
+    ? normalizeFilterText(statusParam)
+    : null;
 
-    const performSearch = async () => {
-      try {
-        setIsSearching(true);
-        let endpoint = "/applications/fetch?";
+  const applicationsState = useMemo(
+    () => mapApplications(applications),
+    [applications],
+  );
 
-        // Determine if searching by email or ID
-        if (searchQuery.includes("@")) {
-          endpoint += `email=${encodeURIComponent(searchQuery)}`;
-        } else if (/^\d+$/.test(searchQuery)) {
-          endpoint += `id=${searchQuery}`;
-        } else {
-          // For name search, filter client-side
-          setSearchResults(
-            applicationsState.filter(
-              (a) =>
-                a.applicantName
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                a.applicantEmail
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()),
-            ),
-          );
-          setIsSearching(false);
-          return;
-        }
-
-        const data = await apiCall(endpoint);
-        if (Array.isArray(data) && data.length > 0) {
-          // Map backend Application objects to ApplicationRow format
-          const mapped: ApplicationRow[] = data.map((app: any) => ({
-            id: `NTC-${String(app.id).padStart(6, "0")}`,
-            applicantName: `${app.first_name} ${app.last_name}`,
-            applicantEmail: app.email,
-            applicantPhone: app.phone,
-            applicationType: [app.application_type, "Application"],
-            details: [
-              app.school_name || "N/A",
-              app.course || "N/A",
-              app.hours_needed ? `${app.hours_needed} hours` : "N/A",
-              `Deploy: ${
-                app.deployment_date
-                  ? new Date(app.deployment_date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  : "N/A"
-              }`,
-            ],
-            submissionDate: [
-              new Date(app.submission_date).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              }),
-              "",
-            ],
-            status: formatStatus(app.status),
-          }));
-          setSearchResults(mapped);
-        } else {
-          setSearchResults([]);
-        }
-      } catch (err) {
-        console.error("Search failed:", err);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    };
-
-    performSearch();
-  }, [searchQuery, applicationsState]);
-
-  // Filter applications based on `status` query param and search results
   const filteredApplications = useMemo(() => {
-    const baseApplications =
-      searchQuery && searchResults.length > 0
-        ? searchResults
-        : applicationsState;
-    return baseApplications.filter((a) => {
-      const matchesStatus = statusParam
-        ? a.status.toLowerCase().includes(statusParam)
+    return applicationsState.filter((application) => {
+      const matchesStatus = normalizedStatusParam
+        ? normalizeFilterText(application.status).includes(
+            normalizedStatusParam,
+          )
         : true;
-      return matchesStatus;
+
+      const matchesSearch = searchQuery
+        ? [
+            application.id,
+            application.applicantName,
+            application.applicantEmail,
+            application.applicantPhone,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())
+        : true;
+
+      return matchesStatus && matchesSearch;
     });
-  }, [applicationsState, statusParam, searchQuery, searchResults]);
+  }, [applicationsState, normalizedStatusParam, searchQuery]);
 
-  // Load applications from API on mount
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        setIsLoading(true);
-        const data = await apiCall("/applications/fetch-all?count=100");
-
-        if (Array.isArray(data)) {
-          const mapped: ApplicationRow[] = data.map((app: any) => ({
-            id: `NTC-${String(app.id).padStart(6, "0")}`,
-            applicantName: `${app.first_name} ${app.last_name}`,
-            applicantEmail: app.email,
-            applicantPhone: app.phone,
-            applicationType: [app.application_type, "Application"],
-            details: [
-              app.school_name || "N/A",
-              app.course || "N/A",
-              app.hours_needed ? `${app.hours_needed} hours` : "N/A",
-              `Deploy: ${app.deployment_date ? new Date(app.deployment_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}`,
-            ],
-            submissionDate: [
-              new Date(app.submission_date).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              }),
-              "",
-            ],
-            status: formatStatus(app.status),
-          }));
-          setApplicationsState(mapped);
-          localStorage.setItem("ojt_applications", JSON.stringify(mapped));
-          window.dispatchEvent(new Event("applications:update"));
-        }
-      } catch (err) {
-        console.error("Failed to fetch applications:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchApplications();
-  }, []);
-
-  // Check if all visible rows are selected
   const allSelected =
     filteredApplications.length > 0 &&
     filteredApplications.every((a) => selectedRows.has(a.id));
 
-  // Handle header checkbox click (select/deselect all visible)
   const handleSelectAll = () => {
     if (allSelected) {
       setSelectedRows(new Set());
-    } else {
-      setSelectedRows(new Set(filteredApplications.map((a) => a.id)));
+      return;
     }
+
+    setSelectedRows(new Set(filteredApplications.map((a) => a.id)));
   };
 
-  // Handle individual row checkbox click (by id)
   const handleRowSelect = (id: string) => {
-    const newSelected = new Set(selectedRows);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+    const updated = new Set(selectedRows);
+
+    if (updated.has(id)) {
+      updated.delete(id);
     } else {
-      newSelected.add(id);
+      updated.add(id);
     }
-    setSelectedRows(newSelected);
+
+    setSelectedRows(updated);
   };
+
+  useEffect(() => {
+    setSelectedRows(new Set());
+  }, [searchQuery, normalizedStatusParam]);
 
   return (
-    <section className="w-full overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200">
+    <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
       <div className="flex flex-col border-b border-slate-100">
         <div className="flex items-center justify-between px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+            <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Applications
             </h2>
-            <p className="text-sm text-slate-500 font-medium">
+
+            <p className="text-sm font-medium text-slate-500">
               {isLoading
                 ? "Synchronizing with database..."
                 : `Total: ${applicationsState.length} • Showing: ${filteredApplications.length}`}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-slate-300 shadow-sm active:scale-95">
-              <Download size={18} className="text-slate-500" />
-              Export
-            </button>
-          </div>
+          <button className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95">
+            <Download size={18} className="text-slate-500" />
+            Export
+          </button>
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-4 px-6 py-4 bg-slate-50/50 border-t border-slate-100">
+        <div className="flex items-center gap-4 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
           <div className="relative flex-1 max-w-md">
             <Search
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
               size={18}
+              className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
             />
+
             <input
               type="text"
-              placeholder="Search by name, email, or ID..."
-              className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white shadow-sm"
               value={searchQuery}
+              placeholder="Search by name, email, phone, or ID..."
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-11 text-sm shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
             />
-            {isSearching && (
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-              </div>
-            )}
           </div>
-
-          <button className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
-            <SlidersHorizontal size={18} />
-            Filters
-          </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto min-h-[400px] relative">
+      <div className="relative min-h-[400px] overflow-x-auto">
         {isLoading && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px]">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent shadow-lg"></div>
-            <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent shadow-lg" />
+
+            <p className="mt-4 animate-pulse text-sm font-bold text-slate-600">
               Fetching valid applications...
             </p>
           </div>
@@ -311,23 +275,24 @@ export const ApplicationsTableSection = (): JSX.Element => {
 
         {!isLoading && filteredApplications.length === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
               <Search size={32} />
             </div>
+
             <h3 className="text-lg font-bold text-slate-800">
               No applications found
             </h3>
-            <p className="text-sm text-slate-500 max-w-xs">
+
+            <p className="max-w-xs text-sm text-slate-500">
               We couldn't find any applications matching your current search or
               filter criteria.
             </p>
+
             <button
-              onClick={() => {
-                setSearchQuery("");
-              }}
+              onClick={() => setSearchQuery("")}
               className="mt-4 text-sm font-bold text-blue-600 hover:underline"
             >
-              Clear all filters
+              Clear search
             </button>
           </div>
         )}
@@ -346,9 +311,9 @@ export const ApplicationsTableSection = (): JSX.Element => {
                     <div className="flex items-center justify-center">
                       <input
                         type="checkbox"
-                        className="h-5 w-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition cursor-pointer"
                         checked={allSelected}
                         onChange={handleSelectAll}
+                        className="h-5 w-5 cursor-pointer rounded-lg border-slate-300 text-blue-600 transition focus:ring-blue-500"
                       />
                     </div>
                   ) : (
@@ -363,40 +328,44 @@ export const ApplicationsTableSection = (): JSX.Element => {
             {filteredApplications.map((application, index) => (
               <tr
                 key={`${application.id}-${index}`}
-                className={`group transition-all duration-200 hover:bg-blue-50/30 ${selectedRows.has(application.id) ? "bg-blue-50/50" : ""}`}
+                className={`group transition-all duration-200 hover:bg-blue-50/30 ${
+                  selectedRows.has(application.id) ? "bg-blue-50/50" : ""
+                }`}
               >
                 {/* Checkbox */}
                 <td className="px-6 py-6 align-top">
                   <div className="flex items-center justify-center">
                     <input
                       type="checkbox"
-                      className="h-5 w-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500 transition cursor-pointer"
                       checked={selectedRows.has(application.id)}
                       onChange={() => handleRowSelect(application.id)}
+                      className="h-5 w-5 cursor-pointer rounded-lg border-slate-300 text-blue-600 transition focus:ring-blue-500"
                     />
                   </div>
                 </td>
 
                 {/* ID */}
                 <td className="px-6 py-6 align-top">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-600 border border-slate-200 shadow-sm">
-                    {application.id.replace("\n", "")}
+                  <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm">
+                    {application.id}
                   </span>
                 </td>
 
                 {/* Applicant */}
                 <td className="px-6 py-6 align-top">
-                  <div className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                  <div className="font-bold text-slate-900 transition-colors group-hover:text-blue-700">
                     {application.applicantName}
                   </div>
 
-                  <div className="text-sm text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                  <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+
                     {application.applicantEmail}
                   </div>
 
-                  <div className="text-sm text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-slate-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-200" />
+
                     {application.applicantPhone}
                   </div>
                 </td>
@@ -407,7 +376,8 @@ export const ApplicationsTableSection = (): JSX.Element => {
                     <span className="text-sm font-bold text-slate-700">
                       {application.applicationType[0]}
                     </span>
-                    <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+
+                    <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
                       {application.applicationType[1]}
                     </span>
                   </div>
@@ -416,18 +386,21 @@ export const ApplicationsTableSection = (): JSX.Element => {
                 {/* Details */}
                 <td className="px-6 py-6 align-top">
                   <div className="space-y-2">
-                    <p className="text-sm font-bold text-slate-700 leading-tight line-clamp-1">
+                    <p className="line-clamp-1 text-sm font-bold leading-tight text-slate-700">
                       {application.details[0]}
                     </p>
+
                     <div className="flex flex-col gap-1">
                       <p className="text-xs font-medium text-slate-500">
                         {application.details[1]}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-600 uppercase tracking-tighter border border-slate-200">
+
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-tighter text-slate-600 uppercase">
                           {application.details[2]}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-[10px] font-bold text-blue-600 uppercase tracking-tighter border border-blue-100">
+
+                        <span className="rounded border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold tracking-tighter text-blue-600 uppercase">
                           {application.details[3].replace("Deploy: ", "🚀 ")}
                         </span>
                       </div>
@@ -441,6 +414,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
                     <span className="text-sm font-bold text-slate-700">
                       {application.submissionDate[0]}
                     </span>
+
                     <span className="text-xs font-medium text-slate-400">
                       Received
                     </span>
@@ -448,38 +422,41 @@ export const ApplicationsTableSection = (): JSX.Element => {
                 </td>
 
                 {/* Status */}
-                <td className="px-6 py-6 align-top min-w-[160px]">
+                <td className="min-w-[160px] px-6 py-6 align-top">
                   <span
-                    className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold ring-1 ring-inset shadow-sm ${getStatusStyles(application.status)}`}
+                    className={`inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold ring-1 ring-inset shadow-sm ${getStatusStyles(
+                      application.status,
+                    )}`}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-current mr-2 animate-pulse"></span>
+                    <span className="mr-2 h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+
                     {application.status}
                   </span>
                 </td>
 
                 {/* Actions */}
                 <td className="px-6 py-6 align-top">
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2">
                     <button
-                      className="rounded-xl bg-white border border-slate-200 p-2.5 text-blue-600 shadow-sm transition hover:bg-blue-50 hover:border-blue-200 active:scale-90"
-                      onClick={() => setSelectedApplication(application)}
                       title="View Profile"
+                      onClick={() => setSelectedApplication(application)}
+                      className="rounded-xl border border-slate-200 bg-white p-2.5 text-blue-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 active:scale-90"
                     >
                       <Eye size={18} />
                     </button>
 
                     <button
-                      className="rounded-xl bg-white border border-slate-200 p-2.5 text-amber-600 shadow-sm transition hover:bg-amber-50 hover:border-amber-200 active:scale-90"
-                      onClick={() => setChangeStatusApplication(application)}
                       title="Update Status"
+                      onClick={() => setChangeStatusApplication(application)}
+                      className="rounded-xl border border-slate-200 bg-white p-2.5 text-amber-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 active:scale-90"
                     >
                       <Pencil size={18} />
                     </button>
 
                     <button
-                      className="rounded-xl bg-white border border-slate-200 p-2.5 text-red-600 shadow-sm transition hover:bg-red-50 hover:border-red-200 active:scale-90"
-                      onClick={() => setApplicationToDelete(application)}
                       title="Remove"
+                      onClick={() => setApplicationToDelete(application)}
+                      className="rounded-xl border border-slate-200 bg-white p-2.5 text-red-600 shadow-sm transition hover:border-red-200 hover:bg-red-50 active:scale-90"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -506,11 +483,8 @@ export const ApplicationsTableSection = (): JSX.Element => {
           message={`Are you sure you want to delete application from ${applicationToDelete.applicantName}? This action cannot be undone.`}
           onCancel={() => setApplicationToDelete(null)}
           onConfirm={() => {
-            setApplicationsState((prev) =>
-              prev.filter((a) => a.id !== applicationToDelete.id),
-            );
-            setSelectedRows(new Set());
             setApplicationToDelete(null);
+            setSelectedRows(new Set());
           }}
         />
       )}
@@ -520,35 +494,7 @@ export const ApplicationsTableSection = (): JSX.Element => {
           open={!!changeStatusApplication}
           application={changeStatusApplication}
           onClose={() => setChangeStatusApplication(null)}
-          onConfirm={(
-            newStatus: string,
-            id: string,
-            scheduleDate?: string,
-            scheduleTime?: string,
-          ) => {
-            setApplicationsState((prev) => {
-              const next = prev.map((a) => {
-                if (a.id === id) {
-                  const updated = { ...a, status: newStatus };
-                  if (scheduleDate && scheduleTime) {
-                    console.log(
-                      `Schedule set for ${newStatus}: ${scheduleDate} at ${scheduleTime}`,
-                    );
-                  }
-                  return updated;
-                }
-                return a;
-              });
-
-              setSelectedApplication((prevSelected) =>
-                prevSelected && prevSelected.id === id
-                  ? (next.find((a) => a.id === id) ?? null)
-                  : prevSelected,
-              );
-
-              return next;
-            });
-
+          onConfirm={() => {
             setChangeStatusApplication(null);
           }}
         />
