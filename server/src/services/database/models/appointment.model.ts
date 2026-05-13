@@ -1,6 +1,6 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createAppointment(client: Client) {
+export async function createAppointment(client: Pool) {
   await client.query(`
         DO $$
         BEGIN

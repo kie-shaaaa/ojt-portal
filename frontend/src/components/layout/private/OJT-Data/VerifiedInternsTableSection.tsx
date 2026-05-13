@@ -5,7 +5,6 @@ import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useState, useEffect } from "react";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
-import { apiCall } from "@/lib/api";
 
 interface Intern {
   id: number;
@@ -50,55 +49,21 @@ export const VerifiedInternsTableSection = ({
   const [editingIntern, setEditingIntern] = useState<Intern | null>(null);
   const [internToDelete, setInternToDelete] = useState<Intern | null>(null);
   const [rows, setRows] = useState<Intern[]>(interns);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch interns from backend on mount
+  // Keep local rows in sync with parent-provided filtered data.
   useEffect(() => {
-    const fetchInterns = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await apiCall("/ojt/fetch-all?count=100", {
-          method: "GET",
-        });
+    setRows(interns);
+  }, [interns]);
 
-        if (response && Array.isArray(response)) {
-          console.log("API Response (array):", response[0]); // Log first item to see structure
-          // Check for duplicate IDs
-          const ids = response.map((r: any) => r.id);
-          const duplicates = ids.filter(
-            (id: any, idx: number) => ids.indexOf(id) !== idx,
-          );
-          if (duplicates.length > 0) {
-            console.warn("Duplicate IDs found:", duplicates);
-          }
-          setRows(response);
-        } else if (response && typeof response === "object") {
-          // Handle case where response is wrapped
-          const data = response.data || response.interns || [];
-          console.log("API Response (wrapped):", data[0]); // Log first item to see structure
-          const ids = data.map((r: any) => r.id);
-          const duplicates = ids.filter(
-            (id: any, idx: number) => ids.indexOf(id) !== idx,
-          );
-          if (duplicates.length > 0) {
-            console.warn("Duplicate IDs found:", duplicates);
-          }
-          setRows(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch interns:", err);
-        setError("Failed to load interns from server");
-        // Fall back to provided interns prop
-        setRows(interns);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  useEffect(() => {
+    setSelectedInterns((prev) =>
+      prev.filter((id) => rows.some((r) => r.id === id)),
+    );
+  }, [rows]);
 
-    fetchInterns();
-  }, []);
+  useEffect(() => {
+    setSelectAll(rows.length > 0 && selectedInterns.length === rows.length);
+  }, [rows, selectedInterns]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Not set";
@@ -266,16 +231,14 @@ export const VerifiedInternsTableSection = ({
               </h3>
             </div>
             <p className="text-sm text-slate-500 ml-4">
-              {isLoading
-                ? "Loading..."
-                : `${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
+              {`${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
           <div className="flex gap-2">
             {/* Export to Excel Button */}
             <button
               onClick={handleExportExcel}
-              disabled={isLoading || rows.length === 0}
+              disabled={rows.length === 0}
               className="px-4 py-2 text-sm font-semibold text-white bg-linear-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Download size={16} />
@@ -351,34 +314,7 @@ export const VerifiedInternsTableSection = ({
               </tr>
             </thead>
             <tbody>
-              {error && (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                        <span className="text-xl">⚠️</span>
-                      </div>
-                      <p className="text-red-600 font-semibold">{error}</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {isLoading && (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="relative w-8 h-8">
-                        <div className="absolute inset-0 bg-blue-500 rounded-full opacity-10 animate-pulse"></div>
-                        <div className="absolute inset-1 border-2 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
-                      </div>
-                      <p className="text-slate-600 font-medium">
-                        Loading interns...
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {!isLoading && interns.length === 0 && rows.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
@@ -395,81 +331,80 @@ export const VerifiedInternsTableSection = ({
                   </td>
                 </tr>
               )}
-              {!isLoading &&
-                rows.map((intern, idx) => (
-                  <tr
-                    key={`intern-${intern.id}`}
-                    className={`border-b border-slate-100 transition-all ${
-                      selectedInterns.includes(intern.id)
-                        ? "bg-blue-50"
-                        : idx % 2 === 0
-                          ? "bg-white hover:bg-slate-50"
-                          : "bg-slate-50 hover:bg-slate-100"
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <label className="inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedInterns.includes(intern.id)}
-                          onChange={() => handleSelectIntern(intern.id)}
-                          className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
-                          aria-label={`Select intern ${getInternName(intern)}`}
-                        />
-                      </label>
-                    </td>
-                    <td className="px-6 py-4 font-mono font-semibold text-blue-600">
-                      {getOjtId(intern)}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-900">
-                      {getInternName(intern)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-700">
-                      <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
-                        {intern.gender || "Not set"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 text-sm">
-                      {intern.school_name}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
-                      {intern.course || (
-                        <span className="text-slate-400 italic">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                      {formatDate(intern.deployment_date)}
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                      {formatDate(intern.end_date)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => handleViewDetails(intern)}
-                          title="View details"
-                          className="rounded-lg bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100 hover:scale-105 active:scale-95"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(intern)}
-                          title="Edit intern"
-                          className="rounded-lg bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95"
-                        >
-                          <SquarePen size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(intern)}
-                          title="Delete intern"
-                          className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+              {rows.map((intern, idx) => (
+                <tr
+                  key={`intern-${intern.id}`}
+                  className={`border-b border-slate-100 transition-all ${
+                    selectedInterns.includes(intern.id)
+                      ? "bg-blue-50"
+                      : idx % 2 === 0
+                        ? "bg-white hover:bg-slate-50"
+                        : "bg-slate-50 hover:bg-slate-100"
+                  }`}
+                >
+                  <td className="px-6 py-4">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedInterns.includes(intern.id)}
+                        onChange={() => handleSelectIntern(intern.id)}
+                        className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
+                        aria-label={`Select intern ${getInternName(intern)}`}
+                      />
+                    </label>
+                  </td>
+                  <td className="px-6 py-4 font-mono font-semibold text-blue-600">
+                    {getOjtId(intern)}
+                  </td>
+                  <td className="px-6 py-4 font-semibold text-slate-900">
+                    {getInternName(intern)}
+                  </td>
+                  <td className="px-6 py-4 text-slate-700">
+                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
+                      {intern.gender || "Not set"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-700 text-sm">
+                    {intern.school_name}
+                  </td>
+                  <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
+                    {intern.course || (
+                      <span className="text-slate-400 italic">—</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
+                    {formatDate(intern.deployment_date)}
+                  </td>
+                  <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
+                    {formatDate(intern.end_date)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleViewDetails(intern)}
+                        title="View details"
+                        className="rounded-lg bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100 hover:scale-105 active:scale-95"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(intern)}
+                        title="Edit intern"
+                        className="rounded-lg bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95"
+                      >
+                        <SquarePen size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(intern)}
+                        title="Delete intern"
+                        className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

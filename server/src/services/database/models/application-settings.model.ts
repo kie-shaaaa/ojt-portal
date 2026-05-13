@@ -1,7 +1,7 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 import * as argon2 from 'argon2';
 
-export async function createApplicationSettings(client: Client) {
+export async function createApplicationSettings(client: Pool) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS application_settings (
             id SERIAL PRIMARY KEY,
@@ -14,15 +14,14 @@ export async function createApplicationSettings(client: Client) {
         );
     `);
 
-  await client
-    .query(
-      `
-        CREATE INDEX idx_setting_key ON application_settings (setting_key);
-    `,
-    )
-    .catch(() => {
-      // Index may already exist, ignore error
-    });
+  await client.query(
+    `DROP INDEX IF EXISTS idx_application_settings_singleton;`,
+  );
+
+  await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_application_settings_latest
+        ON application_settings (created_at DESC, id DESC);
+    `);
 
   await client.query(`
         INSERT INTO application_settings (portal_status)

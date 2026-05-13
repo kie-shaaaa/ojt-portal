@@ -10,6 +10,7 @@ import {
   GetApplicationStatusResponse,
   UpdateApplicationSettingsDto,
   SuccessResponse,
+  AllOjt,
 } from '../data/types';
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
@@ -274,19 +275,75 @@ export class ApplicationsService {
     id: number,
     status: ApplicationStatus,
   ): Promise<GetApplicationStatusResponse> {
-    const client = this.databaseService.getClient();
+    const client = await this.databaseService.getClient();
 
-    const res = await client.query<Application>(
-      `
-      UPDATE applications
-      SET status = $1
-      WHERE id = $2
-      RETURNING *;
+    try {
+      await client.query('BEGIN');
+
+      // 1. Update application and return updated row
+      const res = await client.query<Application>(
+        `
+        UPDATE applications
+        SET status = $1
+        WHERE id = $2
+        RETURNING *;
       `,
-      [status, id],
-    );
+        [status, id],
+      );
 
-    return res.rows[0] ?? null;
+      const application = res.rows[0];
+
+      if (!application) {
+        throw new Error('Application not found');
+      }
+
+      // 2. If accepted → move to ojt_data
+      if (status === 'accepted') {
+        await client.query<AllOjt>(
+          `
+          INSERT INTO ojt_data (
+            application_type,
+            first_name,
+            last_name,
+            email,
+            phone,
+            school_name,
+            hours_needed,
+            course,
+            deployment_date,
+            original_status,
+            moved_to_ojt_at
+          )
+          VALUES (
+            $1, $2, $3, $4, $5,
+            $6, $7, $8, $9, $10,
+            CURRENT_TIMESTAMP
+          )
+        `,
+          [
+            application.application_type,
+            application.first_name,
+            application.last_name,
+            application.email,
+            application.phone,
+            application.school_name,
+            application.hours_needed,
+            application.course,
+            application.deployment_date,
+            application.status,
+          ],
+        );
+      }
+
+      await client.query('COMMIT');
+
+      return application;
+    } catch (error) {
+      await client.query('ROLLBACK');
+
+      console.log(`[APPLICATION | SETTINGS] error updating status`, error);
+      throwAppError('server_error', 'Error updating status');
+    }
   }
 
   async getPendingCount(): Promise<number> {
