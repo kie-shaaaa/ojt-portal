@@ -15,7 +15,6 @@ import {
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
-import { ResolveReplFn } from '@nestjs/core/repl/native-functions';
 
 @Injectable()
 export class ApplicationsService {
@@ -26,7 +25,6 @@ export class ApplicationsService {
 
   async submitApplication(
     application: CreateApplicationDto,
-    files: UploadedFile[] = [],
   ): Promise<SubmitApplicationResponse> {
     const client = this.databaseService.getClient();
     const exists = await client.query(
@@ -276,7 +274,7 @@ export class ApplicationsService {
     id: number,
     status: ApplicationStatus,
   ): Promise<GetApplicationStatusResponse> {
-    const client = await this.databaseService.getClient();
+    const client = this.databaseService.getClient();
 
     try {
       await client.query('BEGIN');
