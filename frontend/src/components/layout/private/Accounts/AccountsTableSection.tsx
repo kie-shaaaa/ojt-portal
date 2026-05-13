@@ -100,7 +100,27 @@ export const AccountsTableSection = ({
         throw new Error("Updating account data failed");
       }
 
-      // Modal success
+      // ✅ If the updated account belongs to the current user,
+      // patch their localStorage token to reflect the new account_type.
+      const raw = localStorage.getItem("access_token");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.user?.id === updatedAccount.id) {
+            parsed.user.account_type = updatedAccount.account_type;
+            // Also update the username in the stored session if it changed
+            parsed.user.username = updatedAccount.username;
+            localStorage.setItem("access_token", JSON.stringify(parsed));
+
+            // Force a full reload so the app re-reads the new role from the
+            // updated token and re-renders guards/navigation accordingly.
+            window.location.reload();
+          }
+        } catch {
+          // Malformed token — leave it alone
+        }
+      }
+
       console.log("Successfully updated account");
     } catch (error) {
       console.error("Error updating account information", error);
@@ -174,12 +194,14 @@ export const AccountsTableSection = ({
     setIsCreateModalOpen(false);
   };
 
-  const handleAccountCreated = async (newAccount: AccountRow & { password: string }) => {
+  const handleAccountCreated = async (
+    newAccount: AccountRow & { password: string },
+  ) => {
     try {
       const result = await apiCall("/accounts/create", {
         method: "POST",
         body: JSON.stringify({
-          newAccount
+          newAccount,
         }),
       });
 
