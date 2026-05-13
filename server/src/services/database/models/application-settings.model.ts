@@ -25,8 +25,9 @@ export async function createApplicationSettings(client: Client) {
     });
 
   await client.query(`
-        INSERT INTO application_settings (portal_status) VALUES
-            (FALSE)
+        INSERT INTO application_settings (portal_status)
+        SELECT FALSE
+        WHERE NOT EXISTS (SELECT 1 FROM application_settings);
     `);
 
   // Hash passwords using Argon2
