@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import DatePicker from "@/components/layout/DatePicker";
+import { apiCall } from "@/lib/api";
 
 interface OjtInformationData {
   school: string;
@@ -25,18 +26,7 @@ interface OjtInformationSectionProps {
   errors: Record<string, string>;
 }
 
-const selectFields = [
-  {
-    id: "school",
-    label: "Name of School",
-  },
-  {
-    id: "course",
-    label: "Course / Program",
-  },
-];
-
-const schoolOptions = [
+const defaultSchoolOptions = [
   "University of the Philippines",
   "Ateneo de Manila University",
   "De La Salle University",
@@ -47,7 +37,7 @@ const schoolOptions = [
   "Far Eastern University",
 ];
 
-const courseOptions = [
+const defaultCourseOptions = [
   "BS Information Technology",
   "BS Computer Science",
   "BS Computer Engineering",
@@ -79,11 +69,6 @@ const SearchableField = ({
 }: SearchableFieldProps): JSX.Element => {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState(value);
-
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -103,6 +88,7 @@ const SearchableField = ({
   }, []);
 
   const mergedOptions = useMemo(() => Array.from(new Set(options)), [options]);
+  const query = value;
 
   const filteredOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -132,7 +118,8 @@ const SearchableField = ({
     if (!normalizedValue) return "";
 
     const matchedOption = mergedOptions.find(
-      (option) => normalizeForCompare(option) === normalizeForCompare(normalizedValue),
+      (option) =>
+        normalizeForCompare(option) === normalizeForCompare(normalizedValue),
     );
 
     return matchedOption ?? normalizedValue;
@@ -140,7 +127,6 @@ const SearchableField = ({
 
   const commitNormalizedValue = (rawValue: string) => {
     const resolvedValue = resolveCanonicalValue(rawValue);
-    setQuery(resolvedValue);
     onChange(resolvedValue);
   };
 
@@ -172,7 +158,10 @@ const SearchableField = ({
   };
 
   return (
-    <div ref={wrapperRef} className="relative flex flex-col items-start gap-2 self-stretch w-full">
+    <div
+      ref={wrapperRef}
+      className="relative flex flex-col items-start gap-2 self-stretch w-full"
+    >
       <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
         <label
           htmlFor={id}
@@ -192,12 +181,14 @@ const SearchableField = ({
           id={id}
           name={id}
           type="text"
+          role="combobox"
           aria-required="true"
+          aria-autocomplete="list"
+          aria-haspopup="listbox"
           placeholder={label}
           value={query}
           onChange={(event) => {
             const nextValue = event.target.value;
-            setQuery(nextValue);
             onChange(nextValue);
             setIsOpen(true);
           }}
@@ -231,28 +222,29 @@ const SearchableField = ({
           role="listbox"
           className="absolute top-[calc(100%+4px)] left-0 z-20 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-[0px_12px_24px_-8px_#00000026]"
         >
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                role="option"
-                aria-selected={option === value}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  handleSelect(option);
-                }}
-                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-900"
-              >
-                {option}
-              </button>
-            ))
-          ) : null}
+          {filteredOptions.length > 0
+            ? filteredOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={option === value}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    handleSelect(option);
+                  }}
+                  className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-900"
+                >
+                  {option}
+                </button>
+              ))
+            : null}
 
           {hasUnlistedValue ? (
             <button
               type="button"
               role="option"
+              aria-selected={false}
               onMouseDown={(event) => {
                 event.preventDefault();
                 handleSelectOthers();
@@ -297,9 +289,128 @@ export const OjtInformationSection = ({
   onDataChange,
   errors,
 }: OjtInformationSectionProps): JSX.Element => {
+  const [schoolOptions, setSchoolOptions] = useState(defaultSchoolOptions);
+  const [courseOptions, setCourseOptions] = useState(defaultCourseOptions);
+
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const response = await apiCall("/schools/fetch-all?count=1000");
+
+        let schools: unknown[] = [];
+
+        if (Array.isArray(response)) {
+          schools = response;
+        } else if (response && typeof response === "object") {
+          const payload = response as {
+            data?: unknown[];
+            schools?: unknown[];
+          };
+
+          schools = payload.data || payload.schools || [];
+        }
+
+        const schoolNames = schools
+          .map((school) => {
+            if (typeof school === "string") {
+              return school;
+            }
+
+            if (school && typeof school === "object") {
+              const payload = school as {
+                name?: string;
+                school_name?: string;
+              };
+
+              return payload.name || payload.school_name || "";
+            }
+
+            return "";
+          })
+          .filter((name): name is string => Boolean(name.trim()));
+
+        const uniqueSchoolNames = Array.from(
+          new Map(
+            schoolNames.map((name) => [name.trim().toLowerCase(), name.trim()]),
+          ).values(),
+        );
+
+        setSchoolOptions(
+          uniqueSchoolNames.length > 0
+            ? uniqueSchoolNames
+            : defaultSchoolOptions,
+        );
+      } catch (error) {
+        console.error("Error fetching schools:", error);
+        setSchoolOptions(defaultSchoolOptions);
+      }
+    };
+
+    fetchSchools();
+  }, []);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await apiCall("/courses/fetch-all?count=1000");
+
+        let courses: unknown[] = [];
+
+        if (Array.isArray(response)) {
+          courses = response;
+        } else if (response && typeof response === "object") {
+          const payload = response as {
+            data?: unknown[];
+            courses?: unknown[];
+          };
+
+          courses = payload.data || payload.courses || [];
+        }
+
+        const courseNames = courses
+          .map((course) => {
+            if (typeof course === "string") {
+              return course;
+            }
+
+            if (course && typeof course === "object") {
+              const payload = course as {
+                name?: string;
+                course?: string;
+                course_name?: string;
+              };
+
+              return (
+                payload.name || payload.course || payload.course_name || ""
+              );
+            }
+
+            return "";
+          })
+          .filter((name): name is string => Boolean(name.trim()));
+
+        const uniqueCourseNames = Array.from(
+          new Map(
+            courseNames.map((name) => [name.trim().toLowerCase(), name.trim()]),
+          ).values(),
+        );
+
+        setCourseOptions(
+          uniqueCourseNames.length > 0
+            ? uniqueCourseNames
+            : defaultCourseOptions,
+        );
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        setCourseOptions(defaultCourseOptions);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   const handleSelectChange =
-    (field: keyof OjtInformationData) =>
-    (value: string) => {
+    (field: keyof OjtInformationData) => (value: string) => {
       onDataChange((prev) => ({
         ...prev,
         [field]: value,
@@ -326,7 +437,10 @@ export const OjtInformationSection = ({
       className="flex flex-col items-start gap-6 pt-10 pb-14 px-12 relative self-stretch w-full flex-[0_0_auto]"
     >
       <div className="flex items-center gap-2 pt-0 pb-2 px-0 relative self-stretch w-full flex-[0_0_auto]">
-        <div className="relative w-6 h-6 shrink-0 text-[#0047ab]" aria-hidden="true">
+        <div
+          className="relative w-6 h-6 shrink-0 text-[#0047ab]"
+          aria-hidden="true"
+        >
           <Info className="absolute inset-0 w-full h-full" />
         </div>
         <div className="items-start inline-flex flex-col relative flex-[0_0_auto]">
@@ -407,7 +521,9 @@ export const OjtInformationSection = ({
                         field.id as keyof OjtInformationData,
                       )}
                       aria-invalid={!!errors[field.id]}
-                      aria-describedby={errors[field.id] ? `${field.id}-error` : undefined}
+                      aria-describedby={
+                        errors[field.id] ? `${field.id}-error` : undefined
+                      }
                       className="relative flex items-center w-full border-0 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-[0] leading-6 outline-none placeholder:text-gray-400"
                     />
                   </div>
