@@ -13,6 +13,7 @@ interface DatePickerProps {
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
+  minDate?: string;
 }
 
 export default function DatePicker({
@@ -24,6 +25,7 @@ export default function DatePicker({
   id = "deployment-date",
   required = false,
   disabled = false,
+  minDate,
   placeholder = "yyyy/mm/dd",
 }: DatePickerProps): JSX.Element {
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -66,6 +68,7 @@ export default function DatePicker({
   };
 
   const isDisabledDate = (dateStr: string): boolean => {
+    if (minDate && dateStr <= minDate) return true; 
     return isPastDate(dateStr) || isWeekend(dateStr);
   };
   // Close picker when clicking outside
@@ -86,8 +89,6 @@ export default function DatePicker({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  
 
   // Calendar generation
   const firstDay = new Date(activeYear, activeMonth, 1).getDay();

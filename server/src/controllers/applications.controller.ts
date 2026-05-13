@@ -128,7 +128,6 @@ export class ApplicationsController {
   async updateApplicationSettings(
     @Body() updateSettings: UpdateApplicationSettingsDto,
   ) {
-    console.log('Received settings update request with body:', updateSettings);
     return this.applicationService.updateApplicationSettings(updateSettings);
   }
 

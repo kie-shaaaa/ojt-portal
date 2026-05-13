@@ -220,28 +220,27 @@ export class ApplicationsService {
   // Update Application Settings
   async updateApplicationSettings(settings: UpdateApplicationSettingsDto) {
     const client = this.databaseService.getClient();
-    console.log('Updating application settings with:', settings);
     try {
       const { portal_status, opening_date, closing_date, created_by } =
         settings;
 
       const res = await client.query(
-            `
-        INSERT INTO application_settings (
-  portal_status,
-  opening_date,
-  closing_date,
-  created_by
-)
-VALUES ($1, $2, $3, $4)
-RETURNING
-  id,
-  portal_status,
-  opening_date,
-  closing_date,
-  created_by,
-  created_at,
-  updated_at;
+        `
+              INSERT INTO application_settings (
+              portal_status,
+              opening_date,
+              closing_date,
+              created_by
+            )
+            VALUES ($1, $2, $3, $4)
+            RETURNING
+              id,
+              portal_status,
+              opening_date,
+              closing_date,
+              created_by,
+              created_at,
+              updated_at;
             `,
         [portal_status, opening_date || null, closing_date || null, created_by],
       );

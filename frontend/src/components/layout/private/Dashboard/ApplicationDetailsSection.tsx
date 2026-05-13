@@ -31,18 +31,21 @@ function getUserIdFromToken(): number | undefined {
 
 export const ApplicationDetailsSection = (): JSX.Element => {
   const lastSavedDate = useRef<string>("");
+  const lastSavedClosingDate = useRef<string>("");
+  const [closingDate, setClosingDate] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [scheduledDate, setScheduledDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<{
     isOpen: boolean;
     scheduledDate: string;
+    closingDate: string;
   } | null>(null);
   const hasChanges =
     originalSettings === null ||
     isOpen !== originalSettings.isOpen ||
-    scheduledDate !== originalSettings.scheduledDate;
-
+    scheduledDate !== originalSettings.scheduledDate ||
+    closingDate !== originalSettings.closingDate;
   // Load saved settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
@@ -52,13 +55,19 @@ export const ApplicationDetailsSection = (): JSX.Element => {
         const fetchedDate = settings.opening_date
           ? settings.opening_date.split("T")[0]
           : "";
+        const fetchedClosingDate = settings.closing_date
+          ? settings.closing_date.split("T")[0]
+          : "";
 
+        setClosingDate(fetchedClosingDate);
         setIsOpen(settings.portal_status);
         setScheduledDate(fetchedDate);
         setOriginalSettings({
           isOpen: settings.portal_status,
           scheduledDate: fetchedDate,
+          closingDate: fetchedClosingDate,
         });
+        lastSavedClosingDate.current = fetchedClosingDate;
         lastSavedDate.current = fetchedDate;
       } catch (error) {
         console.error("Raw fetch error:", error);
@@ -78,6 +87,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
         body: JSON.stringify({
           portal_status: isOpen,
           opening_date: scheduledDate || null,
+          closing_date: closingDate || null,
           ...(userId !== undefined && { created_by: userId }),
         }),
       });
@@ -92,6 +102,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
       setOriginalSettings({
         isOpen: saved.portal_status,
         scheduledDate: savedDate,
+        closingDate: closingDate,
       });
       lastSavedDate.current = savedDate;
 
@@ -181,9 +192,11 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                     const next = !isOpen;
                     setIsOpen(next);
                     if (!next) {
-                      setScheduledDate(""); 
+                      setScheduledDate("");
+                      setClosingDate("");
                     } else {
-                      setScheduledDate(lastSavedDate.current); 
+                      setScheduledDate(lastSavedDate.current);
+                      setClosingDate(lastSavedClosingDate.current);
                     }
                   }}
                   className={`relative flex h-6 w-12 items-center rounded-full transition-colors ${
@@ -216,6 +229,21 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                 onChange={setScheduledDate}
                 placeholder="yyyy/mm/dd"
               />
+              <div className="space-y-2">
+                <DatePicker
+                  id="scheduled-closing-date"
+                  label="Scheduled Closing Date (Optional)"
+                  value={closingDate}
+                  disabled={!isOpen}
+                  onChange={setClosingDate}
+                  placeholder="yyyy/mm/dd"
+                  minDate={scheduledDate || undefined}
+                />
+                <p className="text-[10px] italic text-slate-400">
+                  Leave empty for manual control only. Portal will auto-close on
+                  this date.
+                </p>
+              </div>
 
               <p className="text-[10px] italic text-slate-400">
                 Leave empty for manual control only. Portal will auto-open on
