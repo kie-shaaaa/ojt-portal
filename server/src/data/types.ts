@@ -170,5 +170,7 @@ export type Courses = {
 export type UpdateApplicationSettingsDto = {
   status: boolean;
   opening_date?: Date;
+  closing_date?: Date;
+  created_by: string;
 };
 export type AppointmentType = 'interview' | 'orientation';

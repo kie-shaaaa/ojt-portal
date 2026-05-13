@@ -8,9 +8,12 @@ import {
   GetApplicationsResponse,
   GetApplicationResponse,
   GetApplicationStatusResponse,
+  UpdateApplicationSettingsDto,
+  SuccessResponse,
 } from '../data/types';
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class ApplicationsService {
@@ -196,18 +199,72 @@ export class ApplicationsService {
 
   async getApplicationByStatus(
     status: ApplicationStatus,
-  ): Promise<GetApplicationStatusResponse> {
+  ): Promise<SuccessResponse> {
+    const client = this.databaseService.getClient();
+    try {
+      const res = await client.query<Application>(
+        `
+    SELECT * FROM applications
+    WHERE status = $1;
+    `,
+        [status],
+      );
+
+      return SuccessHandler('Application fetched successfully', res.rows[0]);
+    } catch (error) {
+      console.log(`[APPLICATION] error fetching settings`, error);
+      throwAppError('server_error', 'Error fetching settings');
+    }
+  }
+
+  // Update Application Settings
+  async updateApplicationSettings(settings: UpdateApplicationSettingsDto) {
     const client = this.databaseService.getClient();
 
-    const res = await client.query<Application>(
-      `
-      SELECT * FROM applications
-      WHERE status = $1;
-      `,
-      [status],
-    );
+    try {
+      const { status, opening_date, closing_date, created_by } = settings;
 
-    return res.rows[0] ?? null;
+      const res = await client.query(
+        `
+    UPDATE application_settings
+    SET
+      portal_status = $1,
+      opening_date = $2,
+      closing_date = $3,
+      created_by = $4
+    WHERE id = (
+      SELECT id
+      FROM application_settings
+      ORDER BY created_at DESC
+      LIMIT 1
+    )
+  `,
+        [status, opening_date || null, closing_date || null, created_by],
+      );
+
+      return SuccessHandler('Settings updated successfully', res.rows[0]);
+    } catch (error) {
+      console.log(`[APPLICATION | SETTINGS] error updating settings`, error);
+      throwAppError('server_error', 'Error updating settings');
+    }
+  }
+
+  // Fetch Application Settings
+  async getSettings() {
+    const client = this.databaseService.getClient();
+    try {
+      const settings = await client.query(
+        `
+      SELECT * FROM application_settings LIMIT 1 ORDER BY created_at DESC
+      `,
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return settings.rows[0] || null;
+    } catch (error) {
+      console.log(`[APPLICATION | SETTINGS] error updating settings`, error);
+      throwAppError('server_error', 'Error fetching settings');
+    }
   }
 
   async updateApplication(

@@ -22,6 +22,8 @@ import type {
   GetApplicationResponse,
   GetApplicationStatusResponse,
   SubmitApplicationResponse,
+  UpdateApplicationSettingsDto,
+  SuccessResponse,
 } from '../data/types';
 
 @Controller('applications')
@@ -76,7 +78,7 @@ export class ApplicationsController {
    * @returns applicants with an application status of "for_interview"
    */
   @Get('calendar')
-  async getApplicationForInterview(): Promise<GetApplicationStatusResponse> {
+  async getApplicationForInterview(): Promise<SuccessResponse> {
     try {
       return await this.applicationService.getApplicationByStatus(
         'for_interview',
@@ -98,7 +100,7 @@ export class ApplicationsController {
   @Get('status')
   async getApplicationByStatus(
     @Query('status') status?: ApplicationStatus,
-  ): Promise<GetApplicationStatusResponse> {
+  ): Promise<SuccessResponse> {
     if (!status)
       throw new BadRequestException('Status required to fetch applications');
     try {
@@ -108,6 +110,25 @@ export class ApplicationsController {
         error instanceof Error ? error.message : 'Failed to fetch applications';
       throw new BadRequestException(message);
     }
+  }
+
+  /**
+   * Fetch settings for application_settings
+   */
+  @Get('settings')
+  async getSettings() {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.applicationService.getSettings();
+  }
+
+  /**
+   * Fetch settings
+   */
+  @Patch('settings')
+  async updateApplicationSettings(
+    @Body('updateSettings') updateSettings: UpdateApplicationSettingsDto,
+  ) {
+    return this.applicationService.updateApplicationSettings(updateSettings);
   }
 
   /**
