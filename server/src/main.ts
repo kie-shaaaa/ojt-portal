@@ -4,6 +4,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import 'dotenv/config';
 
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
