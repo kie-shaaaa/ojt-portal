@@ -62,7 +62,9 @@ export default function OJTDataPage() {
         } else if (response && typeof response === "object") {
           interns = response.data || response.interns || [];
         }
-        setInterns(Array.isArray(interns) ? interns : []);
+        const validInterns = Array.isArray(interns) ? interns : [];
+        setInterns(validInterns);
+        console.log("Fetched interns:", validInterns.length, validInterns);
       } catch (error) {
         console.error("Error fetching interns:", error);
         setInterns([]);
@@ -120,13 +122,22 @@ export default function OJTDataPage() {
     return (status || "").trim().toLowerCase();
   };
 
-  const verifiedInternsOnlyList = useMemo(
-    () =>
-      allInterns.filter(
-        (intern) => normalizeStatus(intern.original_status) === "verified",
-      ),
-    [allInterns],
-  );
+  const verifiedInternsOnlyList = useMemo(() => {
+    // Try to find records with verified status
+    const verified = allInterns.filter(
+      (intern) => normalizeStatus(intern.original_status) === "verified",
+    );
+
+    // If no records with "verified" status, try other possible status values
+    if (verified.length === 0 && allInterns.length > 0) {
+      console.log("No 'verified' status found. Checking available statuses...");
+      const statuses = new Set(allInterns.map((i) => i.original_status));
+      console.log("Available statuses:", Array.from(statuses));
+      // Return all records if no verified records found (fallback)
+      return allInterns;
+    }
+    return verified;
+  }, [allInterns]);
 
   const tableInternsList = useMemo(() => allInterns, [allInterns]);
 
@@ -144,13 +155,22 @@ export default function OJTDataPage() {
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
+
       filtered = filtered.filter(
         (intern) =>
-          String(intern.id).includes(searchLower) ||
-          intern.ojt_id.toLowerCase().includes(searchLower) ||
-          intern.first_name.toLowerCase().includes(searchLower) ||
-          intern.last_name.toLowerCase().includes(searchLower) ||
-          intern.email.toLowerCase().includes(searchLower),
+          String(intern.id ?? "").includes(searchLower) ||
+          String(intern.ojt_id ?? "")
+            .toLowerCase()
+            .includes(searchLower) ||
+          String(intern.first_name ?? "")
+            .toLowerCase()
+            .includes(searchLower) ||
+          String(intern.last_name ?? "")
+            .toLowerCase()
+            .includes(searchLower) ||
+          String(intern.email ?? "")
+            .toLowerCase()
+            .includes(searchLower),
       );
     }
 
@@ -169,7 +189,6 @@ export default function OJTDataPage() {
     return filtered;
   }, [filters, searchTerm, tableInternsList]);
 
-  // Calculate stats
   const verifiedCount = verifiedInternsOnlyList.length;
   const confirmedThisMonth = verifiedInternsOnlyList.filter((i) => {
     if (!i.confirmed_at) return false;

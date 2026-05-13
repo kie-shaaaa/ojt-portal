@@ -15,7 +15,7 @@ export async function createOjtData(client: Pool) {
             application_type VARCHAR(50) NOT NULL,
             first_name VARCHAR(100) NOT NULL,
             last_name VARCHAR(100) NOT NULL,
-            gender gender,
+            gender gender DEFAULT 'Not Set',
             email VARCHAR(100) NOT NULL,
             phone VARCHAR(20) NOT NULL,
             school_name VARCHAR(200),
@@ -29,7 +29,6 @@ export async function createOjtData(client: Pool) {
             confirmation_ip VARCHAR(45),
             second_chance SMALLINT DEFAULT 0,
             submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            original_status VARCHAR(50),
             moved_to_ojt_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             admin_notes TEXT
         );

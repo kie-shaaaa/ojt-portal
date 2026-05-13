@@ -26,6 +26,9 @@ export const OjtDataHeaderSection = ({
         <h1 className="text-2xl font-bold text-[#003366]">
           OJT Data
         </h1>
+        <h3>
+          Manage and edit all interns.
+        </h3>
       </div>
 
       <div className="relative w-72 max-md:w-full">
