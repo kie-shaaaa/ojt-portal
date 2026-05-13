@@ -122,12 +122,13 @@ export class ApplicationsController {
   }
 
   /**
-   * Fetch settings
+   * Update settings for application_settings
    */
-  @Patch('settings')
+  @Post('settings')
   async updateApplicationSettings(
-    @Body('updateSettings') updateSettings: UpdateApplicationSettingsDto,
+    @Body() updateSettings: UpdateApplicationSettingsDto,
   ) {
+    console.log('Received settings update request with body:', updateSettings);
     return this.applicationService.updateApplicationSettings(updateSettings);
   }
 

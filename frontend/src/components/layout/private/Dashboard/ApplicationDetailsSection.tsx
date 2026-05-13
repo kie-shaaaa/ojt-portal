@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useState, useEffect } from "react";
+import { JSX, useState, useEffect, useRef } from "react";
 
 import {
   Activity,
@@ -16,22 +16,50 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import DatePicker from "@/components/layout/DatePicker";
 import { apiCall } from "@/lib/api";
 
+function getUserIdFromToken(): number | undefined {
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.id ?? payload.sub ?? payload.userId;
+  } catch {
+    return undefined;
+  }
+}
+
 export const ApplicationDetailsSection = (): JSX.Element => {
+  const lastSavedDate = useRef<string>("");
   const [isOpen, setIsOpen] = useState(true);
   const [scheduledDate, setScheduledDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [originalSettings, setOriginalSettings] = useState<{
+    isOpen: boolean;
+    scheduledDate: string;
+  } | null>(null);
+  const hasChanges =
+    originalSettings === null ||
+    isOpen !== originalSettings.isOpen ||
+    scheduledDate !== originalSettings.scheduledDate;
 
   // Load saved settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const data = await apiCall("/applications/settings", {
-          method: "GET",
-          body: JSON.stringify({
-            status: isOpen,
-            opening_date: scheduledDate || undefined,
-          }),
+        const data = await apiCall("/applications/settings", { method: "GET" });
+        const settings = data.data ?? data;
+        const fetchedDate = settings.opening_date
+          ? settings.opening_date.split("T")[0]
+          : "";
+
+        setIsOpen(settings.portal_status);
+        setScheduledDate(fetchedDate);
+        setOriginalSettings({
+          isOpen: settings.portal_status,
+          scheduledDate: fetchedDate,
         });
+        lastSavedDate.current = fetchedDate;
       } catch (error) {
         console.error("Raw fetch error:", error);
       }
@@ -43,22 +71,39 @@ export const ApplicationDetailsSection = (): JSX.Element => {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      await apiCall("/applications/settings", {
-        method: "PATCH",
+      const userId = getUserIdFromToken();
+
+      const response = await apiCall("/applications/settings", {
+        method: "POST",
         body: JSON.stringify({
-          status: isOpen,
-          opening_date: scheduledDate || undefined,
+          portal_status: isOpen,
+          opening_date: scheduledDate || null,
+          ...(userId !== undefined && { created_by: userId }),
         }),
       });
 
-      // Persist locally after confirmed save
+      const saved = response.data;
+      const savedDate = saved.opening_date
+        ? saved.opening_date.split("T")[0] // ✅ keep as YYYY-MM-DD
+        : "";
+
+      setIsOpen(saved.portal_status);
+      setScheduledDate(savedDate);
+      setOriginalSettings({
+        isOpen: saved.portal_status,
+        scheduledDate: savedDate,
+      });
+      lastSavedDate.current = savedDate;
+
       localStorage.setItem(
         "portalSettings",
-        JSON.stringify({ isOpen, scheduledDate }),
+        JSON.stringify({
+          isOpen: saved.portal_status,
+          scheduledDate: savedDate,
+        }),
       );
     } catch (error) {
       console.error("Failed to save portal settings:", error);
-      // Optionally surface an error toast/alert here
     } finally {
       setIsSaving(false);
     }
@@ -132,7 +177,15 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                   aria-label={`Portal is currently ${
                     isOpen ? "open" : "closed"
                   }. Toggle portal status.`}
-                  onClick={() => setIsOpen((prev) => !prev)}
+                  onClick={() => {
+                    const next = !isOpen;
+                    setIsOpen(next);
+                    if (!next) {
+                      setScheduledDate(""); 
+                    } else {
+                      setScheduledDate(lastSavedDate.current); 
+                    }
+                  }}
                   className={`relative flex h-6 w-12 items-center rounded-full transition-colors ${
                     isOpen ? "bg-green-500" : "bg-red-500"
                   }`}
@@ -159,6 +212,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                 id="scheduled-opening-date"
                 label="Scheduled Opening Date (Optional)"
                 value={scheduledDate}
+                disabled={!isOpen}
                 onChange={setScheduledDate}
                 placeholder="yyyy/mm/dd"
               />
@@ -173,7 +227,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
               <button
                 type="button"
                 onClick={handleSaveSettings}
-                disabled={isSaving}
+                disabled={isSaving || !hasChanges}
                 aria-label="Update portal settings"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#0038a8] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-50 hover:bg-[#002f8c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0038a8]"
               >

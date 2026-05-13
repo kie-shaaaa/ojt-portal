@@ -168,9 +168,9 @@ export type Courses = {
 };
 
 export type UpdateApplicationSettingsDto = {
-  status: boolean;
+  portal_status: boolean;
   opening_date?: Date;
   closing_date?: Date;
-  created_by: string;
+  created_by: number;
 };
 export type AppointmentType = 'interview' | 'orientation';

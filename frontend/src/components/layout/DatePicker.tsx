@@ -11,6 +11,7 @@ interface DatePickerProps {
   error?: string;
   id?: string;
   required?: boolean;
+  disabled?: boolean;
   placeholder?: string;
 }
 
@@ -22,6 +23,7 @@ export default function DatePicker({
   error,
   id = "deployment-date",
   required = false,
+  disabled = false,
   placeholder = "yyyy/mm/dd",
 }: DatePickerProps): JSX.Element {
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +68,6 @@ export default function DatePicker({
   const isDisabledDate = (dateStr: string): boolean => {
     return isPastDate(dateStr) || isWeekend(dateStr);
   };
-
   // Close picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,6 +86,8 @@ export default function DatePicker({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  
 
   // Calendar generation
   const firstDay = new Date(activeYear, activeMonth, 1).getDay();
@@ -105,16 +108,17 @@ export default function DatePicker({
           htmlFor={id}
           className={`relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-sm tracking-[0] leading-5 ${labelClassName}`}
         >
-          {label}{" "}
-          {required ? <span className="text-red-500">*</span> : null}
+          {label} {required ? <span className="text-red-500">*</span> : null}
         </label>
       ) : null}
 
       <div className="relative self-stretch w-full">
         <div
-          className={`flex items-center justify-between gap-3 px-4 py-3 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-lg overflow-visible border shadow-[0px_1px_2px_#0000000d] ${
-            error ? "border-red-500 border-2" : "border-gray-300 border"
-          }`}
+          className={`flex items-center justify-between gap-3 px-4 py-3 relative self-stretch w-full flex-[0_0_auto] rounded-lg overflow-visible border shadow-[0px_1px_2px_#0000000d] ${
+            disabled
+              ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60" // ✅
+              : "bg-white"
+          } ${error ? "border-red-500 border-2" : "border-gray-300 border"}`}
         >
           <input
             ref={inputRef}
@@ -123,6 +127,13 @@ export default function DatePicker({
             type="text"
             readOnly
             autoComplete="off"
+            onClick={() => {
+              if (disabled) {
+                setShowPicker(false);
+                return;
+              }
+              setShowPicker(!showPicker);
+            }}
             aria-required={required || undefined}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
@@ -134,13 +145,19 @@ export default function DatePicker({
               }
               return "";
             })()}
-            onClick={() => setShowPicker(!showPicker)}
             className="relative flex min-w-0 flex-1 items-center border-0 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-[0] leading-6 outline-none placeholder:text-gray-400"
           />
 
           <button
             type="button"
-            onClick={() => setShowPicker(!showPicker)}
+            onClick={() => {
+              if (disabled) {
+                setShowPicker(false);
+                return;
+              }
+              setShowPicker(!showPicker);
+            }}
+            disabled={disabled}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-blue-50 hover:text-gray-600"
             aria-label="Open calendar picker"
           >
@@ -239,7 +256,10 @@ export default function DatePicker({
       </div>
 
       {error ? (
-        <div id={`${id}-error`} className="flex items-center gap-1 text-red-500 text-xs">
+        <div
+          id={`${id}-error`}
+          className="flex items-center gap-1 text-red-500 text-xs"
+        >
           <AlertCircle size={14} />
           {error}
         </div>
