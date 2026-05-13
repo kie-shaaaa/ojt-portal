@@ -1,10 +1,35 @@
-import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  BadRequestException,
+  Get,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { AppointmentType } from '../data/types';
 import { AppointmentsService } from '../services/appointments.service';
 
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentService: AppointmentsService) {}
+
+  @Get('fetch-calendar')
+  async fetchAppointments(
+    @Query('month') month?: string,
+    @Query('year') year?: string,
+  ) {
+    try {
+      if (!month || !year) {
+        throw new BadRequestException('month and year are required');
+      }
+
+      return await this.appointmentService.getAppointments(month, year);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to fetch appointment',
+      );
+    }
+  }
 
   @Post('create')
   async createAppointment(
