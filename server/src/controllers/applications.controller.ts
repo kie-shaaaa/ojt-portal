@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -343,6 +344,11 @@ export class ApplicationsController {
           : 'Failed to fetch pending count';
       throw new BadRequestException(message);
     }
+  }
+
+  @Delete('delete')
+  async deleteApplication(@Body() id: number): Promise<SuccessResponse> {
+    return await this.applicationService.deleteApplication(id);
   }
 
   /**

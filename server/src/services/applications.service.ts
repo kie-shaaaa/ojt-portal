@@ -14,6 +14,7 @@ import {
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { ResolveReplFn } from '@nestjs/core/repl/native-functions';
 
 @Injectable()
 export class ApplicationsService {
@@ -300,5 +301,24 @@ export class ApplicationsService {
     );
 
     return parseInt(res.rows[0]?.count || '0', 10);
+  }
+
+  async deleteApplication(id: number) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const res = await client.query(
+        `
+        DELETE FROM applications
+        WHERE id = $1
+        `,
+        [id],
+      );
+
+      return SuccessHandler('Successfully deleted user', res.rows[0]);
+    } catch (error) {
+      console.log(`[APPLICATION] error deleting application`, error);
+      throwAppError('server_error', 'Error fetching settings');
+    }
   }
 }

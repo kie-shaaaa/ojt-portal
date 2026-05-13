@@ -14,6 +14,7 @@ import { AppointmentsModule } from './modules/appointments.module';
 import { SchoolsModule } from './modules/schools.module';
 import { CoursesModule } from './modules/courses.module';
 import { DatabaseModule } from './modules/database.module';
+import { MailerService } from './services/mailer.service';
 
 @Module({
   imports: [
@@ -27,6 +28,6 @@ import { DatabaseModule } from './modules/database.module';
     CoursesModule,
   ],
   controllers: [AppController, DashboardController],
-  providers: [AppService, DashboardService, JwtService],
+  providers: [AppService, DashboardService, JwtService, MailerService],
 })
 export class AppModule {}

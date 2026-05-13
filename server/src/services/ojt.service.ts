@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { AllOjt } from '../data/types';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class OjtService {
@@ -106,6 +107,25 @@ export class OjtService {
       }
 
       throw new InternalServerErrorException('Failed to fetch user accounts');
+    }
+  }
+
+  async deleteOjt(id: number) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const res = await client.query(
+        `
+        DELETE FROM applications
+        WHERE id = $1
+        `,
+        [id],
+      );
+
+      return SuccessHandler('Successfully deleted user', res.rows[0]);
+    } catch (error) {
+      console.log(`[APPLICATION] error deleting application`, error);
+      throwAppError('server_error', 'Error fetching settings');
     }
   }
 }

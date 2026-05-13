@@ -4,11 +4,12 @@ import { AccountsService } from '../services/accounts.service';
 import { DatabaseModule } from './database.module';
 import { AuthModule } from './auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { MailerModule } from './mailer.module';
 
 @Module({
   controllers: [AccountsController],
   providers: [AccountsService],
-  imports: [DatabaseModule, AuthModule, JwtModule],
+  imports: [DatabaseModule, AuthModule, JwtModule, MailerModule],
   exports: [AccountsService],
 })
 export class AccountsModule {}
