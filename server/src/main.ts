@@ -4,17 +4,21 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import 'dotenv/config';
 
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      bodyLimit: 25 * 1024 * 1024,
+    }),
   );
 
   // MUST register plugins BEFORE app.listen
@@ -31,9 +35,17 @@ async function bootstrap() {
     timeWindow: '1 minute',
   });
 
+  await app.register(multipart as any, {
+    attachFieldsToBody: false,
+    limits: {
+      fileSize: 6 * 1024 * 1024,
+    },
+  });
+
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
+    methods: ['POST', 'PUT', 'GET', 'PATCH', 'DELETE'],
   });
 
   app.useGlobalPipes(

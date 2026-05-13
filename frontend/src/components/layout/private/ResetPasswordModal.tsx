@@ -8,11 +8,13 @@ import { Check, X, ShieldCheck, Type, Hash, Lock } from "lucide-react";
 interface ResetPasswordModalProps {
   account: AccountRow;
   onClose: () => void;
+  onReset: (newPassword: string) => Promise<void>;
 }
 
 export const ResetPasswordModal = ({
   account,
   onClose,
+  onReset,
 }: ResetPasswordModalProps): JSX.Element => {
   const [password, setPassword] = useState("");
   const passwordId = useId();
@@ -52,7 +54,7 @@ export const ResetPasswordModal = ({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onClose();
+    onReset(password);
   };
 
   return (
@@ -86,7 +88,8 @@ export const ResetPasswordModal = ({
           <button
             type="button"
             aria-label="Close reset password dialog"
-            className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+            onClick={handleCancel} 
+            className="..."
           >
             <X className="h-5 w-5" />
           </button>

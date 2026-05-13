@@ -8,7 +8,8 @@ export type ApplicationStatus =
   | 'under_review'
   | 'rejected'
   | 'for_interview'
-  | 'accepted';
+  | 'accepted'
+  | 'pending accept';
 
 export type Application = {
   id: number;
@@ -52,6 +53,7 @@ export type Application = {
 export type Account = {
   id?: number;
   email: string;
+  username: string;
   account_type: AccountType;
   password: string;
   created_at: Date;
@@ -155,3 +157,21 @@ export type AccountPagination = {
   type?: AccountType;
   createdDate?: Date;
 };
+
+export type Schools = {
+  id: number;
+  schoolName: string;
+};
+
+export type Courses = {
+  id: number;
+  courseName: string;
+};
+
+export type UpdateApplicationSettingsDto = {
+  portal_status: boolean;
+  opening_date?: Date;
+  closing_date?: Date;
+  created_by: number;
+};
+export type AppointmentType = 'interview' | 'orientation';

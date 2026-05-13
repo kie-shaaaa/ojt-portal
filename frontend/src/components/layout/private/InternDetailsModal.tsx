@@ -1,14 +1,11 @@
 "use client";
 
-import {
-  X,
-  Eye,
-  Download,
-  FileText,
-} from "lucide-react";
+import { X, Eye, Download, FileText } from "lucide-react";
 import { JSX, useEffect, useState } from "react";
+import { useApplicationFiles } from "@/hooks/useApplicationFiles";
 
 export type ModalInternData = {
+  applicationId?: number | string;
   ojtId: string;
   portalId?: string;
   name: string;
@@ -34,29 +31,45 @@ type DetailRow = {
   bold?: boolean;
 };
 
-const FileCard = ({ file }: { file: { id?: string; title: string; subtitle?: string; fileType?: string } }): JSX.Element => {
-  const { title, fileType } = file;
+const FileCard = ({
+  file,
+}: {
+  file: {
+    id: number;
+    application_id: number;
+    file_type: string;
+    document_key: string | null;
+    file_name: string;
+    file_extension: string;
+    file_path: string;
+    file_size: number;
+    uploaded_at: string;
+    signedUrl: string;
+  };
+}): JSX.Element => {
+  const { file_name, file_size, file_extension, signedUrl, document_key } =
+    file;
+  const title = document_key?.toUpperCase() || file_name.toUpperCase();
 
   const handleView = () => {
-    const content = `Preview of ${title}`;
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    window.open(signedUrl, "_blank");
   };
 
   const handleDownload = () => {
-    const content = `Downloaded file: ${title}`;
-    const ext = (fileType || "txt").toLowerCase().includes("pdf") ? "pdf" : (fileType || "txt");
-    const blob = new Blob([content], { type: "application/octet-stream" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title.replace(/\s+/g, "_").toLowerCase()}.${ext}`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    const link = document.createElement("a");
+    link.href = signedUrl;
+    link.download = file_name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
   return (
@@ -66,8 +79,11 @@ const FileCard = ({ file }: { file: { id?: string; title: string; subtitle?: str
       </div>
 
       <div className="min-w-0">
-        <span className="block break-words text-sm font-medium uppercase leading-5 text-gray-900">
+        <span className="block wrap-break-word text-sm font-medium uppercase leading-5 text-gray-900">
           {title}
+        </span>
+        <span className="text-xs text-gray-500">
+          {formatFileSize(file_size)} • {file_extension.toUpperCase()}
         </span>
       </div>
 
@@ -76,20 +92,20 @@ const FileCard = ({ file }: { file: { id?: string; title: string; subtitle?: str
           type="button"
           onClick={handleView}
           className="inline-flex h-9 items-center gap-1.5 rounded-md bg-white px-3 text-xs font-medium text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-50"
+          title="Preview file"
         >
           <Eye size={14} />
-          <span className="sr-only">View</span>
-          <span className="ml-2 text-xs">View</span>
+          <span className="sr-only">Preview</span>
         </button>
 
         <button
           type="button"
           onClick={handleDownload}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#0038a8] px-3 text-xs font-medium text-white transition hover:bg-[#002f8c]"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-50 px-3 text-xs font-medium text-green-700 ring-1 ring-green-200 transition hover:bg-green-100"
+          title="Download file"
         >
           <Download size={14} />
           <span className="sr-only">Download</span>
-          <span className="ml-2 text-xs">Download</span>
         </button>
       </div>
     </div>
@@ -101,8 +117,19 @@ type InternDetailsModalProps = {
   intern?: ModalInternData | null;
 };
 
-export default function InternDetailsModal({ onClose, intern }: InternDetailsModalProps): JSX.Element {
+export default function InternDetailsModal({
+  onClose,
+  intern,
+}: InternDetailsModalProps): JSX.Element {
   const [isVisible, setIsVisible] = useState(false);
+  const {
+    files,
+    loading: filesLoading,
+    error: filesError,
+  } = useApplicationFiles({
+    applicationId: intern?.applicationId,
+    applicantEmail: intern?.email,
+  });
 
   useEffect(() => {
     requestAnimationFrame(() => setIsVisible(true));
@@ -126,21 +153,17 @@ export default function InternDetailsModal({ onClose, intern }: InternDetailsMod
     { label: "School:", value: intern?.school ?? "Adamson University" },
     { label: "Course:", value: intern?.course ?? "BA in Anthropology" },
     { label: "Hours Needed:", value: intern?.hoursNeeded ?? "21 hours" },
-    { label: "Deployment Date:", value: intern?.deploymentDate ?? "May 11, 2026" },
+    {
+      label: "Deployment Date:",
+      value: intern?.deploymentDate ?? "May 11, 2026",
+    },
     { label: "End Date:", value: intern?.endDate ?? "May 12, 2026" },
   ];
 
-  const requirementFiles = intern?.requirementFiles ?? [
-    { id: "resume-or-cv", title: "RESUME OR CV", fileType: "PDF" },
-    { id: "proof-of-enrollment", title: "PROOF OF ENROLLMENT", fileType: "PDF" },
-    { id: "draft-endorsement-letter", title: "DRAFT ENDORSEMENT LETTER", fileType: "PDF" },
-    { id: "vaccine-card-or-medical-cert", title: "VACCINE CARD OR MEDICAL CERT", fileType: "PDF" },
-    { id: "draft-memorandum-of-agreement", title: "DRAFT MEMORANDUM OF AGREEMENT", fileType: "PDF" },
-    { id: "1x1-picture", title: "1X1 PICTURE", fileType: "JPG/PNG" },
-  ];
+  const fileUploads = files.length > 0 ? files : [];
   return (
     <div
-      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
         isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
       }`}
       onClick={() => onClose && onClose()}
@@ -151,7 +174,9 @@ export default function InternDetailsModal({ onClose, intern }: InternDetailsMod
         aria-labelledby="intern-details-title"
         onClick={(e) => e.stopPropagation()}
         className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out ${
-          isVisible ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-2 opacity-0"
+          isVisible
+            ? "scale-100 translate-y-0 opacity-100"
+            : "scale-95 translate-y-2 opacity-0"
         }`}
       >
         {/* Header */}
@@ -177,22 +202,15 @@ export default function InternDetailsModal({ onClose, intern }: InternDetailsMod
         <div className="flex-1 overflow-y-auto px-8 py-4">
           {/* Details */}
           {detailRows.map((row) => (
-            <div
-              key={row.label}
-              className="flex border-b border-gray-100 py-3"
-            >
+            <div key={row.label} className="flex border-b border-gray-100 py-3">
               <div className="w-1/3">
-                <dt className="text-sm text-gray-700">
-                  {row.label}
-                </dt>
+                <dt className="text-sm text-gray-700">{row.label}</dt>
               </div>
 
               <div className="w-2/3">
                 <dd
                   className={`text-sm ${
-                    row.bold
-                      ? "font-bold text-gray-900"
-                      : "text-gray-600"
+                    row.bold ? "font-bold text-gray-900" : "text-gray-600"
                   }`}
                 >
                   {row.value}
@@ -204,18 +222,23 @@ export default function InternDetailsModal({ onClose, intern }: InternDetailsMod
           {/* Requirement Files */}
           <div className="flex py-4">
             <div className="w-1/3">
-              <span className="text-sm text-gray-700">
-                Requirement File/s:
-              </span>
+              <span className="text-sm text-gray-700">File Uploads:</span>
             </div>
 
             <div className="flex w-2/3 flex-col gap-4">
-              {requirementFiles.map((file) => (
-                <FileCard
-                  key={file.id ?? file.title}
-                  file={file}
-                />
-              ))}
+              {filesLoading ? (
+                <div className="text-sm text-gray-500">Loading files...</div>
+              ) : filesError ? (
+                <div className="text-sm text-red-600">
+                  Failed to load files: {filesError}
+                </div>
+              ) : fileUploads.length > 0 ? (
+                fileUploads.map((file) => (
+                  <FileCard key={file.id} file={file} />
+                ))
+              ) : (
+                <div className="text-sm text-gray-500">No files uploaded</div>
+              )}
             </div>
           </div>
         </div>

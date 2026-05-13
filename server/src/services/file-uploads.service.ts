@@ -6,6 +6,7 @@ import { DatabaseService } from './database/database.service';
 export interface FileUploadData {
   application_id: number;
   file_type: 'ojt_resume' | 'job_resume' | 'cover_letter' | 'other';
+  document_key?: string;
   file_name: string;
   file_extension?: string;
   file_size: number;
@@ -15,6 +16,7 @@ export interface FileUploadResult {
   id: number;
   application_id: number;
   file_type: string;
+  document_key: string | null;
   file_name: string;
   file_extension: string;
   file_path: string;
@@ -67,6 +69,12 @@ export class FileUploadsService {
     file: UploadedFile | undefined,
     fileData: FileUploadData,
   ): Promise<FileUploadResult> {
+    const documentKey = fileData.document_key ?? fileData.file_type;
+    const fileExtension = this.getFileExtension(
+      file?.originalname ?? fileData.file_name,
+    );
+    const filePath = `applicant-${fileData.application_id}/${documentKey}-${fileData.application_id}.${fileExtension}`;
+
     try {
       // Step 1: Validate file
       this.validateFile(file);
@@ -76,14 +84,7 @@ export class FileUploadsService {
         throw new BadRequestException('File validation failed');
       }
 
-      // Step 2: Extract file extension
-      const fileExtension = this.getFileExtension(file.originalname);
-
-      // Step 3: Generate Supabase file path
-      const fileName = `${fileData.file_type}-${fileData.application_id}.${fileExtension}`;
-      const filePath = `applicant-${fileData.application_id}/${fileName}`;
-
-      // Step 4: Upload to Supabase
+      // Step 2: Upload to Supabase
       this.logger.log(`Uploading file: ${filePath}`);
       await this.supabaseService.uploadBuffer(
         this.SUPABASE_BUCKET,
@@ -92,10 +93,11 @@ export class FileUploadsService {
         file.mimetype,
       );
 
-      // Step 5: Save metadata to database
+      // Step 3: Save metadata to database
       const result = await this.saveFileMetadata({
         application_id: fileData.application_id,
         file_type: fileData.file_type,
+        document_key: documentKey,
         file_name: file.originalname,
         file_extension: fileExtension,
         file_path: filePath,
@@ -105,6 +107,9 @@ export class FileUploadsService {
       this.logger.log(`File saved to database: ID ${result.id}`);
       return result;
     } catch (error) {
+      await this.supabaseService
+        .remove(this.SUPABASE_BUCKET, filePath)
+        .catch(() => undefined);
       this.logger.error(`File upload failed: ${error}`, error);
       throw error;
     }
@@ -116,6 +121,7 @@ export class FileUploadsService {
   private async saveFileMetadata(data: {
     application_id: number;
     file_type: string;
+    document_key: string;
     file_name: string;
     file_extension: string;
     file_path: string;
@@ -124,15 +130,16 @@ export class FileUploadsService {
     const dbClient = this.dbService.getClient();
     const query = `
       INSERT INTO file_uploads 
-        (application_id, file_type, file_name, file_extension, file_path, file_size, uploaded_at)
+        (application_id, file_type, document_key, file_name, file_extension, file_path, file_size, uploaded_at)
       VALUES 
-        ($1, $2, $3, $4, $5, $6, NOW())
-      RETURNING id, application_id, file_type, file_name, file_extension, file_path, file_size, uploaded_at
+        ($1, $2, $3, $4, $5, $6, $7, NOW())
+      RETURNING id, application_id, file_type, document_key, file_name, file_extension, file_path, file_size, uploaded_at
     `;
 
     const result = await dbClient.query(query, [
       data.application_id,
       data.file_type,
+      data.document_key,
       data.file_name,
       data.file_extension,
       data.file_path,
@@ -150,7 +157,7 @@ export class FileUploadsService {
   ): Promise<FileUploadResult[]> {
     const dbClient = this.dbService.getClient();
     const query = `
-      SELECT id, application_id, file_type, file_name, file_extension, file_path, file_size, uploaded_at
+      SELECT id, application_id, file_type, document_key, file_name, file_extension, file_path, file_size, uploaded_at
       FROM file_uploads
       WHERE application_id = $1
       ORDER BY uploaded_at DESC

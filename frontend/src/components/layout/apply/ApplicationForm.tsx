@@ -8,6 +8,9 @@ import { OjtInformationSection } from "./OjtInformationSection";
 import { DocumentUploadSection } from "./DocumentUploadSection";
 import { DataPrivacySection } from "./DataPrivacySection";
 import { FormActionsSection } from "./FormActionsSection";
+import { apiCall } from "@/lib/api";
+import ApplicationSubmittedModal from "../../modals/ApplicationSubmittedModal";
+import { useRouter } from "next/navigation";
 
 export type FormStep = 1 | 2 | 3 | 4;
 
@@ -38,28 +41,31 @@ interface ValidationErrors {
 }
 
 export const ApplicationForm = (): JSX.Element => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<FormStep>(1);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
     {},
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [personalDetails, setPersonalDetails] = useState<PersonalDetailsData>({
-     firstName: "",
-     lastName: "",
-     email: "",
-     phone: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
   });
 
   const [ojtInformation, setOjtInformation] = useState<OjtInformationData>({
-     school: "",
-     course: "",
-     hours: "",
-     deploymentDate: "",
+    school: "",
+    course: "",
+    hours: "",
+    deploymentDate: "",
   });
 
-  const [uploadedDocuments, setUploadedDocuments] = useState<DocumentUploadData>(
-    {},
-  );
+  const [uploadedDocuments, setUploadedDocuments] =
+    useState<DocumentUploadData>({});
 
   const [dataPrivacy, setDataPrivacy] = useState<DataPrivacyData>({
     agreed: false,
@@ -83,7 +89,8 @@ export const ApplicationForm = (): JSX.Element => {
     if (!personalDetails.phone.trim()) {
       errors.phone = "Phone number is required";
     } else if (!/^\d{10}$/.test(personalDetails.phone.replace(/\D/g, ""))) {
-      errors.phone = "Please enter a valid 10-digit phone number";
+      errors.phone =
+        "Please enter a valid 10-digit PH mobile number starting with 9";
     }
 
     setValidationErrors(errors);
@@ -116,13 +123,22 @@ export const ApplicationForm = (): JSX.Element => {
     const errors: ValidationErrors = {};
 
     // Check for required documents
-    const requiredDocs = ["resume-cv", "picture-1x1"];
+    const requiredDocs = [
+      "resume-cv",
+      "picture-1x1",
+      "proof-of-enrollment",
+      "draft-endorsement",
+      "vaccine-card",
+      "draft-moa",
+    ];
     requiredDocs.forEach((docId) => {
       if (!uploadedDocuments[docId]) {
         errors[docId] =
           docId === "resume-cv"
             ? "Resume/CV is required"
-            : "1x1 Picture is required";
+            : docId === "picture-1x1"
+              ? "1x1 Picture is required"
+              : "This document is required";
       }
     });
 
@@ -163,31 +179,104 @@ export const ApplicationForm = (): JSX.Element => {
     if (isValid && currentStep < 4) {
       setCurrentStep((prev) => (prev + 1) as FormStep);
       setValidationErrors({});
+      setSubmitError(null);
     }
-  }, [currentStep, validatePersonalDetails, validateOjtInformation, validateDocuments, validateDataPrivacy]);
+  }, [
+    currentStep,
+    validatePersonalDetails,
+    validateOjtInformation,
+    validateDocuments,
+    validateDataPrivacy,
+  ]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep((prev) => (prev - 1) as FormStep);
       setValidationErrors({});
+      setSubmitError(null);
     }
   }, [currentStep]);
 
   const handleSubmit = useCallback(() => {
-    if (validateDataPrivacy()) {
-      // Submit form data
-      const formData = {
-        personalDetails,
-        ojtInformation,
-        uploadedDocuments,
-        dataPrivacy,
-      };
+    const isValid =
+      validatePersonalDetails() &&
+      validateOjtInformation() &&
+      validateDocuments() &&
+      validateDataPrivacy();
 
-      console.log("Submitting form:", formData);
-      
-      alert("Application submitted successfully!");
+    if (!isValid) {
+      return;
     }
-  }, [personalDetails, ojtInformation, uploadedDocuments, dataPrivacy, validateDataPrivacy]);
+
+    setSubmitError(null);
+
+    const formData = new FormData();
+    const normalizedPhone = personalDetails.phone
+      .replace(/\D/g, "")
+      .slice(0, 10);
+
+    formData.append("application_type", "ojt");
+    formData.append("first_name", personalDetails.firstName);
+    formData.append("last_name", personalDetails.lastName);
+    formData.append("email", personalDetails.email);
+    formData.append("phone", `+63${normalizedPhone}`);
+    formData.append("school_name", ojtInformation.school);
+    formData.append("course", ojtInformation.course);
+    formData.append("hours_needed", ojtInformation.hours);
+    formData.append("deployment_date", ojtInformation.deploymentDate);
+    formData.append("agreed_terms", String(dataPrivacy.agreed));
+
+    Object.entries(uploadedDocuments).forEach(([key, file]) => {
+      if (file) {
+        formData.append(key, file, file.name);
+      }
+    });
+
+    setIsSubmitting(true);
+
+    void (async () => {
+      try {
+        const result = await apiCall("/applications/submit", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!result?.ok) {
+          throw new Error(result?.message || "Failed to submit application");
+        }
+
+        setIsSuccessModalOpen(true);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to submit application";
+        setSubmitError(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
+  }, [
+    dataPrivacy.agreed,
+    ojtInformation.course,
+    ojtInformation.deploymentDate,
+    ojtInformation.hours,
+    ojtInformation.school,
+    personalDetails.email,
+    personalDetails.firstName,
+    personalDetails.lastName,
+    personalDetails.phone,
+    uploadedDocuments,
+    validateDataPrivacy,
+    validateDocuments,
+    validateOjtInformation,
+    validatePersonalDetails,
+  ]);
+
+  const handleSuccessModalClose = useCallback(() => {
+    setIsSuccessModalOpen(false);
+    router.push("/");
+  }, [router]);
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center px-4 py-8 [background:radial-gradient(50%_50%_at_50%_50%,rgba(30,58,138,1)_0%,rgba(15,23,42,1)_100%),linear-gradient(0deg,rgba(255,255,255,1)_0%,rgba(255,255,255,1)_100%)]">
@@ -238,16 +327,36 @@ export const ApplicationForm = (): JSX.Element => {
           />
         )}
 
+        {submitError && (
+          <div
+            role="alert"
+            className="mx-12 mt-6 w-[calc(100%-6rem)] rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {submitError}
+          </div>
+        )}
+
         {/* Navigation Buttons */}
         <FormActionsSection
           onPrevious={handlePrevious}
           onNext={currentStep === 4 ? handleSubmit : handleNext}
           previousDisabled={currentStep === 1}
-          nextDisabled={false}
+          nextDisabled={isSubmitting}
           previousLabel="Previous"
-          nextLabel={currentStep === 4 ? "Submit" : "Next"}
+          nextLabel={
+            isSubmitting
+              ? "Submitting..."
+              : currentStep === 4
+                ? "Submit"
+                : "Next"
+          }
         />
       </section>
+
+      <ApplicationSubmittedModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleSuccessModalClose}
+      />
     </main>
   );
 };

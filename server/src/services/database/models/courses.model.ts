@@ -1,6 +1,6 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createCourses(client: Client) {
+export async function createCourses(client: Pool) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS courses (
             id SERIAL PRIMARY KEY,
@@ -8,7 +8,7 @@ export async function createCourses(client: Client) {
         );
     `);
 
-    await client.query(`
+  await client.query(`
         INSERT INTO courses (course_name) VALUES
         ('BA In Anthropology'),
         ('BA In Broadcasting'),

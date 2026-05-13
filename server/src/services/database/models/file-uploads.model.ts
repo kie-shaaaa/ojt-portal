@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
 /**
  * FILE_UPLOADS MODEL - Supabase Migration
@@ -10,7 +10,7 @@ import { Client } from 'pg';
  * Old: /uploads/applications/abc123.pdf
  * New: documents/applicant-{application_id}/{file_type}-{application_id}.{extension}
  */
-export async function createFileUploads(client: Client) {
+export async function createFileUploads(client: Pool) {
   await client.query(`
         DO $$
         BEGIN
@@ -24,6 +24,7 @@ export async function createFileUploads(client: Client) {
             id SERIAL PRIMARY KEY,
             application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
             file_type file_type NOT NULL,
+          document_key VARCHAR(100),
             file_name VARCHAR(255) NOT NULL,
             file_extension VARCHAR(10),
             file_path VARCHAR(500) NOT NULL,
@@ -31,6 +32,11 @@ export async function createFileUploads(client: Client) {
             uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
+
+  await client.query(`
+        ALTER TABLE file_uploads
+        ADD COLUMN IF NOT EXISTS document_key VARCHAR(100);
+      `);
 
   await client
     .query(
@@ -44,6 +50,14 @@ export async function createFileUploads(client: Client) {
     .query(
       `
         CREATE INDEX IF NOT EXISTS idx_file_type ON file_uploads(file_type);
+    `,
+    )
+    .catch(() => {});
+
+  await client
+    .query(
+      `
+        CREATE INDEX IF NOT EXISTS idx_document_key ON file_uploads(document_key);
     `,
     )
     .catch(() => {});

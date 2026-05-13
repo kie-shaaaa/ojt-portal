@@ -7,8 +7,7 @@ import { EditAccountModal } from "../EditAccountModal";
 import { ResetPasswordModal } from "../ResetPasswordModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { CreateAccountModal } from "../CreateAccountModal";
-
-// Using lucide icons for row actions and buttons
+import { apiCall } from "@/lib/api";
 
 const columns = [
   { key: "id", label: "ID", width: "w-[68.98px]", align: "items-start" },
@@ -41,12 +40,13 @@ const columns = [
 
 interface AccountsTableSectionProps {
   accounts: AccountRow[];
+  onAccountsChange: (accounts: AccountRow[]) => void;
 }
 
 export const AccountsTableSection = ({
-  accounts: initialAccounts,
+  accounts,
+  onAccountsChange,
 }: AccountsTableSectionProps): JSX.Element => {
-  const [accounts, setAccounts] = useState(initialAccounts);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -85,21 +85,104 @@ export const AccountsTableSection = ({
     setSelectedAccount(null);
   };
 
-  const handleUpdateAccount = (updatedAccount: AccountRow) => {
-    setAccounts(
+  const handleUpdateAccount = async (updatedAccount: AccountRow) => {
+    try {
+      const result = await apiCall("/accounts/update", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: updatedAccount.id,
+          newUser: updatedAccount.username,
+          newType: updatedAccount.account_type,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // ✅ If the updated account belongs to the current user,
+      // patch their localStorage token to reflect the new account_type.
+      const raw = localStorage.getItem("access_token");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.user?.id === updatedAccount.id) {
+            parsed.user.account_type = updatedAccount.account_type;
+            // Also update the username in the stored session if it changed
+            parsed.user.username = updatedAccount.username;
+            localStorage.setItem("access_token", JSON.stringify(parsed));
+
+            // Force a full reload so the app re-reads the new role from the
+            // updated token and re-renders guards/navigation accordingly.
+            window.location.reload();
+          }
+        } catch {
+          // Malformed token — leave it alone
+        }
+      }
+
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+
+    onAccountsChange(
       accounts.map((account) =>
         account.id === updatedAccount.id ? updatedAccount : account,
       ),
     );
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!selectedAccount) return;
+    try {
+      const result = await apiCall("/accounts/disable", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: selectedAccount.id,
+        }),
+      });
 
-    setAccounts((current) =>
-      current.filter((account) => account.id !== selectedAccount.id),
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+    onAccountsChange(
+      accounts.filter((account) => account.id !== selectedAccount.id),
     );
     setIsDeleteModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handlePasswordReset = async (newPassword: string) => {
+    if (!selectedAccount) return;
+    try {
+      const result = await apiCall("/accounts/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          id: selectedAccount.id,
+          newPassword: newPassword,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+    setIsResetModalOpen(false);
     setSelectedAccount(null);
   };
 
@@ -111,15 +194,34 @@ export const AccountsTableSection = ({
     setIsCreateModalOpen(false);
   };
 
-  const handleAccountCreated = (newAccount: AccountRow) => {
-    setAccounts((current) => {
-      const updated = [newAccount, ...current];
-      return updated.sort((a, b) => a.id - b.id);
-    });
+  const handleAccountCreated = async (
+    newAccount: AccountRow & { password: string },
+  ) => {
+    try {
+      const result = await apiCall("/accounts/create", {
+        method: "POST",
+        body: JSON.stringify({
+          newAccount,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error creating account", error);
+      throw new Error("Error creating account");
+    }
+
+    onAccountsChange([newAccount, ...accounts].sort((a, b) => a.id - b.id));
   };
 
   const nextId =
     accounts.length > 0 ? Math.max(...accounts.map((a) => a.id)) + 1 : 1;
+
   return (
     <>
       <section className="flex flex-col items-start pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-xl overflow-hidden border border-solid border-gray-100 shadow-sm">
@@ -175,7 +277,7 @@ export const AccountsTableSection = ({
               </thead>
               <tbody className="bg-white">
                 {accounts.map((account) => {
-                  const isAdmin = account.accountType === "Admin";
+                  const isAdmin = account.account_type === "admin";
 
                   return (
                     <tr
@@ -204,11 +306,18 @@ export const AccountsTableSection = ({
                             color: isAdmin ? "#4338ca" : "#15803D",
                           }}
                         >
-                          {account.accountType}
+                          {account.account_type}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {account.dateCreated}
+                        {new Date(account.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-right">
                         <div className="flex items-center justify-end gap-3">
@@ -248,6 +357,7 @@ export const AccountsTableSection = ({
           </div>
         </div>
       </section>
+
       {isEditModalOpen && selectedAccount && (
         <EditAccountModal
           account={selectedAccount}
@@ -258,6 +368,7 @@ export const AccountsTableSection = ({
       {isResetModalOpen && selectedAccount && (
         <ResetPasswordModal
           account={selectedAccount}
+          onReset={handlePasswordReset}
           onClose={handleCloseResetModal}
         />
       )}

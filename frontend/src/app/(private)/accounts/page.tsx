@@ -3,102 +3,112 @@ import { AccountsFilterSection } from "../../../components/layout/private/Accoun
 import { AccountsHeaderSection } from "../../../components/layout/private/Accounts/HeaderSection";
 import { AccountsStatsSection } from "../../../components/layout/private/Accounts/AccountsStatsSection";
 import { AccountsTableSection } from "../../../components/layout/private/Accounts/AccountsTableSection";
-import { JSX, useState, useMemo } from "react";
+import { JSX, useState, useMemo, useEffect } from "react";
+import { apiCall } from "@/lib/api";
 
 export type AccountRow = {
   id: number;
   username: string;
   email: string;
-  accountType: "Admin" | "Employee";
-  dateCreated: string;
+  account_type: "admin" | "employee";
+  created_at: string;
   isCurrentUser?: boolean;
 };
 
-const mockAccounts: AccountRow[] = [
-  {
-    id: 1,
-    username: "admin",
-    email: "admin@ntc.gov.ph",
-    accountType: "Admin",
-    dateCreated: "May 4, 2026",
-    isCurrentUser: true,
-  },
-  {
-    id: 2,
-    username: "adminhr",
-    email: "adminhr@gmail.com",
-    accountType: "Admin",
-    dateCreated: "May 4, 2026",
-  },
-  {
-    id: 3,
-    username: "hr_employee",
-    email: "hr.employee@ntc.gov.ph",
-    accountType: "Employee",
-    dateCreated: "May 4, 2026",
-  },
-];
+type AccountsResponse = {
+  status: string;
+  ok: boolean;
+  message: string;
+  data: AccountRow[];
+};
 
 export const MainContentArea = (): JSX.Element => {
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState({
     accountType: "all",
     sortByDate: "newest",
   });
+
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Filter and sort accounts based on filter values
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        setLoading(true);
+
+        const result: AccountsResponse = await apiCall(`/accounts/active`, {
+          method: "GET",
+        });
+
+        setAccounts(result.data);
+      } catch (err) {
+        console.error("Error fetching accounts:", err);
+        setAccounts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccounts();
+  }, []); // fetch once on mount — all filtering is client-side
+
   const filteredAccounts = useMemo(() => {
-    let result = [...mockAccounts];
+    let result = [...accounts];
 
-
-     if (searchTerm.trim() !== "") {
+    if (searchTerm.trim() !== "") {
       result = result.filter(
         (account) =>
-          account.username
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          account.email
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
+          account.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          account.email.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
-    // Filter by account type
     if (filters.accountType.toLowerCase() !== "all") {
       result = result.filter(
         (account) =>
-          account.accountType.toLowerCase() ===
-          filters.accountType.toLowerCase()
+          account.account_type.toLowerCase() ===
+          filters.accountType.toLowerCase(),
       );
     }
 
-    // Sort by date
     result.sort((a, b) => {
-      const dateA = new Date(a.dateCreated).getTime();
-      const dateB = new Date(b.dateCreated).getTime();
-      return filters.sortByDate === "newest" 
-        ? dateB - dateA 
-        : dateA - dateB;
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return filters.sortByDate === "newest" ? dateB - dateA : dateA - dateB;
     });
 
     return result;
-  }, [filters, searchTerm]);
+  }, [accounts, filters, searchTerm]);
+
+  // Lifted mutation handler — keeps accounts state as single source of truth
+  const handleAccountsChange = (updated: AccountRow[]) => {
+    setAccounts(updated);
+  };
 
   return (
     <main
       className="relative flex flex-col items-start gap-6 p-8"
       aria-label="Accounts main content"
     >
-      <AccountsHeaderSection 
+      <AccountsHeaderSection
         searchTerm={searchTerm}
         onSearchChange={(value: string) => setSearchTerm(value)}
       />
-      <AccountsStatsSection accounts={mockAccounts} />
-      <AccountsFilterSection 
-        filters={filters}
-        onFilterChange={setFilters}
-      />
-      <AccountsTableSection accounts={filteredAccounts} />
+
+      <AccountsStatsSection accounts={accounts} />
+
+      <AccountsFilterSection filters={filters} onFilterChange={setFilters} />
+
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading accounts...</p>
+      ) : (
+        <AccountsTableSection
+          accounts={filteredAccounts}
+          onAccountsChange={handleAccountsChange}
+        />
+      )}
     </main>
   );
 };

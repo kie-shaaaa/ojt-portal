@@ -114,14 +114,6 @@ export const LoginFormSection = (): JSX.Element => {
                     Password
                   </span>
                 </label>
-                <a
-                  className="inline-flex flex-col items-start relative flex-[0_0_auto]"
-                  href="#"
-                >
-                  <span className="flex items-center [font-family:'Public_Sans-Bold',Helvetica] font-bold text-[#002068] text-[11px] tracking-[0.55px] leading-[14px] whitespace-nowrap relative w-fit mt-[-1.00px]">
-                    Forgot password?
-                  </span>
-                </a>
               </div>
               <div className="flex items-center justify-center relative self-stretch w-full flex-[0_0_auto]">
                 <div className="flex flex-col items-start pl-10 pr-4 py-3.5 relative flex-1 grow bg-[#eff4ff] rounded overflow-hidden border border-solid border-[#c4c5d5]">

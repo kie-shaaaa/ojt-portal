@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useId, useState, type FormEvent } from "react";
+import { JSX, useId, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -12,6 +12,8 @@ import {
   School,
   User,
 } from "lucide-react";
+
+import { apiCall } from "@/lib/api";
 
 type ApplicationStatus =
   | "pending"
@@ -47,82 +49,76 @@ interface ApplicationRecord {
   reviewedDate?: string;
 }
 
-const mockApplications: ApplicationRecord[] = [
-  {
-    id: "000008",
-    email: "maria.santos@ntc.gov.ph",
-    firstName: "Maria",
-    lastName: "Santos",
-    phone: "09171234567",
-    applicationType: "Internship",
-    submissionDate: "2026-04-18",
-    status: "accepted",
-    positionApplied: "OJT Intern",
-    schoolName: "Polytechnic University of the Philippines",
-    course: "Bachelor of Science in Information Technology",
-    hoursNeeded: "300",
-    reviewedDate: "2026-04-23",
-    adminNotes:
-      "Interview completed successfully. Status changed to: accepted\nPlease wait for the confirmation email.",
-  },
-  {
-    id: "000042",
-    email: "juan.dela.cruz@ntc.gov.ph",
-    firstName: "Juan",
-    lastName: "Dela Cruz",
-    phone: "09180001122",
-    applicationType: "Internship",
-    submissionDate: "2026-04-29",
-    status: "for_interview",
-    positionApplied: "OJT Intern",
-    schoolName: "Technological Institute of the Philippines",
-    course: "Bachelor of Science in Computer Engineering",
-    hoursNeeded: "400",
-    reviewedDate: "2026-05-02",
-  },
-  {
-    id: "000099",
-    email: "carlos.reyes@ntc.gov.ph",
-    firstName: "Carlos",
-    lastName: "Reyes",
-    phone: "09197776655",
-    applicationType: "Internship",
-    submissionDate: "2026-05-05",
-    status: "under_review",
-    schoolName: "National University",
-    course: "Bachelor of Science in Computer Science",
-    hoursNeeded: "480",
-  },
-  {
-    id: "000107",
-    email: "anna.lopez@ntc.gov.ph",
-    firstName: "Anna",
-    lastName: "Lopez",
-    phone: "09991234567",
-    applicationType: "Internship",
-    submissionDate: "2026-05-08",
-    status: "pending",
-    schoolName: "Far Eastern University",
-    course: "Bachelor of Science in Information Technology",
-    hoursNeeded: "300",
-  },
-  {
-    id: "000135",
-    email: "paolo.dizon@ntc.gov.ph",
-    firstName: "Paolo",
-    lastName: "Dizon",
-    phone: "09171112233",
-    applicationType: "Internship",
-    submissionDate: "2026-04-11",
-    status: "rejected",
-    positionApplied: "OJT Intern",
-    schoolName: "AMA University",
-    course: "Bachelor of Science in Information Technology",
-    hoursNeeded: "300",
-    reviewedDate: "2026-04-15",
-    adminNotes: "Application reviewed and marked for rejection due to incomplete documents.",
-  },
-];
+type ApiApplicationRecord = {
+  id: number;
+  application_type: string;
+  other_application_type?: string | null;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  school_name: string | null;
+  hours_needed: number | null;
+  course: string | null;
+  position_applied: string | null;
+  years_experience: number | null;
+  current_company: string | null;
+  salary_expectation: number | null;
+  available_date: string | null;
+  submission_date: string;
+  status: ApplicationStatus;
+  admin_notes: string | null;
+  reviewed_date: string | null;
+};
+
+function mapApplicationRecord(
+  application: ApiApplicationRecord,
+): ApplicationRecord {
+  return {
+    id: String(application.id).padStart(6, "0"),
+    email: application.email,
+    firstName: application.first_name,
+    lastName: application.last_name,
+    phone: application.phone,
+    applicationType:
+      application.other_application_type ?? application.application_type,
+    submissionDate: application.submission_date,
+    status: application.status,
+    positionApplied: application.position_applied ?? undefined,
+    schoolName: application.school_name ?? undefined,
+    course: application.course ?? undefined,
+    hoursNeeded: application.hours_needed?.toString(),
+    yearsExperience: application.years_experience?.toString(),
+    currentCompany: application.current_company ?? undefined,
+    availableDate: application.available_date ?? undefined,
+    salaryExpectation: application.salary_expectation?.toString(),
+    adminNotes: application.admin_notes ?? undefined,
+    reviewedDate: application.reviewed_date ?? undefined,
+  };
+}
+
+async function fetchApplicationRecord(id: string, email: string) {
+  const response = (await apiCall(
+    `/applications/fetch?id=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`,
+  )) as ApiApplicationRecord[];
+
+  const normalizedEmail = email.toLowerCase();
+  const numericId = Number(id);
+
+  const matchedApplication =
+    response.find(
+      (application) =>
+        application.id === numericId &&
+        application.email.toLowerCase() === normalizedEmail,
+    ) ??
+    response.find((application) => application.id === numericId) ??
+    response.find(
+      (application) => application.email.toLowerCase() === normalizedEmail,
+    ) ??
+    null;
+
+  return matchedApplication ? mapApplicationRecord(matchedApplication) : null;
+}
 
 const statusMeta: Record<
   ApplicationStatus,
@@ -215,7 +211,8 @@ function buildTimeline(application: ApplicationRecord): TimelineEntry[] {
     timeline.push({
       date: formatDate(application.reviewedDate),
       title: "Application Reviewed",
-      description: "Your application has been reviewed by our recruitment team.",
+      description:
+        "Your application has been reviewed by our recruitment team.",
     });
   }
 
@@ -238,13 +235,17 @@ function InfoCard({
   icon: typeof User;
 }) {
   return (
-    <div className="flex min-h-[88px] flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md">
+    <div className="flex min-h-22 flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-transform hover:-translate-y-0.5 hover:shadow-md">
       <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
       <div className="space-y-1">
-        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</div>
-        <div className="text-sm font-semibold leading-5 text-slate-800 break-words">{value}</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          {label}
+        </div>
+        <div className="text-sm font-semibold leading-5 text-slate-800 wrap-break-word">
+          {value}
+        </div>
       </div>
     </div>
   );
@@ -288,42 +289,80 @@ function ResultSection({ application }: { application: ApplicationRecord }) {
             <FileText className="h-4 w-4 text-slate-700" aria-hidden="true" />
             Application Found
           </div>
-          <div className="inline-flex max-w-full items-center justify-center rounded-full bg-gradient-to-r from-blue-800 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-12px_rgba(37,99,235,0.35)] break-words">
+          <div className="inline-flex max-w-full items-center justify-center rounded-full bg-linear-to-r from-blue-800 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-12px_rgba(37,99,235,0.35)] wrap-break-word">
             {formatApplicationId(application.id)}
           </div>
         </div>
 
-        <div className={`inline-flex items-center rounded-full px-5 py-3 text-sm font-semibold uppercase ${meta.badgeClassName}`}>
+        <div
+          className={`inline-flex items-center rounded-full px-5 py-3 text-sm font-semibold uppercase ${meta.badgeClassName}`}
+        >
           {meta.label}
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <InfoCard label="Applicant Name" value={`${application.firstName} ${application.lastName}`} icon={User} />
+        <InfoCard
+          label="Applicant Name"
+          value={`${application.firstName} ${application.lastName}`}
+          icon={User}
+        />
         <InfoCard label="Email Address" value={application.email} icon={Mail} />
         <InfoCard label="Phone Number" value={application.phone} icon={Mail} />
-        <InfoCard label="Application Type" value={application.applicationType} icon={FileText} />
-        <InfoCard label="Submission Date" value={formatDate(application.submissionDate)} icon={CalendarClock} />
+        <InfoCard
+          label="Application Type"
+          value={application.applicationType}
+          icon={FileText}
+        />
+        <InfoCard
+          label="Submission Date"
+          value={formatDate(application.submissionDate)}
+          icon={CalendarClock}
+        />
         {application.positionApplied ? (
-          <InfoCard label="Position Applied" value={application.positionApplied} icon={School} />
+          <InfoCard
+            label="Position Applied"
+            value={application.positionApplied}
+            icon={School}
+          />
         ) : null}
         {application.schoolName ? (
-          <InfoCard label="School" value={application.schoolName} icon={School} />
+          <InfoCard
+            label="School"
+            value={application.schoolName}
+            icon={School}
+          />
         ) : null}
         {application.course ? (
           <InfoCard label="Course" value={application.course} icon={School} />
         ) : null}
         {application.hoursNeeded ? (
-          <InfoCard label="Required Hours" value={`${application.hoursNeeded} hours`} icon={Clock3} />
+          <InfoCard
+            label="Required Hours"
+            value={`${application.hoursNeeded} hours`}
+            icon={Clock3}
+          />
         ) : null}
         {application.yearsExperience ? (
-          <InfoCard label="Years of Experience" value={`${application.yearsExperience} years`} icon={Clock3} />
+          <InfoCard
+            label="Years of Experience"
+            value={`${application.yearsExperience} years`}
+            icon={Clock3}
+          />
         ) : null}
         {application.currentCompany ? (
-          <InfoCard label="Current Company" value={application.currentCompany} icon={FileText} />
+          <InfoCard
+            label="Current Company"
+            value={application.currentCompany}
+            icon={FileText}
+          />
         ) : null}
         {application.salaryExpectation ? (
-          <InfoCard label="Salary Expectation" value={`₱${application.salaryExpectation}`} icon={FileText} />
+          <InfoCard
+            label="Salary Expectation"
+            value={`₱${application.salaryExpectation}`}
+            icon={FileText}
+          />
         ) : null}
       </div>
 
@@ -340,7 +379,9 @@ function ResultSection({ application }: { application: ApplicationRecord }) {
       <StatusPanel application={application} />
 
       <div className="space-y-4 border-t border-slate-200 pt-6">
-        <h3 className="text-lg font-semibold text-slate-900">Application Timeline</h3>
+        <h3 className="text-lg font-semibold text-slate-900">
+          Application Timeline
+        </h3>
         <div className="space-y-4">
           {timeline.map((entry) => (
             <TimelineItem key={`${entry.title}-${entry.date}`} {...entry} />
@@ -359,8 +400,9 @@ export default function TrackPage(): JSX.Element {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState<ApplicationRecord | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleApplicationIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleApplicationIdChange = (event: ChangeEvent<HTMLInputElement>) => {
     let nextValue = event.target.value.toUpperCase();
 
     if (/^\d+$/.test(nextValue) && nextValue.length > 0) {
@@ -372,7 +414,7 @@ export default function TrackPage(): JSX.Element {
     setApplicationId(nextValue);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmedApplicationId = applicationId.trim();
@@ -398,20 +440,34 @@ export default function TrackPage(): JSX.Element {
       return;
     }
 
-    const matchedApplication = mockApplications.find(
-      (application) =>
-        application.id === numericId.padStart(6, "0") &&
-        application.email.toLowerCase() === trimmedEmail.toLowerCase(),
-    );
+    setIsLoading(true);
 
-    if (!matchedApplication) {
-      setError("No application found with the provided Application ID and Email.");
+    try {
+      const matchedApplication = await fetchApplicationRecord(
+        numericId,
+        trimmedEmail,
+      );
+
+      if (!matchedApplication) {
+        setError(
+          "No application found with the provided Application ID and Email.",
+        );
+        setResult(null);
+        return;
+      }
+
+      setError("");
+      setResult(matchedApplication);
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Failed to fetch application.",
+      );
       setResult(null);
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    setError("");
-    setResult(matchedApplication);
   };
 
   const handleReturn = () => {
@@ -424,14 +480,16 @@ export default function TrackPage(): JSX.Element {
     <main className="flex min-h-screen w-full items-center justify-center bg-[radial-gradient(50%_50%_at_50%_24%,rgba(0,51,153,1)_0%,rgba(0,31,84,1)_70%)] px-4 py-10 sm:px-6 lg:px-8">
       <section className="flex w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_25px_50px_-12px_#00000040]">
         <header className="flex flex-col gap-3 bg-[linear-gradient(167deg,rgba(30,58,138,1)_0%,rgba(59,130,246,1)_100%)] px-6 py-12 text-center text-white sm:px-10">
-          <h1 className="text-4xl font-bold tracking-[-0.9px] sm:text-5xl">Track Your Application</h1>
+          <h1 className="text-4xl font-bold tracking-[-0.9px] sm:text-5xl">
+            Track Your Application
+          </h1>
           <p className="mx-auto max-w-2xl text-sm leading-6 text-white/90 sm:text-base">
-            Enter your Application ID and Email to check your application status.
+            Enter your Application ID and Email to check your application
+            status.
           </p>
         </header>
 
         <div className="flex flex-col gap-8 p-6 sm:p-10">
-          
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
             {error ? (
               <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
@@ -440,7 +498,10 @@ export default function TrackPage(): JSX.Element {
             ) : null}
 
             <div className="space-y-2">
-              <label htmlFor={applicationIdInputId} className="text-sm font-semibold text-slate-700">
+              <label
+                htmlFor={applicationIdInputId}
+                className="text-sm font-semibold text-slate-700"
+              >
                 Application ID
               </label>
               <div className="rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
@@ -457,13 +518,20 @@ export default function TrackPage(): JSX.Element {
                   onChange={handleApplicationIdChange}
                 />
               </div>
-              <p id={`${applicationIdInputId}-hint`} className="text-xs leading-5 text-slate-500">
-                You can enter with or without &quot;NTC-APP&quot; prefix (e.g., NTC-APP-000008 or 8)
+              <p
+                id={`${applicationIdInputId}-hint`}
+                className="text-xs leading-5 text-slate-500"
+              >
+                You can enter with or without &quot;NTC-APP&quot; prefix (e.g.,
+                NTC-APP-000008 or 8)
               </p>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor={emailInputId} className="text-sm font-semibold text-slate-700">
+              <label
+                htmlFor={emailInputId}
+                className="text-sm font-semibold text-slate-700"
+              >
                 Used Email Address (For Verification)
               </label>
               <div className="rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
@@ -482,11 +550,14 @@ export default function TrackPage(): JSX.Element {
 
             <button
               type="submit"
-              className="relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-[linear-gradient(90deg,rgba(30,58,138,1)_0%,rgba(59,130,246,1)_100%)] px-6 py-4 text-base font-semibold text-white shadow-[0px_10px_20px_-8px_rgba(37,99,235,0.7)] transition-transform hover:-translate-y-0.5"
+              className="relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-linear-to-r from-blue-800 to-blue-500 px-6 py-4 text-base font-semibold text-white shadow-[0px_10px_20px_-8px_rgba(37,99,235,0.7)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
               aria-label="Track Application Status"
+              disabled={isLoading}
             >
               <Search className="h-5 w-5" aria-hidden="true" />
-              <span>Track Application Status</span>
+              <span>
+                {isLoading ? "Tracking..." : "Track Application Status"}
+              </span>
             </button>
           </form>
 

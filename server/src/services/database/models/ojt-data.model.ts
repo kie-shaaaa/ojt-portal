@@ -1,10 +1,10 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createOjtData(client: Client) {
+export async function createOjtData(client: Pool) {
   await client.query(`
         DO $$
         BEGIN
-            CREATE TYPE gender AS ENUM ('Male', 'Female');
+            CREATE TYPE gender AS ENUM ('Male', 'Female', 'Not Set');
         EXCEPTION WHEN duplicate_object THEN null;
         END $$;
     `);
@@ -12,12 +12,10 @@ export async function createOjtData(client: Client) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS ojt_data (
             id SERIAL PRIMARY KEY,
-            ojt_id VARCHAR(10) UNIQUE,
-            application_id INTEGER NOT NULL,
             application_type VARCHAR(50) NOT NULL,
             first_name VARCHAR(100) NOT NULL,
             last_name VARCHAR(100) NOT NULL,
-            gender gender,
+            gender gender DEFAULT 'Not Set',
             email VARCHAR(100) NOT NULL,
             phone VARCHAR(20) NOT NULL,
             school_name VARCHAR(200),
@@ -26,12 +24,8 @@ export async function createOjtData(client: Client) {
             deployment_date DATE,
             end_date DATE,
             certificate_issuance_date DATE,
-            orientation_date VARCHAR(100),
             confirmed_at TIMESTAMP,
-            confirmation_ip VARCHAR(45),
-            second_chance SMALLINT DEFAULT 0,
             submission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            original_status VARCHAR(50),
             moved_to_ojt_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             admin_notes TEXT
         );

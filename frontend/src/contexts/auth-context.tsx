@@ -38,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check localStorage first (remember me), then sessionStorage
     const storedToken =
       localStorage.getItem("access_token") ||
       sessionStorage.getItem("access_token");

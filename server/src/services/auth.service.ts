@@ -26,7 +26,7 @@ export class AuthService {
    */
 
   async signInAccount(email: string, password: string) {
-    const user = await this.findUser(email);
+    const user = await this.findActiveUser(email);
 
     if (!user) throw new UnauthorizedException('Invalid email or password');
 
@@ -147,7 +147,7 @@ export class AuthService {
    * @param email User email
    * @returns User account or null if not found
    */
-  async findUser(email: string): Promise<Account | null> {
+  async findActiveUser(email: string): Promise<Account | null> {
     if (!email) {
       throw new BadRequestException('Email is required');
     }
@@ -157,7 +157,7 @@ export class AuthService {
       const result = await client.query<Account>(
         `
           SELECT id, email, password, account_type, created_at, updated_at FROM user_accounts
-          WHERE email = $1;
+          WHERE email = $1 AND account_status = 'active'; 
         `,
         [email.toLowerCase()],
       );
@@ -251,7 +251,7 @@ export class AuthService {
       );
     }
 
-    const user = await this.findUser(email);
+    const user = await this.findActiveUser(email);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }

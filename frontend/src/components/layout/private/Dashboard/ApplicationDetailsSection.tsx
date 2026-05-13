@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useState, useEffect } from "react";
+import { JSX, useState, useEffect, useRef } from "react";
 
 import {
   Activity,
@@ -14,45 +14,105 @@ import {
 
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import DatePicker from "@/components/layout/DatePicker";
+import { apiCall } from "@/lib/api";
+
+function getUserIdFromToken(): number | undefined {
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
+  if (!token) return undefined;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.id ?? payload.sub ?? payload.userId;
+  } catch {
+    return undefined;
+  }
+}
 
 export const ApplicationDetailsSection = (): JSX.Element => {
+  const lastSavedDate = useRef<string>("");
+  const lastSavedClosingDate = useRef<string>("");
+  const [closingDate, setClosingDate] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [scheduledDate, setScheduledDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
+  const [originalSettings, setOriginalSettings] = useState<{
+    isOpen: boolean;
+    scheduledDate: string;
+    closingDate: string;
+  } | null>(null);
+  const hasChanges =
+    originalSettings === null ||
+    isOpen !== originalSettings.isOpen ||
+    scheduledDate !== originalSettings.scheduledDate ||
+    closingDate !== originalSettings.closingDate;
   // Load saved settings on mount
   useEffect(() => {
-    const saved = localStorage.getItem("portalSettings");
-    if (saved) {
+    const fetchSettings = async () => {
       try {
-        const { isOpen: savedIsOpen, scheduledDate: savedDate } = JSON.parse(
-          saved,
-        );
-        setIsOpen(savedIsOpen);
-        setScheduledDate(savedDate || "");
+        const data = await apiCall("/applications/settings", { method: "GET" });
+        const settings = data.data ?? data;
+        const fetchedDate = settings.opening_date
+          ? settings.opening_date.split("T")[0]
+          : "";
+        const fetchedClosingDate = settings.closing_date
+          ? settings.closing_date.split("T")[0]
+          : "";
+
+        setClosingDate(fetchedClosingDate);
+        setIsOpen(settings.portal_status);
+        setScheduledDate(fetchedDate);
+        setOriginalSettings({
+          isOpen: settings.portal_status,
+          scheduledDate: fetchedDate,
+          closingDate: fetchedClosingDate,
+        });
+        lastSavedClosingDate.current = fetchedClosingDate;
+        lastSavedDate.current = fetchedDate;
       } catch (error) {
-        console.error("Failed to load portal settings:", error);
+        console.error("Raw fetch error:", error);
       }
-    }
+    };
+
+    fetchSettings();
   }, []);
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // Hold the saving state long enough to accommodate a future backend request.
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const userId = getUserIdFromToken();
 
-      // Save to localStorage
+      const response = await apiCall("/applications/settings", {
+        method: "POST",
+        body: JSON.stringify({
+          portal_status: isOpen,
+          opening_date: scheduledDate || null,
+          closing_date: closingDate || null,
+          ...(userId !== undefined && { created_by: userId }),
+        }),
+      });
+
+      const saved = response.data;
+      const savedDate = saved.opening_date
+        ? saved.opening_date.split("T")[0] // ✅ keep as YYYY-MM-DD
+        : "";
+
+      setIsOpen(saved.portal_status);
+      setScheduledDate(savedDate);
+      setOriginalSettings({
+        isOpen: saved.portal_status,
+        scheduledDate: savedDate,
+        closingDate: closingDate,
+      });
+      lastSavedDate.current = savedDate;
+
       localStorage.setItem(
         "portalSettings",
         JSON.stringify({
-          isOpen,
-          scheduledDate,
+          isOpen: saved.portal_status,
+          scheduledDate: savedDate,
         }),
       );
-
-      // Here you would normally make an API call to save to backend
-      // Example: await updatePortalSettings({ isOpen, scheduledDate });
     } catch (error) {
       console.error("Failed to save portal settings:", error);
     } finally {
@@ -128,7 +188,17 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                   aria-label={`Portal is currently ${
                     isOpen ? "open" : "closed"
                   }. Toggle portal status.`}
-                  onClick={() => setIsOpen((prev) => !prev)}
+                  onClick={() => {
+                    const next = !isOpen;
+                    setIsOpen(next);
+                    if (!next) {
+                      setScheduledDate("");
+                      setClosingDate("");
+                    } else {
+                      setScheduledDate(lastSavedDate.current);
+                      setClosingDate(lastSavedClosingDate.current);
+                    }
+                  }}
                   className={`relative flex h-6 w-12 items-center rounded-full transition-colors ${
                     isOpen ? "bg-green-500" : "bg-red-500"
                   }`}
@@ -155,9 +225,25 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                 id="scheduled-opening-date"
                 label="Scheduled Opening Date (Optional)"
                 value={scheduledDate}
+                disabled={!isOpen}
                 onChange={setScheduledDate}
                 placeholder="yyyy/mm/dd"
               />
+              <div className="space-y-2">
+                <DatePicker
+                  id="scheduled-closing-date"
+                  label="Scheduled Closing Date (Optional)"
+                  value={closingDate}
+                  disabled={!isOpen}
+                  onChange={setClosingDate}
+                  placeholder="yyyy/mm/dd"
+                  minDate={scheduledDate || undefined}
+                />
+                <p className="text-[10px] italic text-slate-400">
+                  Leave empty for manual control only. Portal will auto-close on
+                  this date.
+                </p>
+              </div>
 
               <p className="text-[10px] italic text-slate-400">
                 Leave empty for manual control only. Portal will auto-open on
@@ -169,7 +255,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
               <button
                 type="button"
                 onClick={handleSaveSettings}
-                disabled={isSaving}
+                disabled={isSaving || !hasChanges}
                 aria-label="Update portal settings"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#0038a8] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-50 hover:bg-[#002f8c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0038a8]"
               >

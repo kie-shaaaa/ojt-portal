@@ -78,7 +78,7 @@ const statusToId = (status?: string) => {
   if (s.includes("interview")) return "for-interview";
   if (s.includes("under")) return "under-review";
   if (s.includes("reject")) return "rejected";
-  if (s.includes("accept")) return "accepted";
+  if (s.includes("accept")) return "pending-accept";
   return "pending-review";
 };
 
@@ -110,7 +110,7 @@ const idToBackendStatus = (id: string): string => {
     case "rejected":
       return "rejected";
     case "accepted":
-      return "accepted";
+      return "pending accept";
     default:
       return id;
   }
@@ -180,13 +180,31 @@ const ChangeStatusModal = ({
 
   if (!open) return null;
 
+  const getAppointmentType = (status: string): string | undefined => {
+    switch (status) {
+      case "for_interview":
+        return "interview";
+      case "accepted":
+        return "orientation";
+      default:
+        return undefined;
+    }
+  };
+
   const handleConfirm = async () => {
     try {
       setIsUpdating(true);
-      const backendStatus = idToBackendStatus(selectedStatus);
-      const applicationId = Number(application?.id) || 0;
 
-      // Call the PATCH endpoint to update application status
+      const backendStatus = idToBackendStatus(selectedStatus);
+
+      const applicationId = application?.id
+        ? Number(application.id.replace("NTC-", ""))
+        : undefined;
+
+      if (!applicationId) throw new Error("Invalid application ID");
+      const appointmentType = getAppointmentType(backendStatus);
+
+      // 1. Update application status first
       await apiCall("/applications/update", {
         method: "PATCH",
         body: JSON.stringify({
@@ -195,29 +213,40 @@ const ChangeStatusModal = ({
         }),
       });
 
-      // Get display status for local state update
-      const mappedStatus = idToStatus(selectedStatus);
-      let scheduleDate = undefined;
-      let scheduleTime = undefined;
+      // 2. Determine if we need to create appointment
+      let appointmentDate: string | undefined;
 
       if (selectedStatus === "for-interview" && interviewDate) {
-        scheduleDate = interviewDate;
-        scheduleTime = interviewTime;
-      } else if (selectedStatus === "accepted" && acceptedDate) {
-        scheduleDate = acceptedDate;
-        scheduleTime = acceptedTime;
+        appointmentDate = new Date(
+          `${interviewDate}T${interviewTime}`,
+        ).toISOString();
       }
 
-      // Update local state
-      onConfirm(
-        mappedStatus,
-        application?.id ?? "",
-        scheduleDate,
-        scheduleTime,
-      );
+      if (selectedStatus === "accepted" && acceptedDate) {
+        appointmentDate = new Date(
+          `${acceptedDate}T${acceptedTime}`,
+        ).toISOString();
+      }
+
+      // 3. Create appointment ONLY if needed
+      if (appointmentDate) {
+        await apiCall("/appointments/create", {
+          method: "POST",
+          body: JSON.stringify({
+            type: appointmentType, // or map to interview/orientation if needed
+            appointmentDate,
+          }),
+        });
+      }
+
+      // 4. UI update
+      const mappedStatus = idToStatus(selectedStatus);
+
+      onConfirm(mappedStatus, application?.id ?? "", appointmentDate);
+
       onClose();
     } catch (error) {
-      console.error("Failed to update application status:", error);
+      console.error("Failed to update:", error);
       alert("Failed to update application status. Please try again.");
     } finally {
       setIsUpdating(false);

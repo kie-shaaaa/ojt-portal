@@ -6,6 +6,9 @@ import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class AccountsService {
+  resetPassword(id: number, newPassword: string) {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
@@ -15,31 +18,22 @@ export class AccountsService {
   async createAccount(account: AccountCreate): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
     try {
-      const exists = await this.authService.findUser(account.email);
+      const exists = await this.authService.findActiveUser(account.email);
       if (exists) {
         throwAppError('conflict', 'User with this email already exists');
       }
-      const hash = await this.authService.hashPassword(account.password);
 
-      const newUser: AccountCreate = {
-        email: account.email,
-        password: hash,
-        username: account.username,
-        account_type: account.account_type,
-      };
+      const hashedPassword = await this.authService.hashPassword(
+        account.password,
+      );
 
       const res = await client.query<Omit<Account, 'password'>>(
         `
-        INSERT INTO user_accounts (email, password, username, account_type)
-        VALUES($1, $2, $3, $4)
-        RETURNING id, email, username, account_type, created_at, updated_at
-        `,
-        [
-          newUser.email,
-          newUser.password,
-          newUser.username,
-          newUser.account_type,
-        ],
+  INSERT INTO user_accounts (email, password, username, account_type)
+  VALUES($1, $2, $3, $4)
+  RETURNING id, email, username, account_type, created_at, updated_at
+  `,
+        [account.email, hashedPassword, account.username, account.account_type],
       );
 
       return SuccessHandler('Successfully created account', res.rows[0]);
@@ -49,29 +43,29 @@ export class AccountsService {
     }
   }
 
-  async updateAccount(id: number, newEmail?: string, newType?: string) {
+  async updateAccount(id: number, newUser?: string, newType?: string) {
     const client = this.databaseService.getClient();
     try {
       const exists = await client.query<Account>(
         `
-        SELECT id, email, account_type FROM user_accounts
+        SELECT id, email, username, account_type FROM user_accounts
         WHERE id = $1
         `,
         [id],
       );
 
-      if (!exists || exists.rows.length === 0) {
+      if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
 
-      if (newEmail && exists.rows[0].email !== newEmail) {
+      if (newUser && exists.rows[0].username !== newUser) {
         await client.query(
           `
           UPDATE user_accounts
-          SET email = $1
+          SET username = $1
           WHERE id = $2
           `,
-          [newEmail, id],
+          [newUser, id],
         );
       }
 
@@ -99,9 +93,9 @@ export class AccountsService {
     try {
       const values: any[] = [];
       let query = `
-        SELECT id, email, account_type, created_at
+        SELECT id, email, username, account_type, created_at
         FROM user_accounts
-        WHERE account_status = 'active' 1=1
+        WHERE account_status = 'active' AND 1=1
       `;
 
       if (type) {
@@ -197,9 +191,8 @@ export class AccountsService {
   }
 
   async disableAccount(id: number) {
+    const client = this.databaseService.getClient();
     try {
-      const client = this.databaseService.getClient();
-
       const exists = await client.query<Account>(
         `
         SELECT id, email, account_type FROM user_accounts
@@ -213,7 +206,7 @@ export class AccountsService {
 
       const res = await client.query(
         `UPDATE user_accounts
-        SET account_status = "disabled"
+        SET account_status = 'disabled'
         WHERE id = $1`,
         [id],
       );
@@ -226,9 +219,8 @@ export class AccountsService {
   }
 
   async updatePassword(id: number, newPassword: string) {
+    const client = this.databaseService.getClient();
     try {
-      const client = this.databaseService.getClient();
-
       const exists = await client.query<Account>(
         `
         SELECT id, email, account_type FROM user_accounts
@@ -236,7 +228,7 @@ export class AccountsService {
         `,
         [id],
       );
-      if (!exists) {
+      if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
 
@@ -245,7 +237,7 @@ export class AccountsService {
       const res = await client.query<Account>(
         `
           UPDATE user_accounts
-          SET password = $1,
+          SET password = $1
           WHERE id = $2
         `,
         [newHash, id],

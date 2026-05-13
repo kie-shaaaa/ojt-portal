@@ -1,10 +1,10 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createApplications(client: Client) {
+export async function createApplications(client: Pool) {
   await client.query(`
         DO $$
         BEGIN
-            CREATE TYPE application_status AS ENUM ('pending', 'under_review', 'rejected', 'for_interview', 'accepted');
+            CREATE TYPE application_status AS ENUM ('pending', 'under_review', 'rejected', 'for_interview', 'pending accept', 'accepted');
         EXCEPTION WHEN duplicate_object THEN null;
         END $$;
     `);

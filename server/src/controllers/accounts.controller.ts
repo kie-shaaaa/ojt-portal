@@ -23,7 +23,7 @@ export class AccountsController {
   @Get('test-guard')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  testGuard(@Req() req: Request & { user?: unknown }) {
+  testGuard(@Req() req: Request & { user?: any }) {
     console.log('Hello from the test guard endpoint!');
     return {
       message: 'Guard passed successfully',
@@ -39,7 +39,7 @@ export class AccountsController {
    * @param createdDate Date of fetched accounts creation
    * @returns Array of accounts matching the provided criteria
    */
-  @Get('')
+  @Get('active')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async getActiveAccounts(
     @Param('count') count: number,
@@ -47,9 +47,9 @@ export class AccountsController {
     @Param('createdDate') createdDate?: Date,
   ) {
     return await this.accountsService.fetchActiveAccounts(
-      count,
+      Number(count),
       type,
-      createdDate,
+      createdDate ? new Date(createdDate) : undefined,
     );
   }
 
@@ -82,7 +82,7 @@ export class AccountsController {
   @Post('create')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async createAccount(@Body('account') account: AccountCreate) {
+  async createAccount(@Body('newAccount') account: AccountCreate) {
     return await this.accountsService.createAccount(account);
   }
 
@@ -94,12 +94,28 @@ export class AccountsController {
    * @return Updated account data
    */
   @Patch('update')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async updateAccount(
-    @Body('id') id: number,
-    @Body('newEmail') newEmail?: string,
-    @Body('newType') newType?: string,
+    @Body()
+    body: {
+      id: number;
+      newUser?: string;
+      newType?: string;
+    },
   ) {
-    return this.accountsService.updateAccount(id, newEmail, newType);
+    return this.accountsService.updateAccount(
+      body.id,
+      body.newUser,
+      body.newType,
+    );
+  }
+
+  @Post('reset-password')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async updatePassword(@Body() body: { id: number; newPassword: string }) {
+    return await this.accountsService.updatePassword(body.id, body.newPassword);
   }
 
   /**

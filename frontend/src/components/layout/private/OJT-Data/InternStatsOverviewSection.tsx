@@ -1,6 +1,6 @@
 "use client";
 import { UsersRound, CircleCheck } from "lucide-react";
-import {useState, JSX} from "react";
+import { useState, JSX } from "react";
 interface StatsData {
   totalVerified: number;
   confirmedThisMonth: number;
@@ -48,11 +48,7 @@ export const InternStatsOverviewSection = ({
             <div
               className={`flex h-14 w-14 items-center justify-center rounded-full ${stat.iconBg}`}
             >
-              <Icon
-                size={30}
-                strokeWidth={1.5}
-                className={stat.iconColor}
-              />
+              <Icon size={30} strokeWidth={1.5} className={stat.iconColor} />
             </div>
 
             <div>
