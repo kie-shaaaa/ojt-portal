@@ -48,6 +48,9 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     data = null;
   }
 
+  console.log("Data", data);
+  console.log("Response", response);
+
   // if (response.status === 401) {
   //   localStorage.removeItem("access_token");
   //   sessionStorage.removeItem("access_token");
@@ -57,7 +60,8 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     throw new Error(
-      data?.message || `API Error: ${response.status} ${response.statusText}`,
+      data?.message ||
+        `Request failed due to unknown error: ${response.status}`,
     );
   }
 
