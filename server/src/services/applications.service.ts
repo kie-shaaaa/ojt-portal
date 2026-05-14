@@ -29,17 +29,18 @@ export class ApplicationsService {
     application: CreateApplicationDto,
   ): Promise<SubmitApplicationResponse> {
     const client = this.databaseService.getClient();
-    const exists = await client.query(
-      'SELECT id FROM applications WHERE email = $1',
-      [application.email],
-    );
+    try {
+      const exists = await client.query(
+        'SELECT id FROM applications WHERE email = $1',
+        [application.email],
+      );
 
-    if (exists.rows.length > 0) {
-      throw new Error('You already submitted an application!');
-    }
+      if (exists.rows.length > 0) {
+        throw new Error('You already submitted an application!');
+      }
 
-    const res = await client.query<Application>(
-      `
+      const res = await client.query<Application>(
+        `
         INSERT INTO applications (
           application_type, other_application_type, first_name, last_name, email, phone,
           school_name, hours_needed, course, deployment_date,
@@ -54,47 +55,57 @@ export class ApplicationsService {
         )
         RETURNING *
       `,
-      [
-        application.application_type,
-        application.other_application_type,
-        application.first_name,
-        application.last_name,
-        application.email,
-        application.phone,
-        application.school_name,
-        application.hours_needed,
-        application.course,
-        application.deployment_date,
-        application.position_applied,
-        application.years_experience,
-        application.current_company,
-        application.salary_expectation,
-        application.available_date,
-        application.agreed_terms,
-      ],
-    );
+        [
+          application.application_type,
+          application.other_application_type,
+          application.first_name,
+          application.last_name,
+          application.email,
+          application.phone,
+          application.school_name,
+          application.hours_needed,
+          application.course,
+          application.deployment_date,
+          application.position_applied,
+          application.years_experience,
+          application.current_company,
+          application.salary_expectation,
+          application.available_date,
+          application.agreed_terms,
+        ],
+      );
 
-    if (res.rowCount === 0) {
-      throwAppError('bad_request', 'Application did not return for submission');
+      if (res.rowCount === 0) {
+        throwAppError(
+          'bad_request',
+          'Application did not return for submission',
+        );
+      }
+
+      const data = res.rows[0];
+
+      const confirmationDto = {
+        to: data.email,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        applicationId: data.id,
+        applicationType: data.application_type,
+      };
+
+      const mailed =
+        await this.mailerService.confirmationEmail(confirmationDto);
+
+      if (!mailed) throwAppError('server_error', 'Failed to email user');
+
+      return {
+        ok: true,
+        message: 'Application submitted successfully',
+        data: res.rows[0],
+      };
+    } catch (error) {
+      console.error('[APPLICATION] Error submitting application', error);
+      throwAppError('server_error', 'Server error, try again later');
     }
-
-    const data = res.rows[0];
-
-    const confirmationDto = {
-      to: data.email,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      applicationId: data.id,
-      applicationType: data.application_type,
-    };
-
-    await this.mailerService.confirmationEmail(confirmationDto);
-
-    return {
-      ok: true,
-      message: 'Application submitted successfully',
-      data: res.rows[0],
-    };
   }
 
   async submitApplicationWithFiles(
@@ -162,6 +173,20 @@ export class ApplicationsService {
 
         uploadedFileIds.push(uploadedFile.id);
       }
+      const data = res.rows[0];
+
+      const confirmationDto = {
+        to: data.email,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        applicationId: data.id,
+        applicationType: data.application_type,
+      };
+
+      const mailed =
+        await this.mailerService.confirmationEmail(confirmationDto);
+
+      if (!mailed) throwAppError('server_error', 'Failed to email user');
 
       return {
         ok: true,
