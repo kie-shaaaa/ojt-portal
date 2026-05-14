@@ -394,42 +394,14 @@ export class ApplicationsService {
         );
       }
 
-      // 2. If accepted → move to ojt_data
+      // 2. If accepted → move confirmed_at is stamped
       if (status === 'accepted') {
         await client.query<AllOjt>(
           `
-          INSERT INTO ojt_data (
-            application_type,
-            first_name,
-            last_name,
-            email,
-            phone,
-            school_name,
-            hours_needed,
-            course,
-            deployment_date,
-            original_status,
-            moved_to_ojt_at,
-            confirmed_at
-          )
-          VALUES (
-            $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10,
-            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-          )
-        `,
-          [
-            application.application_type,
-            application.first_name,
-            application.last_name,
-            application.email,
-            application.phone,
-            application.school_name,
-            application.hours_needed,
-            application.course,
-            application.deployment_date,
-            application.status,
-          ],
+            UPDATE ojt_data
+            SET confirmed_at = CURRENT_TIMESTAMP
+            WHERE email = $1
+          `, [application.email]
         );
       }
 
