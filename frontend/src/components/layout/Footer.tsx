@@ -44,7 +44,8 @@ const resourceItems = [
     label: "OJT Requirements",
     icon: BookOpen,
     iconClassName: "w-5 h-5 text-slate-200",
-    href: "#",
+    href: "/NTC-OJT-Requirements.pdf",
+    download: true,
   },
 ];
 
@@ -213,6 +214,7 @@ export const Footer = (): JSX.Element => {
                 </div>
                 <a
                   href={item.href}
+                  download={item.download ? true : undefined}
                   className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit focus:outline-none focus:underline hover:underline"
                 >
                   {item.label}

@@ -176,7 +176,7 @@ export const LoginFormSection = (): JSX.Element => {
                   <Loader2 className="relative w-[13.33px] h-[13.33px] animate-spin text-white" />
                 ) : (
                   <ArrowRight
-                    className="relative w-[13.33px] h-[13.33px]"
+                    className="relative w-[13.33px] h-[13.33px] text-white"
                     aria-hidden="true"
                   />
                 )}
