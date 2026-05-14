@@ -1,39 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
-
-// ─── DTOs ────────────────────────────────────────────────────────────────────
-
-export interface DeletionEmailDto {
-  to: string;
-  firstName: string;
-  lastName: string;
-  applicationId: number;
-  applicationType?: string;
-}
-
-export interface ConfirmationEmailDto {
-  to: string;
-  firstName: string;
-  lastName: string;
-  applicationId: number;
-  applicationType: string;
-  submittedAt?: Date;
-}
-
-export type ResponseStatus = 'scheduled' | 'rejected';
-
-export interface ResponseEmailDto {
-  to: string;
-  firstName: string;
-  lastName: string;
-  applicationId: number;
-  status: ResponseStatus;
-  interviewDate?: string;
-  interviewTime?: string;
-  interviewLocation?: string;
-  adminNote?: string;
-}
+import { ApplicationStatus } from '../data/types';
+import {
+  ConfirmationEmailDto,
+  DeletionEmailDto,
+  ResponseEmailDto,
+  StatusUpdateEmailDto,
+} from '../data/interfaces';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -409,6 +383,108 @@ export class MailerService {
         ].join('\n');
 
     return this.send({ to, subject: subjectLine, html, text });
+  }
+
+  async statusUpdateEmail(dto: StatusUpdateEmailDto): Promise<boolean> {
+    const { to, firstName, lastName, applicationId, status, adminNote } = dto;
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+
+    const statusConfig: Record<
+      ApplicationStatus,
+      { label: string; color: string; message: string }
+    > = {
+      pending: {
+        label: 'PENDING',
+        color: '#888888',
+        message:
+          'Your application has been received and is currently pending review.',
+      },
+      under_review: {
+        label: 'UNDER REVIEW',
+        color: '#d97706',
+        message:
+          'Your application is now being reviewed by our team. We will notify you once a decision has been made.',
+      },
+      'pending accept': {
+        // add this
+        label: 'PENDING ACCEPTANCE',
+        color: '#0038A8',
+        message:
+          'Your application has been conditionally approved. Please await further instructions from our team regarding your acceptance.',
+      },
+      accepted: {
+        label: 'ACCEPTED',
+        color: '#1a7f37',
+        message:
+          'Congratulations! Your application has been <strong>accepted</strong>. Our team will reach out to you shortly with further instructions.',
+      },
+      rejected: {
+        label: 'NOT APPROVED',
+        color: '#cf222e',
+        message:
+          'After careful review, we regret to inform you that your application has <strong>not been approved</strong> at this time. We encourage you to apply again in future periods.',
+      },
+      for_interview: {
+        label: 'INTERVIEW SCHEDULED',
+        color: '#0038A8',
+        message:
+          'Your application has progressed to the interview stage. Please await a separate email with your interview details.',
+      },
+    };
+
+    const { label, color, message } = statusConfig[status];
+
+    const statusBadge = `<span style="display:inline-block;background:${color};color:#fff;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:bold;">${label}</span>`;
+
+    const noteBlock = adminNote
+      ? alertBox(
+          `<strong>Note from the Administrator:</strong><br/>${adminNote}`,
+          color,
+        )
+      : '';
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${fullName}</strong>,</p>
+    <p>Good day!</p>
+    <p>We would like to inform you of an update regarding your OJT application.</p>
+    <p style="margin:16px 0 6px;">${statusBadge}</p>
+    ${infoBox(`<strong>Reference No.:</strong> ${ref}<br/><strong>Current Status:</strong> ${label}`)}
+    <p>${message}</p>
+    ${noteBlock}
+    <p style="margin-top:28px;">
+      Sincerely,<br/>
+      <strong>David M. Zaldua</strong><br/>
+      Administrative Officer IV<br/>
+      Human Resource Division
+    </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      `APPLICATION STATUS UPDATE: ${label}`,
+      '='.repeat(60),
+      '',
+      `Dear ${fullName},`,
+      '',
+      `Reference No.: ${ref}`,
+      `Status       : ${label}`,
+      '',
+      adminNote ? `Note: ${adminNote}\n` : '',
+      'David M. Zaldua',
+      'Administrative Officer IV | Human Resource Division',
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Status Update: ${label} [${ref}]`,
+      html,
+      text,
+    });
   }
 
   // ─── Dev-only: fire all 4 email types ────────────────────────────────────
