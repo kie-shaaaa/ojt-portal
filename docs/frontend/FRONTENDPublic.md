@@ -135,13 +135,51 @@ Enables users to submit application easily and efficiently through an online sub
 
 ## Purpose
 
+Allow users to monitor the status and progress of their submitted application using their Application ID and Email Address.
+
 ## UI Elements
+
+* Application ID Input Field
+* Email Address Input Field
+* Track Application Button
+* User Personal Infromation Display Section
+* Application Progress Indicator
+* Error Messages
 
 ## Process Overview
 
+* User access the Track Application page
+* User enters the Application ID and Email Address
+* System validates the entered credentials
+* System retrieves the application data
+* User views the current application and progress
+
 ## Step-by-Step
 
+1. Enter the Application ID
+2. Enter the registered Email Address 
+3. Click the Track Application button
+4. View the application status and updates
+
+## Validation Rules
+* Application ID field must not be empty
+* Email Address field must not be empty or must follow a valid email format
+* Application ID and Email Address must match the existing record
+
+## Error Handling
+* Display an error message for invalid Application ID and Email Address
+* Notify users when no matching application record is found
+* Prevents submission when fields are incomplete
+* Display server or network messages when retrieval fails
+
+## Security Considerations
+* Protect applicant information from unauthorized access
+* Validate and sanitize users inputs
+
 ## Design Notes
+* Keep the interface simple and easy to use
+* Clearly display the application and status and progress
+* Ensure responsive layout accross devices
 
 ## Login
 
