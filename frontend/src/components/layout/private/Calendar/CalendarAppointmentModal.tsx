@@ -345,16 +345,15 @@ export default function CalendarAppointmentModal({
           open={isChangeStatusModalOpen}
           mode="appointment-date"
           application={{
-            id: activeAppointment.id,
-            applicationId: activeAppointment.id,
+            id: activeAppointment.applicationId,
+            applicationId: activeAppointment.applicationId,
             applicantName: activeAppointment.applicantName,
             status: activeAppointment.status,
             appointmentDate: activeAppointment.appointmentDate,
             appointmentTime: activeAppointment.appointmentTime,
           }}
           onClose={() => setIsChangeStatusModalOpen(false)}
-          onConfirm={(newStatus, id) => {
-            onChangeStatus(activeAppointment);
+          onConfirm={() => {
             setIsChangeStatusModalOpen(false);
           }}
         />

@@ -32,6 +32,40 @@ export class AppointmentsController {
     }
   }
 
+  @Patch('update')
+  async updateAppointment(
+    @Body()
+    body: {
+      applicationId: number;
+      appointmentDate: string;
+    },
+  ) {
+    try {
+      const { applicationId, appointmentDate } = body;
+
+      if (!applicationId || !appointmentDate) {
+        throw new BadRequestException(
+          'applicationId and appointmentDate are required',
+        );
+      }
+
+      const parsedDate = new Date(appointmentDate);
+
+      if (isNaN(parsedDate.getTime())) {
+        throw new BadRequestException('Invalid appointmentDate');
+      }
+
+      return await this.appointmentService.updateAppointment(
+        applicationId,
+        parsedDate,
+      );
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to update appointment',
+      );
+    }
+  }
+
   @Patch('cancel-appointment')
   async cancelAppointment(
     @Body()
@@ -71,7 +105,9 @@ export class AppointmentsController {
       return await this.appointmentService.completedAppointment(appointmentId);
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to complete appointment',
+        error instanceof Error
+          ? error.message
+          : 'Failed to complete appointment',
       );
     }
   }
