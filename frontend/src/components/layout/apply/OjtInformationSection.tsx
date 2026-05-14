@@ -434,7 +434,7 @@ export const OjtInformationSection = ({
   return (
     <section
       aria-labelledby="ojt-information-heading"
-      className="flex flex-col items-start gap-6 pt-10 pb-14 px-12 relative self-stretch w-full flex-[0_0_auto]"
+      className="flex flex-col items-start gap-6 pt-10 pb-14 px-6 md:px-12 relative self-stretch w-full flex-[0_0_auto]"
     >
       <div className="flex items-center gap-2 pt-0 pb-2 px-0 relative self-stretch w-full flex-[0_0_auto]">
         <div
@@ -474,11 +474,11 @@ export const OjtInformationSection = ({
           onChange={handleSelectChange("course")}
         />
 
-        <div className="grid grid-cols-2 grid-rows-[78px] h-fit gap-6 self-stretch w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[78px] h-fit gap-6 self-stretch w-full">
           {textFields.map((field, index) => (
             <div
               key={field.id}
-              className={`relative row-[1_/_2] ${index === 0 ? "col-[1_/_2]" : "col-[2_/_3]"} w-full h-fit flex flex-col items-start gap-2`}
+              className="relative w-full h-fit flex flex-col items-start gap-2"
             >
               {field.id === "deploymentDate" ? (
                 <DatePicker
@@ -490,7 +490,7 @@ export const OjtInformationSection = ({
                   }
                   error={errors[field.id]}
                   required
-                  placeholder="dd/mm/yyyy"
+                  placeholder="yyyy/mm/dd"
                 />
               ) : (
                 <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">

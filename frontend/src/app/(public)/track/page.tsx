@@ -81,7 +81,7 @@ function mapApplicationRecord(
     lastName: application.last_name,
     phone: application.phone,
     applicationType:
-      application.other_application_type ?? application.application_type,
+      application.other_application_type ?? application.application_type.toUpperCase(),
     submissionDate: application.submission_date,
     status: application.status,
     positionApplied: application.position_applied ?? undefined,
@@ -243,7 +243,7 @@ function InfoCard({
         <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           {label}
         </div>
-        <div className="text-sm font-semibold leading-5 text-slate-800 wrap-break-word">
+        <div className="text-sm font-semibold leading-5 text-slate-800 break-word">
           {value}
         </div>
       </div>
@@ -253,8 +253,8 @@ function InfoCard({
 
 function TimelineItem({ date, title, description }: TimelineEntry) {
   return (
-    <div className="relative rounded-xl border border-slate-200 bg-white p-4 pl-10 shadow-sm">
-      <div className="absolute left-4 top-5 h-3 w-3 rounded-full bg-blue-600" />
+    <div className="relative rounded-xl border border-slate-200 bg-white p-4 pl-8 sm:pl-10 shadow-sm">
+      <div className="absolute left-3 top-5 h-2.5 w-2.5 rounded-full bg-blue-600 sm: left-4 sm:h-3 sm:w-3" />
       <div className="mb-1 text-sm font-semibold text-blue-700">{date}</div>
       <div className="text-base font-semibold text-slate-900">{title}</div>
       <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
@@ -283,7 +283,7 @@ function ResultSection({ application }: { application: ApplicationRecord }) {
 
   return (
     <section className="mt-10 space-y-6 rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-      <div className="flex flex-col gap-4 rounded-xl bg-white p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm sm:p-5 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="mb-3 inline-flex items-center gap-3 rounded-full px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] bg-slate-100 text-slate-700">
             <FileText className="h-4 w-4 text-slate-700" aria-hidden="true" />
@@ -301,7 +301,7 @@ function ResultSection({ application }: { application: ApplicationRecord }) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <InfoCard
           label="Applicant Name"
           value={`${application.firstName} ${application.lastName}`}
@@ -477,19 +477,19 @@ export default function TrackPage(): JSX.Element {
   };
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-[radial-gradient(50%_50%_at_50%_24%,rgba(0,51,153,1)_0%,rgba(0,31,84,1)_70%)] px-4 py-10 sm:px-6 lg:px-8">
+    <main className="flex min-h-screen w-full items-center justify-center bg-[radial-gradient(50%_50%_at_50%_24%,rgba(0,51,153,1)_0%,rgba(0,31,84,1)_70%)] px-3 py-6 sm:px-6 sm:py-10 lg:px-8">
       <section className="flex w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-[0px_25px_50px_-12px_#00000040]">
         <header className="flex flex-col gap-3 bg-[linear-gradient(167deg,rgba(30,58,138,1)_0%,rgba(59,130,246,1)_100%)] px-6 py-12 text-center text-white sm:px-10">
-          <h1 className="text-4xl font-bold tracking-[-0.9px] sm:text-5xl">
+          <h1 className="text-4xl font-bold tracking-[-0.9px] sm:text-4xl lg:text-5xl">
             Track Your Application
           </h1>
-          <p className="mx-auto max-w-2xl text-sm leading-6 text-white/90 sm:text-base">
+          <p className="mx-auto max-w-2xl text-sm leading-6 text-white/90 sm:text-base sm:leading-7">
             Enter your Application ID and Email to check your application
             status.
           </p>
         </header>
 
-        <div className="flex flex-col gap-8 p-6 sm:p-10">
+        <div className="flex flex-col gap-8 p-4 sm:gap-8 sm:p-8 lg:p-10">
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
             {error ? (
               <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
@@ -504,7 +504,7 @@ export default function TrackPage(): JSX.Element {
               >
                 Application ID
               </label>
-              <div className="rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="rounded-xl border border-slate-300 bg-white px-3 py-3 sm:px-4 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
                 <input
                   id={applicationIdInputId}
                   name="applicationId"
@@ -512,7 +512,7 @@ export default function TrackPage(): JSX.Element {
                   inputMode="text"
                   autoComplete="off"
                   aria-describedby={`${applicationIdInputId}-hint`}
-                  className="w-full border-0 bg-transparent p-0 text-base text-slate-800 outline-none placeholder:text-slate-400"
+                  className="w-full border-0 bg-transparent p-0 text-sm sm:text-base text-slate-800 outline-none placeholder:text-slate-400"
                   placeholder="Enter your application number"
                   value={applicationId}
                   onChange={handleApplicationIdChange}
@@ -534,13 +534,13 @@ export default function TrackPage(): JSX.Element {
               >
                 Used Email Address (For Verification)
               </label>
-              <div className="rounded-xl border border-slate-300 bg-white px-4 py-3 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="rounded-xl border border-slate-300 bg-white px-3 py-3 sm:px-4 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
                 <input
                   id={emailInputId}
                   name="email"
                   type="email"
                   autoComplete="email"
-                  className="w-full border-0 bg-transparent p-0 text-base text-slate-800 outline-none placeholder:text-slate-400"
+                  className="w-full border-0 bg-transparent p-0 text-sm sm:text-base text-slate-800 outline-none placeholder:text-slate-400"
                   placeholder="Enter the email used in your application"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}

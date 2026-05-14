@@ -25,10 +25,10 @@ export const FormActionsSection = ({
       onClick: onPrevious,
       type: "button" as const,
       className:
-        "box-border inline-flex items-center gap-2 px-10 py-3 relative flex-[0_0_auto] bg-gray-100 rounded-lg border border-solid border-gray-300 shadow-[0px_1px_2px_#0000000d] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "box-border inline-flex items-center gap-2 px-4 py-2.5 md:px-10 md:py-3 relative flex-[0_0_auto] bg-gray-100 rounded-lg border border-solid border-gray-300 shadow-[0px_1px_2px_#0000000d] transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
       textClassName:
-        "justify-center [font-family:'Inter-Bold',Helvetica] font-bold text-gray-600 text-base text-center tracking-[0] leading-6 relative flex items-center w-fit whitespace-nowrap",
-      icon: <ArrowLeft size={18} strokeWidth={2} />,
+        "justify-center [font-family:'Inter-Bold',Helvetica] font-bold text-gray-600 text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative flex items-center w-fit whitespace-nowrap",
+      icon: <ArrowLeft size={16} strokeWidth={2} className="md:w-[18px] md:h-[18px]" />,
       iconAfter: false,
       ariaLabel: previousLabel,
     },
@@ -39,10 +39,10 @@ export const FormActionsSection = ({
       onClick: onNext,
       type: "button" as const,
       className:
-        "box-border inline-flex items-center gap-2 px-10 py-3 relative flex-[0_0_auto] bg-[#003da5] rounded-lg transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "box-border inline-flex items-center gap-2 px-4 py-2.5 md:px-10 md:py-3 relative flex-[0_0_auto] bg-[#003da5] rounded-lg transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#003da5] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
       textClassName:
-        "justify-center [font-family:'Inter-Bold',Helvetica] font-bold text-white text-base text-center tracking-[0] leading-6 relative flex items-center w-fit whitespace-nowrap",
-      icon: <ArrowRight size={18} color="white" strokeWidth={2} />,
+        "justify-center [font-family:'Inter-Bold',Helvetica] font-bold text-white text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative flex items-center w-fit whitespace-nowrap",
+      icon: <ArrowRight size={16} color="white" strokeWidth={2} className="md:w-[18px] md:h-[18px]" />,
       iconAfter: true,
       ariaLabel: nextLabel,
       overlay: (
@@ -55,7 +55,7 @@ export const FormActionsSection = ({
   ];
 
   return (
-    <footer className="flex items-center justify-between px-12 py-8 relative self-stretch w-full flex-[0_0_auto] bg-transparent">
+    <footer className="flex items-center justify-between px-4 md:px-12 py-5 md:py-8 relative self-stretch w-full flex-[0_0_auto] bg-transparent">
       {buttons.map((button) => (
         <button
           key={button.key}

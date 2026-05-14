@@ -343,7 +343,7 @@ export const ApplicationForm = (): JSX.Element => {
         {submitError && (
           <div
             role="alert"
-            className="mx-12 mt-6 w-[calc(100%-6rem)] rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+            className="mx-6 md:mx-12 mt-6 w-[calc(100%-3rem)] md:w-[calc(100%-6rem)] rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
           >
             {submitError}
           </div>

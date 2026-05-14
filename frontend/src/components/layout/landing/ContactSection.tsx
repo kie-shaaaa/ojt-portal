@@ -38,7 +38,7 @@ const contactCards = [
       },
       {
         label: "Closed:",
-        value: "Sat - Sun & Holidays",
+        value: "Fri - Sun & Holidays",
       },
     ],
   },
@@ -79,44 +79,39 @@ export const ContactSection = (): JSX.Element => {
   return (
     <section
       id="contact"
-      className="flex-1 max-h-[878px] w-full px-16 py-20 bg-[#002b7f] flex relative flex-col items-center scroll-mt-[96px]"
+      className="flex-1 w-full px-3 md:px-8 lg:px-16 py-8 md:py-16 bg-[#002b7f] flex relative flex-col items-center scroll-mt-[72px]"
       aria-labelledby="contact-section-heading"
     >
-      <div className="flex max-w-6xl items-start gap-12 relative w-full flex-[0_0_auto]">
-        <div className="flex flex-col w-[441.61px] items-start gap-4 relative self-stretch">
+      <div className="flex max-w-6xl flex-col lg:flex-row items-start gap-8 lg:gap-12 relative w-full flex-[0_0_auto]">
+        {/* Left Column - Contact Info */}
+        <div className="flex flex-col w-full lg:w-[45%] items-start gap-4 relative">
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
             <h2
               id="contact-section-heading"
-              className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-3xl tracking-[0] leading-9"
+              className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-2xl md:text-3xl tracking-[0] leading-8 md:leading-9"
             >
               We&#39;re Here to Help
             </h2>
           </div>
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-            <p className="relative self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-300 text-base tracking-[0] leading-[26px]">
-              Have questions about the application process or need
-              <br />
-              assistance? Our HR team is ready to support you. Reach
-              <br />
-              out through any of the channels below or send us a
-              <br />
-              message directly.
+            <p className="relative self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-300 text-sm md:text-base tracking-[0] leading-6 md:leading-[26px]">
+              Have questions about the application process or need assistance? Our HR team is ready to support you. Reach out through any of the channels below or send us a message directly.
             </p>
           </div>
           <div className="flex flex-col items-start gap-4 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
             {contactCards.map((card) => (
               <div
                 key={card.title}
-                className="flex items-start gap-4 p-5 relative self-stretch w-full flex-[0_0_auto] bg-[#1e4197] rounded-lg border border-solid border-[#ffffff1a]"
+                className="flex items-start gap-3.5 md:gap-4 p-3.5 md:p-5 relative self-stretch w-full flex-[0_0_auto] bg-[#1e4197] rounded-lg border border-solid border-[#ffffff1a]"
               >
-                <div className="inline-flex flex-col items-start p-3 relative flex-[0_0_auto] bg-[#3b82f633] rounded-md">
+                <div className="inline-flex flex-col items-start p-2 md:p-3 relative flex-[0_0_auto] bg-[#3b82f633] rounded-md">
                   {card.icon && (
                     <card.icon className={card.iconClassName} aria-hidden="true" />
                   )}
                 </div>
                 <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
                   <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                    <h3 className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-sm tracking-[0] leading-5 whitespace-nowrap relative w-fit">
+                    <h3 className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-xs md:text-sm tracking-[0] leading-5 relative w-fit">
                       {card.title}
                     </h3>
                   </div>
@@ -125,7 +120,7 @@ export const ContactSection = (): JSX.Element => {
                       key={`${card.title}-${line.label}`}
                       className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]"
                     >
-                      <p className="flex items-center mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-normal text-transparent text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit">
+                      <p className="flex items-center mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-normal text-transparent text-xs tracking-[0] leading-4 relative w-fit">
                         <span className="font-semibold text-white">
                           {line.label}
                         </span>
@@ -141,22 +136,23 @@ export const ContactSection = (): JSX.Element => {
             ))}
           </div>
         </div>
-        <div className="flex flex-col w-[662.39px] items-start relative self-stretch">
-          <div className="gap-2 pt-12 pb-16 px-12 rounded-2xl flex flex-col items-start relative self-stretch w-full flex-[0_0_auto] bg-white">
+        
+        {/* Right Column - Contact Form */}
+        <div className="flex flex-col w-full lg:w-[55%] items-start relative">
+          <div className="gap-2 pt-8 md:pt-12 pb-8 md:pb-12 px-3 md:px-8 lg:px-12 rounded-2xl flex flex-col items-start relative self-stretch w-full flex-[0_0_auto] bg-white">
             <div className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-2xl shadow-[0px_25px_50px_-12px_#00000040]" />
             <div className="flex items-start self-stretch w-full flex-col relative flex-[0_0_auto]">
-              <h2 className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-[#0047ab] text-2xl tracking-[0] leading-8">
+              <h2 className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-[#0047ab] text-xl md:text-2xl tracking-[0] leading-7 md:leading-8">
                 Send Us a Message
               </h2>
             </div>
             <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-              <p className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-500 text-sm tracking-[0] leading-5">
-                Fill out the form below and we&#39;ll get back to you within
-                24-48 hours.
+              <p className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-500 text-xs md:text-sm tracking-[0] leading-5">
+                Fill out the form below and we&#39;ll get back to you within 24-48 hours.
               </p>
             </div>
             <form
-              className="flex flex-col items-start gap-6 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] z-[1]"
+              className="flex flex-col items-start gap-4 md:gap-6 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] z-[1]"
               onSubmit={handleSubmit}
             >
               <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
@@ -168,9 +164,9 @@ export const ContactSection = (): JSX.Element => {
                     FULL NAME *
                   </label>
                 </div>
-                <div className="flex items-start justify-center px-4 py-3.5 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="flex items-start justify-center px-3 md:px-4 py-2.5 md:py-3.5 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
                   <input
-                    className="relative grow border-[none] [background:none] self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-base tracking-[0] leading-[normal] p-0 outline-none placeholder:text-gray-500"
+                    className="relative grow border-[none] [background:none] self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-sm md:text-base tracking-[0] leading-[normal] p-0 outline-none placeholder:text-gray-500"
                     id={fullNameId}
                     name="fullName"
                     placeholder="Enter your full name"
@@ -196,9 +192,9 @@ export const ContactSection = (): JSX.Element => {
                     EMAIL ADDRESS *
                   </label>
                 </div>
-                <div className="flex items-start justify-center px-4 py-3.5 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="flex items-start justify-center px-3 md:px-4 py-2.5 md:py-3.5 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
                   <input
-                    className="relative grow border-[none] [background:none] self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-base tracking-[0] leading-[normal] p-0 outline-none placeholder:text-gray-500"
+                    className="relative grow border-[none] [background:none] self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-sm md:text-base tracking-[0] leading-[normal] p-0 outline-none placeholder:text-gray-500"
                     id={emailId}
                     name="email"
                     placeholder="Enter your email address"
@@ -224,8 +220,8 @@ export const ContactSection = (): JSX.Element => {
                     SUBJECT *
                   </label>
                 </div>
-                <div className="flex items-center justify-center px-4 py-3 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md border border-solid border-slate-200">
-                  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
+                <div className="flex items-center justify-center px-3 md:px-4 py-2 md:py-3 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md border border-solid border-slate-200">
+                  <div className="pointer-events-none absolute right-3 md:right-4 top-1/2 -translate-y-1/2">
                     <ChevronDown className="relative w-4 h-4 text-slate-400" aria-hidden="true" />
                   </div>
                   <div className="flex flex-col items-start relative flex-1 grow">
@@ -240,7 +236,7 @@ export const ContactSection = (): JSX.Element => {
                           subject: event.target.value,
                         }))
                       }
-                      className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-800 text-base tracking-[0] leading-6 bg-transparent border-0 outline-none appearance-none pr-10"
+                      className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-800 text-sm md:text-base tracking-[0] leading-6 bg-transparent border-0 outline-none appearance-none pr-10"
                     >
                       <option value="" disabled className="text-slate-800">
                         Select a subject
@@ -263,7 +259,7 @@ export const ContactSection = (): JSX.Element => {
                     MESSAGE *
                   </label>
                 </div>
-                <div className="flex items-start justify-center pt-3 pb-6 px-4 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="flex items-start justify-center pt-2 md:pt-3 pb-4 md:pb-6 px-3 md:px-4 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
                   <div className="flex flex-col items-start relative flex-1 grow">
                     <textarea
                       id={messageId}
@@ -277,7 +273,7 @@ export const ContactSection = (): JSX.Element => {
                         }))
                       }
                       placeholder="Type your message here..."
-                      className="relative flex items-center self-stretch mt-[-1.00px] min-h-[24px] resize-none border-0 bg-transparent p-0 outline-none [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-base tracking-[0] leading-6 placeholder:text-gray-500"
+                      className="relative flex items-center self-stretch mt-[-1.00px] min-h-[24px] resize-none border-0 bg-transparent p-0 outline-none [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-sm md:text-base tracking-[0] leading-6 placeholder:text-gray-500"
                       rows={3}
                     />
                   </div>
@@ -285,13 +281,13 @@ export const ContactSection = (): JSX.Element => {
               </div>
               <button
                 type="submit"
-                className="all-[unset] box-border flex justify-center gap-2 px-0 py-4 self-stretch w-full bg-[#3b66f5] rounded-md items-center relative flex-[0_0_auto] cursor-pointer"
+                className="all-[unset] box-border flex justify-center gap-2 px-0 py-3 md:py-4 self-stretch w-full bg-[#3b66f5] rounded-md items-center relative flex-[0_0_auto] cursor-pointer hover:bg-[#2b5ee5] transition-colors"
               >
                 <div className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-md shadow-[0px_4px_6px_-4px_#0000001a,0px_10px_15px_-3px_#0000001a]" />
                 <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                  <Send className="relative w-[14.01px] h-[14.01px] text-white" aria-hidden="true" />
+                  <Send className="relative w-3.5 md:w-[14.01px] h-3.5 md:h-[14.01px] text-white" aria-hidden="true" />
                 </div>
-                <span className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-base text-center tracking-[0] leading-6 whitespace-nowrap relative w-fit">
+                <span className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative w-fit">
                   Send Message
                 </span>
               </button>
