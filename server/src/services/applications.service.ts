@@ -359,8 +359,7 @@ export class ApplicationsService {
         throw new Error('Application not found');
       }
 
-      // 2. If accepted → move to ojt_data
-      if (status === 'accepted') {
+      if (status === 'pending accept') {
         await client.query<AllOjt>(
           `
           INSERT INTO ojt_data (
@@ -374,13 +373,12 @@ export class ApplicationsService {
             course,
             deployment_date,
             original_status,
-            moved_to_ojt_at,
-            confirmed_at
+            moved_to_ojt_at
           )
           VALUES (
             $1, $2, $3, $4, $5,
             $6, $7, $8, $9, $10,
-            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            CURRENT_TIMESTAMP
           )
         `,
           [
@@ -395,6 +393,17 @@ export class ApplicationsService {
             application.deployment_date,
             application.status,
           ],
+        );
+      }
+
+      // 2. If accepted → move confirmed_at is stamped
+      if (status === 'accepted') {
+        await client.query<AllOjt>(
+          `
+            UPDATE ojt_data
+            SET confirmed_at = CURRENT_TIMESTAMP
+            WHERE email = $1
+          `, [application.email]
         );
       }
 

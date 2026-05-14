@@ -11,6 +11,32 @@ import { AppointmentType } from '../data/types';
 export class AppointmentsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
+  private async updateAppointmentStatus(
+    id: number,
+    updates: { isCancelled?: boolean; isDone?: boolean },
+    notFoundMessage: string,
+  ) {
+    const client = this.databaseService.getClient();
+
+    const result = await client.query(
+      `
+        UPDATE appointments
+        SET
+          is_cancelled = COALESCE($2, is_cancelled),
+          is_done = COALESCE($3, is_done)
+        WHERE id = $1
+        RETURNING *
+      `,
+      [id, updates.isCancelled ?? null, updates.isDone ?? null],
+    );
+
+    if (result.rowCount === 0) {
+      throw new BadRequestException(notFoundMessage);
+    }
+
+    return result.rows[0];
+  }
+
   async addAppointment(
     type: AppointmentType,
     appointmentDate: Date,
@@ -19,6 +45,19 @@ export class AppointmentsService {
     const client = this.databaseService.getClient();
 
     try {
+      const duplicate = await client.query(
+        `
+          SELECT * FROM appointments
+          WHERE type = $1 AND
+          application_id = $2
+        `,
+        [type, applicationId],
+      );
+
+      if ((duplicate.rowCount ?? 0) > 0) {
+        throw new InternalServerErrorException('Appointment already exists');
+      }
+
       const result = await client.query(
         `
       INSERT INTO appointments (type, appointment_date, application_id)
@@ -45,66 +84,54 @@ export class AppointmentsService {
   }
 
   async cancelAppointment(id: number) {
-    const client = this.databaseService.getClient();
-
     try {
-      const update = await client.query(
-        `UPDATE appointments
-             SET is_cancelled = TRUE
-             WHERE id = $1
-             RETURNING *`,
-        [id],
+      await this.updateAppointmentStatus(
+        id,
+        { isCancelled: true, isDone: false },
+        'Appointment not found',
       );
-
-      if (update.rowCount === 0) {
-        throw new BadRequestException('Application settings not found');
-      }
 
       return {
         status: 200,
-        message: 'Appointment cancelled updated successfully',
+        message: 'Appointment cancelled successfully',
         ok: true,
         error: null,
-        data: [],
+        data: null,
       };
     } catch (error) {
-      console.error('[APPOINTMENT] Error cancelling appointments:', error);
+      console.error('[APPOINTMENT] Error cancelling appointment:', error);
 
-      throw new InternalServerErrorException(
-        'Failed to cancelling appointments',
-      );
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to cancel appointment');
     }
   }
 
   async completedAppointment(id: number) {
-    const client = this.databaseService.getClient();
-
     try {
-      const update = await client.query(
-        `UPDATE appointments
-             SET is_done = TRUE
-             WHERE id = $1
-             RETURNING *`,
-        [id],
+      await this.updateAppointmentStatus(
+        id,
+        { isDone: true, isCancelled: false },
+        'Appointment not found',
       );
-
-      if (update.rowCount === 0) {
-        throw new BadRequestException('appointments not found');
-      }
 
       return {
         status: 200,
         message: 'Appointment updated successfully',
         ok: true,
         error: null,
-        data: [],
+        data: null,
       };
     } catch (error) {
-      console.error('[APPOINTMENT] Error cancelling appointments:', error);
+      console.error('[APPOINTMENT] Error completing appointment:', error);
 
-      throw new InternalServerErrorException(
-        'Failed to cancelling appointments',
-      );
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to complete appointment');
     }
   }
 
