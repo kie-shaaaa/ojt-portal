@@ -15,12 +15,14 @@ import {
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { MailerService } from './mailer.service';
 
 @Injectable()
 export class ApplicationsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly fileUploadsService: FileUploadsService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async submitApplication(
@@ -363,6 +365,30 @@ export class ApplicationsService {
     const client = this.databaseService.getClient();
 
     try {
+      const exists = await client.query<Application>(
+        `
+              SELECT * FROM applications
+              WHERE id = $1
+              `,
+        [id],
+      );
+
+      if (exists.rowCount === 0) {
+        throwAppError('not_found', 'User account does not exist');
+      }
+
+      const data = exists.rows[0];
+
+      const deletionDto = {
+        to: data.email,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        applicationId: data.id,
+        applicationType: data.application_type,
+      };
+
+      await this.mailerService.deletionEmail(deletionDto);
+
       const res = await client.query(
         `
         DELETE FROM applications
