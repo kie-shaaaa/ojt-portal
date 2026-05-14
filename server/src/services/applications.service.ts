@@ -74,6 +74,22 @@ export class ApplicationsService {
       ],
     );
 
+    if (res.rowCount === 0) {
+      throwAppError('bad_request', 'Application did not return for submission');
+    }
+
+    const data = res.rows[0];
+
+    const confirmationDto = {
+      to: data.email,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      applicationId: data.id,
+      applicationType: data.application_type,
+    };
+
+    await this.mailerService.confirmationEmail(confirmationDto);
+
     return {
       ok: true,
       message: 'Application submitted successfully',
