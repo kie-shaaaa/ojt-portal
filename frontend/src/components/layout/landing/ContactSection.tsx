@@ -33,7 +33,7 @@ const contactCards = [
     iconClassName: "relative w-4 h-4 text-white",
     lines: [
       {
-        label: "Mon - Fri:",
+        label: "Mon - Thurs:",
         value: "8:00 AM - 5:00 PM",
       },
       {

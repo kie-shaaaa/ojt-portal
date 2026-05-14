@@ -164,19 +164,32 @@ export const ApplicationForm = (): JSX.Element => {
     switch (currentStep) {
       case 1:
         isValid = validatePersonalDetails();
+        if (!isValid) {
+          return; // Stop navigation if validation fails
+        }
         break;
       case 2:
         isValid = validateOjtInformation();
+        if (!isValid) {
+          return; // Stop navigation if validation fails
+        }
         break;
       case 3:
         isValid = validateDocuments();
+        if (!isValid) {
+          return; // Stop navigation if validation fails
+        }
         break;
       case 4:
         isValid = validateDataPrivacy();
+        if (!isValid) {
+          return; // Stop navigation if validation fails
+        }
         break;
     }
 
-    if (isValid && currentStep < 4) {
+    // Only proceed if we haven't reached the last step
+    if (currentStep < 4) {
       setCurrentStep((prev) => (prev + 1) as FormStep);
       setValidationErrors({});
       setSubmitError(null);

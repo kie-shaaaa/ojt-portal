@@ -113,7 +113,10 @@ const mapApplications = (applications: Application[]): ApplicationRow[] => {
 
     applicantPhone: app.phone,
 
-    applicationType: [app.application_type, "Application"],
+    applicationType: [
+      app.application_type === "ojt" ? "OJT" : app.application_type,
+      "Application",
+    ],
 
     details: [
       app.school_name || "N/A",
