@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 import { Clock3 } from "lucide-react";
 
 interface TimePickerProps {
@@ -14,10 +14,31 @@ export default function TimePicker({
   onChange,
   label = "Time",
 }: TimePickerProps): JSX.Element {
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLDivElement | null>(null);
   const [showPicker, setShowPicker] = useState(false);
 
   // Parse HH:MM format (24-hour)
-  const [hours24, minutes] = value.split(":").map(Number);
+  const [rawHours, rawMinutes] = value.split(":").map(Number);
+  const hours24 = Number.isFinite(rawHours) ? rawHours : 9;
+  const minutes = Number.isFinite(rawMinutes) ? rawMinutes : 0;
+
+  useEffect(() => {
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(target)
+      ) {
+        setShowPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
 
   // Convert 24-hour to 12-hour format
   const isPM = hours24 >= 12;
@@ -68,7 +89,7 @@ export default function TimePicker({
         {label}
       </label>
 
-      <div className="relative">
+      <div className="relative" ref={triggerRef}>
         {/* Display Time Button - matches DatePicker styling */}
         <div className="flex items-center justify-between gap-3 px-4 py-3 relative w-full bg-white rounded-lg border border-gray-300 shadow-[0px_1px_2px_#0000000d]">
           <button
@@ -90,7 +111,10 @@ export default function TimePicker({
 
         {/* Clock UI Picker */}
         {showPicker && (
-          <div className="absolute top-full mt-2 left-0 z-50 bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-full">
+          <div
+            ref={pickerRef}
+            className="absolute bottom-full left-0 z-50 mb-2 w-full rounded-lg border border-gray-300 bg-white p-4 shadow-lg"
+          >
             <div className="flex items-center justify-center mb-4">
               <Clock3 className="w-5 h-5 text-gray-400 mr-2" />
               <span className="text-sm font-semibold text-gray-700">
