@@ -8,6 +8,8 @@ import { ResetPasswordModal } from "../ResetPasswordModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { CreateAccountModal } from "../CreateAccountModal";
 import { apiCall } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 const columns = [
   { key: "id", label: "ID" },
@@ -18,22 +20,32 @@ const columns = [
   { key: "actions", label: "ACTIONS" },
 ];
 
+interface StoredUser {
+  id: number;
+  email: string;
+  account_type: string;
+}
+
 interface AccountsTableSectionProps {
   accounts: AccountRow[];
   onAccountsChange: (accounts: AccountRow[]) => void;
-  isAdmin: boolean; // 👈 added
+  user?: StoredUser;
 }
 
 export const AccountsTableSection = ({
   accounts,
   onAccountsChange,
-  isAdmin, // 👈 added
+  user,
 }: AccountsTableSectionProps): JSX.Element => {
+  const { logout } = useAuth();
+  const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
+    null,
+  );
 
   const handleEditClick = (account: AccountRow) => {
     setSelectedAccount(account);
@@ -88,7 +100,6 @@ export const AccountsTableSection = ({
         try {
           const parsed = JSON.parse(raw);
 
-          // 👇 Fixed: stored user is flat { id, email, account_type }, no nested .user
           if (parsed?.id === updatedAccount.id) {
             parsed.account_type = updatedAccount.account_type;
             parsed.username = updatedAccount.username;
@@ -129,9 +140,16 @@ export const AccountsTableSection = ({
       });
 
       if (!result.ok) {
+        setIsDeleteModalOpen(false)
         throw new Error("Updating account data failed");
       }
 
+      if (selectedAccount.id === user?.id) {
+        logout();
+        router.push("/");
+      }
+
+      setIsDeleteModalOpen(false)
       console.log("Successfully deleted account");
     } catch (error) {
       console.error("Error deleting account", error);
@@ -211,8 +229,7 @@ export const AccountsTableSection = ({
             </p>
           </div>
 
-          {/* 👇 Only admins see Create Account */}
-          {isAdmin && (
+          {user?.account_type == "admin" && (
             <button
               type="button"
               onClick={handleCreateClick}
@@ -231,7 +248,10 @@ export const AccountsTableSection = ({
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {columns
-                    .filter((col) => isAdmin || col.key !== "actions")
+                    .filter(
+                      (col) =>
+                        user?.account_type == "admin" || col.key !== "actions",
+                    )
                     .map((column) => (
                       <th
                         key={column.key}
@@ -239,11 +259,17 @@ export const AccountsTableSection = ({
                         className={`px-6 py-4 text-sm font-semibold text-slate-700 ${column.key === "actions" ? "text-right" : ""}`}
                         style={{
                           width:
-                            column.key === "id" ? "6%" :
-                            column.key === "username" ? "24%" :
-                            column.key === "email" ? "30%" :
-                            column.key === "accountType" ? "14%" :
-                            column.key === "dateCreated" ? "16%" : "10%",
+                            column.key === "id"
+                              ? "6%"
+                              : column.key === "username"
+                                ? "24%"
+                                : column.key === "email"
+                                  ? "30%"
+                                  : column.key === "accountType"
+                                    ? "14%"
+                                    : column.key === "dateCreated"
+                                      ? "16%"
+                                      : "10%",
                         }}
                       >
                         {column.label}
@@ -267,7 +293,9 @@ export const AccountsTableSection = ({
                       <td className="px-6 py-4 text-sm text-slate-800">
                         {account.username}
                         {account.isCurrentUser && (
-                          <span className="ml-2 text-xs text-[#0b5cff]">You</span>
+                          <span className="ml-2 text-xs text-[#0b5cff]">
+                            You
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
@@ -277,7 +305,9 @@ export const AccountsTableSection = ({
                         <span
                           className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                           style={{
-                            backgroundColor: accountIsAdmin ? "#e0e7ff" : "#DCFCE7",
+                            backgroundColor: accountIsAdmin
+                              ? "#e0e7ff"
+                              : "#DCFCE7",
                             color: accountIsAdmin ? "#4338ca" : "#15803D",
                           }}
                         >
@@ -285,14 +315,17 @@ export const AccountsTableSection = ({
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {new Date(account.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(account.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </td>
 
-                      {isAdmin && (
+                      {user?.account_type == "admin" && (
                         <td className="px-6 py-4 text-sm text-right">
                           <div className="flex items-center justify-end gap-3">
                             <button

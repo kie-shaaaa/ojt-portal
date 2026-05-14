@@ -56,9 +56,9 @@ export class AccountsService {
 
       const remainingAdmins = await client.query<Account>(
         `
-        SELECT * FROM user_accounts
+        SELECT * FROM user_accounts 
+        WHERE account_type = 'admin'
         `,
-        [id],
       );
 
       if (remainingAdmins.rowCount === 1) {
@@ -211,15 +211,15 @@ export class AccountsService {
         `,
         [id],
       );
-      if (!exists) {
+      if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
 
       const remainingAdmins = await client.query<Account>(
         `
         SELECT * FROM user_accounts
+        WHERE account_type = 'admin'
         `,
-        [id],
       );
 
       if (remainingAdmins.rowCount === 1) {

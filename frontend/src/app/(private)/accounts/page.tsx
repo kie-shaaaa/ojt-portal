@@ -31,7 +31,7 @@ interface StoredUser {
 
 
 export const MainContentArea = (): JSX.Element => {
-  const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<StoredUser | undefined>(undefined);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +44,10 @@ export const MainContentArea = (): JSX.Element => {
 
   useEffect(() => {
     const data = fetchToken();
-    if (!data?.user) return;
+    if (!data?.user) {
+      setCurrentUser(undefined);
+      return;
+    }
 
     try {
       // fetchToken returns user as a raw JSON string — parse it
@@ -53,6 +56,7 @@ export const MainContentArea = (): JSX.Element => {
       setCurrentUser(parsed);
     } catch {
       // Ignore malformed data
+      setCurrentUser(undefined);
     }
   }, []);
   
@@ -130,7 +134,7 @@ export const MainContentArea = (): JSX.Element => {
         <AccountsTableSection
           accounts={filteredAccounts}
           onAccountsChange={handleAccountsChange}
-          isAdmin={currentUser?.account_type == 'admin'}
+          user={currentUser}
         />
       )}
     </main>
