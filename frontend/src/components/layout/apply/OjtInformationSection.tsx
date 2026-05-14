@@ -94,12 +94,12 @@ const SearchableField = ({
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
-      return mergedOptions.slice(0, 6);
+      return mergedOptions;
     }
 
-    return mergedOptions
-      .filter((option) => option.toLowerCase().includes(normalizedQuery))
-      .slice(0, 6);
+    return mergedOptions.filter((option) =>
+      option.toLowerCase().includes(normalizedQuery),
+    );
   }, [mergedOptions, query]);
 
   const exactMatch = mergedOptions.some(
@@ -165,7 +165,7 @@ const SearchableField = ({
       <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
         <label
           htmlFor={id}
-          className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-transparent text-sm tracking-[0] leading-5"
+          className="relative flex items-center self-stretch -mt-px font-['Inter-Bold',Helvetica] font-bold text-transparent text-sm tracking-normal leading-5"
         >
           <span className="text-[#0047ab]">{label} </span>
           <span className="text-red-500">*</span>
@@ -203,7 +203,7 @@ const SearchableField = ({
           aria-expanded={isOpen}
           aria-controls={`${id}-listbox`}
           autoComplete="off"
-          className="relative flex items-center w-full border-0 bg-transparent px-4 py-3 pr-10 [font-family:'Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-[0] leading-6 outline-none placeholder:text-gray-400"
+          className="relative flex items-center w-full border-0 bg-transparent px-4 py-3 pr-10 font-['Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-normal leading-6 outline-none placeholder:text-gray-400"
         />
 
         <button
@@ -220,7 +220,7 @@ const SearchableField = ({
         <div
           id={`${id}-listbox`}
           role="listbox"
-          className="absolute top-[calc(100%+4px)] left-0 z-20 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-[0px_12px_24px_-8px_#00000026]"
+          className="relative z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-[0px_12px_24px_-8px_#00000026]"
         >
           {filteredOptions.length > 0
             ? filteredOptions.map((option) => (
@@ -319,10 +319,13 @@ export const OjtInformationSection = ({
             if (school && typeof school === "object") {
               const payload = school as {
                 name?: string;
+                schoolName?: string;
                 school_name?: string;
               };
 
-              return payload.name || payload.school_name || "";
+              return (
+                payload.schoolName || payload.name || payload.school_name || ""
+              );
             }
 
             return "";
@@ -376,12 +379,17 @@ export const OjtInformationSection = ({
             if (course && typeof course === "object") {
               const payload = course as {
                 name?: string;
+                courseName?: string;
                 course?: string;
                 course_name?: string;
               };
 
               return (
-                payload.name || payload.course || payload.course_name || ""
+                payload.courseName ||
+                payload.name ||
+                payload.course ||
+                payload.course_name ||
+                ""
               );
             }
 
@@ -446,7 +454,7 @@ export const OjtInformationSection = ({
         <div className="items-start inline-flex flex-col relative flex-[0_0_auto]">
           <h2
             id="ojt-information-heading"
-            className="mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-[#0047ab] text-lg tracking-[0.90px] leading-7 relative flex items-center w-fit whitespace-nowrap"
+            className="-mt-px font-['Inter-Bold',Helvetica] font-bold text-[#0047ab] text-lg tracking-[0.90px] leading-7 relative flex items-center w-fit whitespace-nowrap"
           >
             OJT INFORMATION
           </h2>
@@ -478,7 +486,7 @@ export const OjtInformationSection = ({
           {textFields.map((field, index) => (
             <div
               key={field.id}
-              className={`relative row-[1_/_2] ${index === 0 ? "col-[1_/_2]" : "col-[2_/_3]"} w-full h-fit flex flex-col items-start gap-2`}
+              className={`relative row-[1/2] ${index === 0 ? "col-[1/2]" : "col-[2/3]"} w-full h-fit flex flex-col items-start gap-2`}
             >
               {field.id === "deploymentDate" ? (
                 <DatePicker
@@ -497,7 +505,7 @@ export const OjtInformationSection = ({
                   <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
                     <label
                       htmlFor={field.id}
-                      className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-transparent text-sm tracking-[0] leading-5"
+                      className="relative flex items-center self-stretch -mt-px font-['Inter-Bold',Helvetica] font-bold text-transparent text-sm tracking-normal leading-5"
                     >
                       <span className="text-[#0047ab]">{field.label} </span>
                       <span className="text-red-500">*</span>
@@ -524,7 +532,7 @@ export const OjtInformationSection = ({
                       aria-describedby={
                         errors[field.id] ? `${field.id}-error` : undefined
                       }
-                      className="relative flex items-center w-full border-0 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-[0] leading-6 outline-none placeholder:text-gray-400"
+                      className="relative flex items-center w-full border-0 bg-transparent font-['Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-normal leading-6 outline-none placeholder:text-gray-400"
                     />
                   </div>
                   {errors[field.id] && (
