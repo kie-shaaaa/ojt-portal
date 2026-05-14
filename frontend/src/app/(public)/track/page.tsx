@@ -81,7 +81,7 @@ function mapApplicationRecord(
     lastName: application.last_name,
     phone: application.phone,
     applicationType:
-      application.other_application_type ?? application.application_type,
+      application.other_application_type ?? application.application_type.toUpperCase(),
     submissionDate: application.submission_date,
     status: application.status,
     positionApplied: application.position_applied ?? undefined,
