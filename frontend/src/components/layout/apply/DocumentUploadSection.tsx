@@ -448,10 +448,12 @@ export const DocumentUploadSection = ({
               type="button"
               className="all-[unset] box-border flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto] cursor-pointer mt-1"
             >
-              <Download size={16} className="shrink-0" />
-              <div className="relative flex items-center mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-sm tracking-[0] leading-5 underline break-words text-left">
+              <a href= "/NTC-OJT-Requirements.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto]">
+              <Download size={16} />
+              <div className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-sm tracking-[0] leading-5 underline whitespace-nowrap">
                 Download Requirements Guide
               </div>
+              </a>
             </button>
           </div>
         </div>

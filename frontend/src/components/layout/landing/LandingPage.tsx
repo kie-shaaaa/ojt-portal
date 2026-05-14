@@ -8,7 +8,7 @@ import { JSX } from "react";
 
 export const LandingPage = (): JSX.Element => {
   return (
-    <main className="bg-white w-full min-h-[2652px] flex flex-col">
+    <main className="bg-white w-full min-h-screen flex flex-col">
       <NavBar />
       <HeroSection />
       <FaqSection />

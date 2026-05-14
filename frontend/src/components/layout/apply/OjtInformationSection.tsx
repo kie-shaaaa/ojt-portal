@@ -490,7 +490,7 @@ export const OjtInformationSection = ({
                   }
                   error={errors[field.id]}
                   required
-                  placeholder="dd/mm/yyyy"
+                  placeholder="yyyy/mm/dd"
                 />
               ) : (
                 <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
