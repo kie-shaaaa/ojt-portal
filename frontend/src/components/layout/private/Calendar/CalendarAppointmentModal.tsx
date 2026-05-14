@@ -3,6 +3,7 @@
 import { JSX, useEffect, useMemo, useState } from "react";
 import { CalendarAppointment } from "./calendarTypes";
 import { X } from "lucide-react";
+import ChangeStatusModal from "../ChangeStatusModal";
 
 type Props = {
   open: boolean;
@@ -92,6 +93,7 @@ export default function CalendarAppointmentModal({
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(
     null,
   );
+  const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -309,9 +311,9 @@ export default function CalendarAppointmentModal({
           <button
             type="button"
             className="rounded-lg border border-blue-600 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
-            onClick={() => onChangeStatus(activeAppointment)}
+            onClick={() => setIsChangeStatusModalOpen(true)}
           >
-            Change status
+            Change Date
           </button>
 
           <button
@@ -338,6 +340,24 @@ export default function CalendarAppointmentModal({
             Close
           </button>
         </footer>
+
+        <ChangeStatusModal
+          open={isChangeStatusModalOpen}
+          mode="appointment-date"
+          application={{
+            id: activeAppointment.id,
+            applicationId: activeAppointment.id,
+            applicantName: activeAppointment.applicantName,
+            status: activeAppointment.status,
+            appointmentDate: activeAppointment.appointmentDate,
+            appointmentTime: activeAppointment.appointmentTime,
+          }}
+          onClose={() => setIsChangeStatusModalOpen(false)}
+          onConfirm={(newStatus, id) => {
+            onChangeStatus(activeAppointment);
+            setIsChangeStatusModalOpen(false);
+          }}
+        />
       </section>
     </div>
   );
