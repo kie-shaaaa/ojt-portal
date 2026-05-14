@@ -14,13 +14,15 @@ import {
 } from "lucide-react";
 
 import { apiCall } from "@/lib/api";
+import { toast } from "sonner";
 
-type KnownApplicationStatus =
+type ApplicationStatus =
   | "pending"
   | "under_review"
   | "for_interview"
   | "rejected"
-  | "accepted";
+  | "accepted"
+  | "pending accept";
 
 type TimelineEntry = {
   date: string;
@@ -36,7 +38,7 @@ interface ApplicationRecord {
   phone: string;
   applicationType: string;
   submissionDate: string;
-  status: string;
+  status: ApplicationStatus;
   positionApplied?: string;
   schoolName?: string;
   course?: string;
@@ -66,7 +68,7 @@ type ApiApplicationRecord = {
   salary_expectation: number | null;
   available_date: string | null;
   submission_date: string;
-  status: string;
+  status: ApplicationStatus;
   admin_notes: string | null;
   reviewed_date: string | null;
 };
@@ -74,9 +76,6 @@ type ApiApplicationRecord = {
 function mapApplicationRecord(
   application: ApiApplicationRecord,
 ): ApplicationRecord {
-  const normalizedStatus =
-    typeof application.status === "string" ? application.status : "pending";
-
   return {
     id: String(application.id).padStart(6, "0"),
     email: application.email,
@@ -84,10 +83,9 @@ function mapApplicationRecord(
     lastName: application.last_name,
     phone: application.phone,
     applicationType:
-      application.other_application_type ??
-      application.application_type.toUpperCase(),
+      application.other_application_type ?? application.application_type.toUpperCase(),
     submissionDate: application.submission_date,
-    status: normalizedStatus,
+    status: application.status,
     positionApplied: application.position_applied ?? undefined,
     schoolName: application.school_name ?? undefined,
     course: application.course ?? undefined,
@@ -109,23 +107,50 @@ async function fetchApplicationRecord(id: string, email: string) {
   const normalizedEmail = email.toLowerCase();
   const numericId = Number(id);
 
+  // Strict verification: require both id and email to match the same record.
+  // The server may return rows that match id OR email; do not accept an id-only match.
   const matchedApplication =
     response.find(
       (application) =>
         application.id === numericId &&
         application.email.toLowerCase() === normalizedEmail,
-    ) ??
-    response.find((application) => application.id === numericId) ??
-    response.find(
-      (application) => application.email.toLowerCase() === normalizedEmail,
-    ) ??
-    null;
+    ) ?? null;
 
   return matchedApplication ? mapApplicationRecord(matchedApplication) : null;
 }
 
+// Enhanced diagnostic fetch: when an exact id+email match isn't found, call
+// the server for id-only and email-only matches to provide clearer feedback.
+async function fetchApplicationRecordWithDiagnostics(id: string, email: string) {
+  const normalizedEmail = email.toLowerCase();
+  const numericId = Number(id);
+
+  const exact = await fetchApplicationRecord(id, email);
+  if (exact) return exact;
+
+  // Check id-only
+  const idOnly = (await apiCall(
+    `/applications/fetch?id=${encodeURIComponent(id)}&email=`,
+  )) as ApiApplicationRecord[];
+
+  if (idOnly.find((app) => app.id === numericId)) {
+    throw new Error("ID_EXISTS_EMAIL_MISMATCH");
+  }
+
+  // Check email-only
+  const emailOnly = (await apiCall(
+    `/applications/fetch?id=&email=${encodeURIComponent(email)}`,
+  )) as ApiApplicationRecord[];
+
+  if (emailOnly.find((app) => app.email.toLowerCase() === normalizedEmail)) {
+    throw new Error("EMAIL_EXISTS_ID_MISMATCH");
+  }
+
+  return null;
+}
+
 const statusMeta: Record<
-  KnownApplicationStatus,
+  ApplicationStatus,
   {
     label: string;
     badgeClassName: string;
@@ -171,6 +196,15 @@ const statusMeta: Record<
     description:
       "Thank you for your interest in joining the National Telecommunications Commission. After careful consideration, your application was not selected.",
   },
+  "pending accept": {
+    label: "Pending Accept",
+    badgeClassName: "bg-amber-100 text-amber-800",
+    panelClassName: "border-amber-200 bg-amber-50 text-amber-900",
+    icon: BadgeCheck,
+    title: "Pending Acceptance",
+    description:
+      "Your application has been conditionally approved. Please check your email for instructions to confirm acceptance.",
+  },
   accepted: {
     label: "Accepted",
     badgeClassName: "bg-green-100 text-green-800",
@@ -181,42 +215,6 @@ const statusMeta: Record<
       "Your application has been accepted. Kindly check your email for the confirmation and next steps.",
   },
 };
-
-const fallbackStatusMeta = {
-  label: "In Progress",
-  badgeClassName: "bg-slate-100 text-slate-700",
-  panelClassName: "border-slate-200 bg-slate-50 text-slate-900",
-  icon: Clock3,
-  title: "Application Update",
-  description:
-    "Your application is being processed. Please check back later or monitor your email for updates.",
-};
-
-function normalizeStatus(value: unknown): KnownApplicationStatus | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const normalizedValue = value
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-
-  if (normalizedValue in statusMeta) {
-    return normalizedValue as KnownApplicationStatus;
-  }
-
-  if (normalizedValue === "pending_accept") {
-    return "pending";
-  }
-
-  return null;
-}
-
-function getStatusMeta(value: unknown) {
-  const normalizedStatus = normalizeStatus(value);
-  return normalizedStatus ? statusMeta[normalizedStatus] : fallbackStatusMeta;
-}
 
 function normalizeApplicationId(value: string) {
   return value.replace(/\D/g, "");
@@ -234,8 +232,8 @@ function formatDate(value: string) {
   });
 }
 
-function statusLabel(value: string) {
-  return getStatusMeta(value).label;
+function statusLabel(value: ApplicationStatus) {
+  return statusMeta[value].label;
 }
 
 function buildTimeline(application: ApplicationRecord): TimelineEntry[] {
@@ -294,7 +292,7 @@ function InfoCard({
 function TimelineItem({ date, title, description }: TimelineEntry) {
   return (
     <div className="relative rounded-xl border border-slate-200 bg-white p-4 pl-8 sm:pl-10 shadow-sm">
-      <div className="absolute left-3 top-5 h-2.5 w-2.5 rounded-full bg-blue-600 sm:left-4 sm:h-3 sm:w-3" />
+      <div className="absolute left-3 top-5 h-2.5 w-2.5 rounded-full bg-blue-600 sm: left-4 sm:h-3 sm:w-3" />
       <div className="mb-1 text-sm font-semibold text-blue-700">{date}</div>
       <div className="text-base font-semibold text-slate-900">{title}</div>
       <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
@@ -303,7 +301,7 @@ function TimelineItem({ date, title, description }: TimelineEntry) {
 }
 
 function StatusPanel({ application }: { application: ApplicationRecord }) {
-  const meta = getStatusMeta(application.status);
+  const meta = statusMeta[application.status];
   const StatusIcon = meta.icon;
 
   return (
@@ -319,7 +317,7 @@ function StatusPanel({ application }: { application: ApplicationRecord }) {
 
 function ResultSection({ application }: { application: ApplicationRecord }) {
   const timeline = buildTimeline(application);
-  const meta = getStatusMeta(application.status);
+  const meta = statusMeta[application.status];
 
   return (
     <section className="mt-10 space-y-6 rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
@@ -438,7 +436,6 @@ export default function TrackPage(): JSX.Element {
 
   const [applicationId, setApplicationId] = useState("");
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [result, setResult] = useState<ApplicationRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -461,50 +458,61 @@ export default function TrackPage(): JSX.Element {
     const trimmedEmail = email.trim();
 
     if (!trimmedApplicationId || !trimmedEmail) {
-      setError("Please enter both Application ID and Email address.");
       setResult(null);
+      toast.error("Please enter your application ID and email address.");
       return;
     }
 
     if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
       setResult(null);
+      toast.error("Please enter a valid email address.");
       return;
     }
 
     const numericId = normalizeApplicationId(trimmedApplicationId);
 
     if (!numericId) {
-      setError("Please enter a valid Application ID (e.g., 8 or NTC-000008).");
       setResult(null);
+      toast.error("Please enter a valid Application ID.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const matchedApplication = await fetchApplicationRecord(
+      const matchedApplication = await fetchApplicationRecordWithDiagnostics(
         numericId,
         trimmedEmail,
       );
 
       if (!matchedApplication) {
-        setError(
-          "No application found with the provided Application ID and Email.",
-        );
         setResult(null);
+        toast.error("No application matched that ID and email address.");
         return;
       }
 
-      setError("");
       setResult(matchedApplication);
     } catch (fetchError) {
-      setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : "Failed to fetch application.",
-      );
       setResult(null);
+      if (fetchError instanceof Error) {
+        if (fetchError.message === "ID_EXISTS_EMAIL_MISMATCH") {
+          toast.error(
+            "Application ID exists but the email does not match. Please use the email used during application.",
+          );
+        } else if (fetchError.message === "EMAIL_EXISTS_ID_MISMATCH") {
+          toast.error(
+            "Email exists but the Application ID does not match. Please check your Application ID.",
+          );
+        } else if (fetchError.message.includes("fetch")) {
+          toast.error(
+            "We couldn't load that application right now. Please try again.",
+          );
+        } else {
+          toast.error(fetchError.message);
+        }
+      } else {
+        toast.error("We couldn't load that application right now. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -531,12 +539,6 @@ export default function TrackPage(): JSX.Element {
 
         <div className="flex flex-col gap-8 p-4 sm:gap-8 sm:p-8 lg:p-10">
           <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            {error ? (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
-                <strong>Error:</strong> {error}
-              </div>
-            ) : null}
-
             <div className="space-y-2">
               <label
                 htmlFor={applicationIdInputId}

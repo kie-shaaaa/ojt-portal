@@ -151,8 +151,20 @@ export const CalendarDatesGridSection = ({
                       {appointment.title}
                     </p>
 
-                    <div className="mt-2 inline-flex items-center justify-center rounded-full bg-purple-100 px-3 py-1">
-                      <span className="text-[10px] font-bold text-purple-700">
+                    <div
+                      className={`mt-2 inline-flex items-center justify-center rounded-full px-3 py-1 ${
+                        appointment.appointmentType === "Orientation"
+                          ? "bg-green-100"
+                          : "bg-purple-100"
+                      }`}
+                    >
+                      <span
+                        className={`text-[10px] font-bold ${
+                          appointment.appointmentType === "Orientation"
+                            ? "text-green-700"
+                            : "text-purple-700"
+                        }`}
+                      >
                         {appointment.tag}
                       </span>
                     </div>

@@ -249,14 +249,6 @@ export default function CalendarAppointmentModal({
                   </p>
                 </div>
               </div>
-
-              <div className="md:col-span-2 rounded-xl bg-sky-100 px-5 py-4 text-sky-900">
-                <p className="text-sm">
-                  This appointment is represented on the calendar. Use the
-                  action buttons below to update the schedule, clear it, or mark
-                  it completed.
-                </p>
-              </div>
             </div>
 
             <aside className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -293,7 +285,7 @@ export default function CalendarAppointmentModal({
                             </p>
                           </div>
                           <span
-                            className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(appointment.tag)}`}
+                            className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(appointment.appointmentType)}`}
                           >
                             {appointment.tag}
                           </span>
@@ -341,23 +333,24 @@ export default function CalendarAppointmentModal({
           </button>
         </footer>
 
-        <ChangeStatusModal
-          open={isChangeStatusModalOpen}
-          mode="appointment-date"
-          application={{
-            id: activeAppointment.applicationId,
-            applicationId: activeAppointment.applicationId,
-            applicantName: activeAppointment.applicantName,
-            status: activeAppointment.status,
-            appointmentDate: activeAppointment.appointmentDate,
-            appointmentTime: activeAppointment.appointmentTime,
-          }}
-          onClose={() => setIsChangeStatusModalOpen(false)}
-          onConfirm={() => {
-            setIsChangeStatusModalOpen(false);
-          }}
-        />
       </section>
+
+      <ChangeStatusModal
+        open={isChangeStatusModalOpen}
+        mode="appointment-date"
+        application={{
+          id: activeAppointment.applicationId,
+          applicationId: activeAppointment.applicationId,
+          applicantName: activeAppointment.applicantName,
+          status: activeAppointment.status,
+          appointmentDate: activeAppointment.appointmentDate,
+          appointmentTime: activeAppointment.appointmentTime,
+        }}
+        onClose={() => setIsChangeStatusModalOpen(false)}
+        onConfirm={() => {
+          setIsChangeStatusModalOpen(false);
+        }}
+      />
     </div>
   );
 }
