@@ -54,6 +54,17 @@ export class AccountsService {
         [id],
       );
 
+      const remainingAdmins = await client.query<Account>(
+        `
+        SELECT * FROM user_accounts
+        `,
+        [id],
+      );
+
+      if (remainingAdmins.rowCount === 1) {
+        throwAppError('forbidden', 'Accounts should have at least 1');
+      }
+
       if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
       }
@@ -202,6 +213,17 @@ export class AccountsService {
       );
       if (!exists) {
         throwAppError('not_found', 'User account does not exist');
+      }
+
+      const remainingAdmins = await client.query<Account>(
+        `
+        SELECT * FROM user_accounts
+        `,
+        [id],
+      );
+
+      if (remainingAdmins.rowCount === 1) {
+        throwAppError('forbidden', 'Accounts should have at least 1');
       }
 
       const res = await client.query(
