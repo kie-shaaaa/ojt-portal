@@ -427,7 +427,7 @@ export class MailerService {
           ].join('\n');
 
     return this.send({ to, subject: subjectLine, html, text });
-  }
+  } 
 
   async statusUpdateEmail(dto: StatusUpdateEmailDto): Promise<boolean> {
     const { to, firstName, lastName, applicationId, status, adminNote } = dto;

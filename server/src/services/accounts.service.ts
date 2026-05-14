@@ -33,7 +33,12 @@ export class AccountsService {
   VALUES($1, $2, $3, $4)
   RETURNING id, email, username, account_type, created_at, updated_at
   `,
-        [account.email, hashedPassword, account.username, account.account_type],
+        [
+          account.email,
+          hashedPassword,
+          account.username,
+          account.account_type.toLowerCase(),
+        ],
       );
 
       return SuccessHandler('Successfully created account', res.rows[0]);
@@ -61,7 +66,10 @@ export class AccountsService {
         `,
       );
 
-      if (remainingAdmins.rowCount === 1) {
+      if (
+        remainingAdmins.rowCount === 1 &&
+        exists.rows[0].account_type === 'admin'
+      ) {
         throwAppError('forbidden', 'Accounts should have at least 1');
       }
 
@@ -222,7 +230,10 @@ export class AccountsService {
         `,
       );
 
-      if (remainingAdmins.rowCount === 1) {
+      if (
+        remainingAdmins.rowCount === 1 &&
+        exists.rows[0].account_type === 'admin'
+      ) {
         throwAppError('forbidden', 'Accounts should have at least 1');
       }
 
