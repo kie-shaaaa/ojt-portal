@@ -16,6 +16,13 @@ type AppointmentRow = {
   appointment_date: string;
   application_id?: number | null;
   is_done?: boolean;
+  application_first_name?: string | null;
+  application_last_name?: string | null;
+  application_email?: string | null;
+  application_school_name?: string | null;
+  application_course?: string | null;
+  application_hours_needed?: number | null;
+  application_deployment_date?: string | null;
 };
 
 const formatDateKey = (date: Date) =>
@@ -52,25 +59,54 @@ const mapAppointmentRowToCalendarAppointment = (
       : "Accepted";
   const dateKey = formatDateKey(appointmentDate);
   const appointmentTime = formatTime(appointmentDate);
+  const applicantName = [row.application_first_name, row.application_last_name]
+    .filter((part): part is string => Boolean(part && part.trim()))
+    .join(" ");
+  const hoursNeeded =
+    row.application_hours_needed !== null &&
+    row.application_hours_needed !== undefined
+      ? `${row.application_hours_needed} hours`
+      : "Not available";
 
   return {
     id: String(row.id),
     applicationId: String(row.application_id ?? row.id),
     ojtId: `APPT-${String(row.id).padStart(4, "0")}`,
-    applicantName: `${formatTypeLabel(row.type)} appointment`,
-    applicantEmail: "Not available",
-    school: "Not available",
-    course: "Not available",
-    hoursNeeded: "Not available",
+    appointmentDate: row.appointment_date,
+    applicantName: applicantName || `${formatTypeLabel(row.type)} appointment`,
+    applicantEmail: row.application_email ?? "Not available",
+    school: row.application_school_name ?? "Not available",
+    course: row.application_course ?? "Not available",
+    hoursNeeded,
     dateKey,
     appointmentTime,
     appointmentType,
     status,
     title: `${appointmentType} - ${dateKey}`,
     tag: status === "For interview" ? "For Interview" : appointmentType,
-    deploymentDate: dateKey,
+    deploymentDate: row.application_deployment_date ?? dateKey,
     endDate: dateKey,
   };
+};
+
+const hydrateAppointments = async (rows: AppointmentRow[]) => {
+  const appointments = rows
+    .map((row) => mapAppointmentRowToCalendarAppointment(row))
+    .filter(
+      (appointment): appointment is CalendarAppointment => appointment !== null,
+    );
+
+  return appointments;
+};
+
+const parseAppointmentId = (appointmentId: string) => {
+  const parsed = Number(appointmentId);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error("Invalid appointment ID");
+  }
+
+  return parsed;
 };
 
 export default function Page() {
@@ -104,6 +140,24 @@ export default function Page() {
     setCurrent(new Date(now.getFullYear(), now.getMonth(), 1));
   };
 
+  const refreshAppointments = async () => {
+    try {
+      const response = (await apiCall(
+        `/appointments/fetch-calendar?month=${month + 1}&year=${year}`,
+        {
+          method: "GET",
+        },
+      )) as AppointmentRow[];
+
+      console.log(response)
+
+      setAppointments(await hydrateAppointments(response));
+    } catch (error) {
+      console.error("Failed to fetch appointments", error);
+      setAppointments([]);
+    }
+  };
+
   useEffect(() => {
     let isActive = true;
 
@@ -116,18 +170,13 @@ export default function Page() {
           },
         )) as AppointmentRow[];
 
+        console.log(response)
+
         if (!isActive) {
           return;
         }
 
-        setAppointments(
-          response
-            .map(mapAppointmentRowToCalendarAppointment)
-            .filter(
-              (appointment): appointment is CalendarAppointment =>
-                appointment !== null,
-            ),
-        );
+        setAppointments(await hydrateAppointments(response));
       } catch (error) {
         if (!isActive) {
           return;
@@ -182,78 +231,40 @@ export default function Page() {
     setShowAppointmentModal(true);
   };
 
-  const persistCompletedIntern = (appointment: CalendarAppointment) => {
-    const completedIntern = {
-      id: appointment.applicationId,
-      ojtId: appointment.ojtId,
-      name: appointment.applicantName,
-      email: appointment.applicantEmail,
-      school: appointment.school,
-      startDate: appointment.deploymentDate,
-      endDate: appointment.endDate,
-      status: "completed",
-      verifiedDate: new Date().toISOString().split("T")[0],
-      gender: appointment.gender,
-      course: appointment.course,
-      hoursNeeded: appointment.hoursNeeded,
-    };
-
+  const handleClearAppointment = async (appointment: CalendarAppointment) => {
     try {
-      const raw = localStorage.getItem("ojt_completed_interns");
-      const existing = raw
-        ? (JSON.parse(raw) as (typeof completedIntern)[])
-        : [];
-      const next = [
-        ...existing.filter((intern) => intern.ojtId !== completedIntern.ojtId),
-        completedIntern,
-      ];
+      const appointmentId = parseAppointmentId(appointment.id);
 
-      localStorage.setItem("ojt_completed_interns", JSON.stringify(next));
-      window.dispatchEvent(new Event("interns:update"));
-    } catch {
-      // ignore storage failures in mock mode
+      await apiCall("/appointments/cancel-appointment", {
+        method: "PATCH",
+        body: JSON.stringify({ appointmentId }),
+      });
+
+      await refreshAppointments();
+      setShowAppointmentModal(false);
+    } catch (error) {
+      console.error("Failed to cancel appointment", error);
+      alert("Failed to cancel appointment. Please try again.");
     }
   };
 
-  const handleChangeStatus = (appointment: CalendarAppointment) => {
-    setChangeStatusAppointment(appointment);
-  };
+  const handleCompleteAppointment = async (
+    appointment: CalendarAppointment,
+  ) => {
+    try {
+      const appointmentId = parseAppointmentId(appointment.id);
 
-  const handleClearAppointment = (appointment: CalendarAppointment) => {
-    setAppointments((prev) =>
-      prev.map((item) =>
-        item.id === appointment.id
-          ? {
-              ...item,
-              status: "Pending",
-              dateKey: "",
-              appointmentTime: "",
-              title: `Pending - ${item.applicantName}`,
-              tag: "Pending",
-            }
-          : item,
-      ),
-    );
-    setShowAppointmentModal(false);
-  };
+      await apiCall("/appointments/completed-appointment", {
+        method: "PATCH",
+        body: JSON.stringify({ appointmentId }),
+      });
 
-  const handleCompleteAppointment = (appointment: CalendarAppointment) => {
-    persistCompletedIntern(appointment);
-    setAppointments((prev) =>
-      prev.map((item) =>
-        item.id === appointment.id
-          ? {
-              ...item,
-              status: "Completed",
-              dateKey: "",
-              appointmentTime: "",
-              title: `Completed - ${item.applicantName}`,
-              tag: "Completed",
-            }
-          : item,
-      ),
-    );
-    setShowAppointmentModal(false);
+      await refreshAppointments();
+      setShowAppointmentModal(false);
+    } catch (error) {
+      console.error("Failed to complete appointment", error);
+      alert("Failed to complete appointment. Please try again.");
+    }
   };
 
   const handleConfirmStatusChange = (
