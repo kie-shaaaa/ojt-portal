@@ -3,7 +3,7 @@
 import type { AccountRow } from "../../../app/(private)/accounts/page";
 import type { FormEvent, JSX } from "react";
 import { useId, useMemo, useState } from "react";
-import { Check, X, ShieldCheck, Type, Hash, Lock } from "lucide-react";
+import { Check, X, ShieldCheck, Type, Hash, Lock, Eye, EyeOff } from "lucide-react";
 
 interface ResetPasswordModalProps {
   account: AccountRow;
@@ -17,6 +17,7 @@ export const ResetPasswordModal = ({
   onReset,
 }: ResetPasswordModalProps): JSX.Element => {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const passwordId = useId();
 
   const requirements = useMemo(
@@ -115,10 +116,17 @@ export const ResetPasswordModal = ({
               </label>
 
               <div className="relative">
+                <style>{`
+                  #\\:r1\\: /* Fallback since ID might have colons */,
+                  [id="${passwordId}"]::-ms-reveal,
+                  [id="${passwordId}"]::-ms-clear {
+                    display: none;
+                  }
+                `}</style>
                 <input
                   id={passwordId}
                   name="newPassword"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   aria-describedby={`${passwordId}-requirements`}
                   value={password}
@@ -126,7 +134,21 @@ export const ResetPasswordModal = ({
                   className="h-14 w-full rounded-lg border border-gray-300 px-4 pr-12 text-[15px] text-gray-900 shadow-sm outline-none transition focus:border-[#0038a8] focus:ring-4 focus:ring-blue-100"
                 />
 
-                <Lock className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0038a8]"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <Eye className="h-5 w-5" aria-hidden="true" />
+                    ) : (
+                      <EyeOff className="h-5 w-5" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -146,10 +168,10 @@ export const ResetPasswordModal = ({
                       className="flex items-center gap-3"
                     >
                       <div
-                        className={`flex h-5 w-5 items-center justify-center rounded-full ${
+                        className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors duration-300 ${
                           requirement.isValid
                             ? "bg-green-100 text-green-600"
-                            : "bg-gray-200 text-gray-500"
+                            : "bg-red-100 text-red-600"
                         }`}
                       >
                         {requirement.isValid ? (
@@ -160,10 +182,10 @@ export const ResetPasswordModal = ({
                       </div>
 
                       <span
-                        className={`text-[15px] ${
+                        className={`text-[15px] transition-colors duration-300 ${
                           requirement.isValid
-                            ? "font-medium text-green-700"
-                            : "text-gray-500"
+                            ? "font-medium text-green-600"
+                            : "text-red-600"
                         }`}
                       >
                         {requirement.label}
