@@ -24,6 +24,23 @@ const formatDate = (dateKey: string) => {
   });
 };
 
+const formatDateTime = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not available";
+  }
+
+  return date.toLocaleString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 const formatTime = (time: string) => {
   if (!time) return "TBA";
 
@@ -72,7 +89,9 @@ export default function CalendarAppointmentModal({
   onComplete,
 }: Props): JSX.Element | null {
   const [isVisible, setIsVisible] = useState(false);
-  const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(null);
+  const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (open) {
@@ -89,7 +108,10 @@ export default function CalendarAppointmentModal({
   }, [open, appointments, selectedAppointmentId]);
 
   const activeAppointment = useMemo(
-    () => appointments.find((appointment) => appointment.id === activeAppointmentId) ?? appointments[0],
+    () =>
+      appointments.find(
+        (appointment) => appointment.id === activeAppointmentId,
+      ) ?? appointments[0],
     [appointments, activeAppointmentId],
   );
 
@@ -97,7 +119,7 @@ export default function CalendarAppointmentModal({
 
   return (
     <div
-      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
         isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
       }`}
       onClick={onClose}
@@ -108,16 +130,23 @@ export default function CalendarAppointmentModal({
         aria-labelledby="calendar-appointment-title"
         onClick={(event) => event.stopPropagation()}
         className={`flex w-full max-w-4xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out ${
-          isVisible ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-2 opacity-0"
+          isVisible
+            ? "scale-100 translate-y-0 opacity-100"
+            : "scale-95 translate-y-2 opacity-0"
         }`}
       >
-        <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4 flex-shrink-0">
+        <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
           <div>
-            <h1 id="calendar-appointment-title" className="text-xl font-bold text-[#0038a8]">
-              {activeAppointment.appointmentType} - {activeAppointment.applicantName}
+            <h1
+              id="calendar-appointment-title"
+              className="text-xl font-bold text-[#0038a8]"
+            >
+              {activeAppointment.appointmentType} -{" "}
+              {activeAppointment.applicantName}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              {formatDate(activeAppointment.dateKey)} at {activeAppointment.appointmentTime}
+              {formatDate(activeAppointment.dateKey)} at{" "}
+              {activeAppointment.appointmentTime}
             </p>
           </div>
 
@@ -135,38 +164,76 @@ export default function CalendarAppointmentModal({
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Applicant</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Applicant
+                </p>
                 <div className="mt-3 space-y-1">
-                  <p className="text-base font-semibold text-gray-900">{activeAppointment.applicantName}</p>
-                  <p className="text-sm text-gray-600">{activeAppointment.applicantEmail}</p>
-                  <p className="text-sm text-gray-600">OJT ID: {activeAppointment.ojtId}</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {activeAppointment.applicantName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {activeAppointment.applicantEmail}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    OJT ID: {activeAppointment.ojtId}
+                  </p>
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Appointment</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Appointment
+                </p>
                 <div className="mt-3 space-y-1">
-                  <p className="text-base font-semibold text-gray-900">{formatDate(activeAppointment.dateKey)}</p>
-                  <p className="text-sm text-gray-600">{formatTime(activeAppointment.appointmentTime)}</p>
-                  <span className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(activeAppointment.tag)}`}>
+                  <p className="text-sm text-gray-600">
+                    Appointment ID: {activeAppointment.ojtId}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Type: {activeAppointment.appointmentType}
+                  </p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {formatDate(activeAppointment.dateKey)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {formatTime(activeAppointment.appointmentTime)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Scheduled:{" "}
+                    {formatDateTime(activeAppointment.appointmentDate)}
+                  </p>
+                  <span
+                    className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(activeAppointment.tag)}`}
+                  >
                     {activeAppointment.tag}
                   </span>
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">School</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  School
+                </p>
                 <div className="mt-3 space-y-1">
-                  <p className="text-base font-semibold text-gray-900">{activeAppointment.school}</p>
-                  <p className="text-sm text-gray-600">{activeAppointment.course}</p>
-                  <p className="text-sm text-gray-600">{activeAppointment.hoursNeeded}</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {activeAppointment.school}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {activeAppointment.course}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {activeAppointment.hoursNeeded}
+                  </p>
                 </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Status</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Status
+                </p>
                 <div className="mt-3 space-y-2">
-                  <span className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(activeAppointment.status)}`}>
+                  <span
+                    className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(activeAppointment.status)}`}
+                  >
                     {activeAppointment.status}
                   </span>
                   <p className="text-sm text-gray-600">
@@ -183,17 +250,21 @@ export default function CalendarAppointmentModal({
 
               <div className="md:col-span-2 rounded-xl bg-sky-100 px-5 py-4 text-sky-900">
                 <p className="text-sm">
-                  This appointment is represented on the calendar. Use the action buttons below to update the schedule, clear it, or mark it completed.
+                  This appointment is represented on the calendar. Use the
+                  action buttons below to update the schedule, clear it, or mark
+                  it completed.
                 </p>
               </div>
             </div>
 
             <aside className="rounded-xl border border-gray-200 bg-white shadow-sm">
               <div className="border-b border-gray-100 px-4 py-3">
-                <p className="text-sm font-semibold text-gray-800">Appointments on this day</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  Appointments on this day
+                </p>
               </div>
 
-              <div className="max-h-[520px] overflow-y-auto p-3">
+              <div className="max-h-130 overflow-y-auto p-3">
                 <div className="flex flex-col gap-3">
                   {appointments.map((appointment) => {
                     const isSelected = appointment.id === activeAppointment.id;
@@ -211,12 +282,17 @@ export default function CalendarAppointmentModal({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-800">{appointment.applicantName}</p>
+                            <p className="truncate text-sm font-semibold text-gray-800">
+                              {appointment.applicantName}
+                            </p>
                             <p className="mt-1 text-xs text-gray-500">
-                              {formatDate(appointment.dateKey)} • {formatTime(appointment.appointmentTime)}
+                              {formatDate(appointment.dateKey)} •{" "}
+                              {formatTime(appointment.appointmentTime)}
                             </p>
                           </div>
-                          <span className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(appointment.tag)}`}>
+                          <span
+                            className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(appointment.tag)}`}
+                          >
                             {appointment.tag}
                           </span>
                         </div>
@@ -229,7 +305,7 @@ export default function CalendarAppointmentModal({
           </div>
         </div>
 
-        <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 flex-shrink-0">
+        <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 shrink-0">
           <button
             type="button"
             className="rounded-lg border border-blue-600 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"

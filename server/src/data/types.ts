@@ -145,6 +145,19 @@ export type Token = {
 
 export type DashboardData = {
   totalApplications: number;
+  pendingApplications: number;
+  underReviewApplications: number;
+  forInterviewApplications: number;
+  rejectedApplications: number;
+  acceptedApplications: number;
+  dailyApplications: DashboardSeriesPoint[];
+  monthlyApplications: DashboardSeriesPoint[];
+  statusDistribution: DashboardSeriesPoint[];
+};
+
+export type DashboardSeriesPoint = {
+  label: string;
+  value: number;
 };
 
 export type ApplicationSettings = {
