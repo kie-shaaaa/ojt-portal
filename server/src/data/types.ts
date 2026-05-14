@@ -187,4 +187,7 @@ export type UpdateApplicationSettingsDto = {
   closing_date?: Date;
   created_by: number;
 };
+
 export type AppointmentType = 'interview' | 'orientation';
+
+export type ResponseStatus = 'scheduled' | 'rejected';

@@ -313,13 +313,31 @@ export class ApplicationsService {
     }
   }
 
-  async updateApplication(
+  async updateApplicationStatus(
     id: number,
     status: ApplicationStatus,
+    interviewDate?: string,
+    interviewTime?: string,
+    interviewLocation?: string,
+    adminNote?: string,
   ): Promise<GetApplicationStatusResponse> {
     const client = this.databaseService.getClient();
 
     try {
+      const exists = await client.query<Application>(
+        `
+              SELECT * FROM applications
+              WHERE id = $1
+              `,
+        [id],
+      );
+
+      if (exists.rowCount === 0) {
+        throwAppError('not_found', 'User account does not exist');
+      }
+
+      const data = exists.rows[0];
+
       await client.query('BEGIN');
 
       // 1. Update application and return updated row
@@ -378,6 +396,33 @@ export class ApplicationsService {
         );
       }
 
+      if (status === 'for_interview') {
+        const mailSent = await this.mailerService.responseEmail({
+          to: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: id,
+          status: 'scheduled',
+          interviewDate,
+          interviewTime,
+          interviewLocation,
+          adminNote,
+        });
+        if (!mailSent)
+          throwAppError('server_error', 'Interview mailing failed');
+      } else {
+        const mailSent = await this.mailerService.statusUpdateEmail({
+          to: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: id,
+          status,
+          adminNote,
+        });
+        if (!mailSent)
+          throwAppError('server_error', 'Status update mailing failed');
+      }
+
       await client.query('COMMIT');
 
       return application;
@@ -428,8 +473,9 @@ export class ApplicationsService {
         applicationType: data.application_type,
       };
 
-      await this.mailerService.deletionEmail(deletionDto);
-
+      const deletionMail = await this.mailerService.deletionEmail(deletionDto);
+      if (!deletionMail)
+        throwAppError('server_error', 'Deletion mailing failed');
       const res = await client.query(
         `
         DELETE FROM applications

@@ -26,6 +26,7 @@ import type {
   UpdateApplicationSettingsDto,
   SuccessResponse,
 } from '../data/types';
+import type { UpdateApplicationDto } from '../data/interfaces';
 
 @Controller('applications')
 export class ApplicationsController {
@@ -314,18 +315,15 @@ export class ApplicationsController {
    * @returns
    */
   @Patch('update')
-  async updateApplication(
-    @Body() body: { id: number; status: ApplicationStatus },
-  ): Promise<GetApplicationStatusResponse> {
-    try {
-      const { id, status } = body;
-
-      return await this.applicationService.updateApplication(id, status);
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to update application',
-      );
-    }
+  async updateStatus(@Body() body: UpdateApplicationDto) {
+    return this.applicationService.updateApplicationStatus(
+      body.id,
+      body.status,
+      body.interviewDate,
+      body.interviewTime,
+      body.interviewLocation,
+      body.adminNote,
+    );
   }
 
   /**
@@ -356,7 +354,7 @@ export class ApplicationsController {
    * @param id application ID
    * @returns array of files with metadata and signed URLs
    */
-  @Get(':id/files') 
+  @Get(':id/files')
   async getApplicationFiles(@Param('id') id: string): Promise<
     Array<{
       id: number;
