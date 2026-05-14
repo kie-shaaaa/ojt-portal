@@ -13,10 +13,10 @@ interface FilterInternsSectionProps {
   schoolOptions: string[];
 }
 
-export const FilterInternsSection = ({ 
-  filters, 
+export const FilterInternsSection = ({
+  filters,
   onFilterChange,
-  schoolOptions 
+  schoolOptions
 }: FilterInternsSectionProps): JSX.Element => {
   const sectionTitleId = useId();
 
