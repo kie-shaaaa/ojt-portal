@@ -207,8 +207,10 @@ export const ApplicationForm = (): JSX.Element => {
       setCurrentStep((prev) => (prev - 1) as FormStep);
       setValidationErrors({});
       setSubmitError(null);
+    } else if (currentStep === 1) {
+      router.push("/");
     }
-  }, [currentStep]);
+  }, [currentStep, router]);
 
   const handleSubmit = useCallback(() => {
     const isValid =
@@ -298,7 +300,7 @@ export const ApplicationForm = (): JSX.Element => {
         className="relative flex w-full max-w-4xl flex-col items-start overflow-hidden rounded-3xl bg-[#002b80] shadow-[0px_25px_50px_-12px_#00000040]"
       >
         <div className="self-stretch w-full overflow-hidden rounded-t-3xl bg-[#002b80]">
-          <HeaderSection />
+          <HeaderSection currentStep={currentStep} />
         </div>
 
         <div className="self-stretch w-full bg-white">
