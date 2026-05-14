@@ -48,6 +48,11 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     data = null;
   }
 
+  // DEBUG only 
+  console.log("Data", data);
+  console.log("Response", response);
+
+  // Temporary, removed to avoid unauthorized status completely deleting sessions
   // if (response.status === 401) {
   //   localStorage.removeItem("access_token");
   //   sessionStorage.removeItem("access_token");
@@ -56,9 +61,13 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   // }
 
   if (!response.ok) {
-    throw new Error(
-      data?.message || `API Error: ${response.status} ${response.statusText}`,
-    );
+    return response;
+    // Temporary, removed for cleaner management of error
+
+    // throw new Error(
+    //   data?.message ||
+    //     `Request failed due to unknown error: ${response.status}`,
+    // );
   }
 
   return data;

@@ -15,29 +15,32 @@ import {
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { MailerService } from './mailer.service';
 
 @Injectable()
 export class ApplicationsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly fileUploadsService: FileUploadsService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async submitApplication(
     application: CreateApplicationDto,
   ): Promise<SubmitApplicationResponse> {
     const client = this.databaseService.getClient();
-    const exists = await client.query(
-      'SELECT id FROM applications WHERE email = $1',
-      [application.email],
-    );
+    try {
+      const exists = await client.query(
+        'SELECT id FROM applications WHERE email = $1',
+        [application.email],
+      );
 
-    if (exists.rows.length > 0) {
-      throw new Error('You already submitted an application!');
-    }
+      if (exists.rows.length > 0) {
+        throw new Error('You already submitted an application!');
+      }
 
-    const res = await client.query<Application>(
-      `
+      const res = await client.query<Application>(
+        `
         INSERT INTO applications (
           application_type, other_application_type, first_name, last_name, email, phone,
           school_name, hours_needed, course, deployment_date,
@@ -52,31 +55,57 @@ export class ApplicationsService {
         )
         RETURNING *
       `,
-      [
-        application.application_type,
-        application.other_application_type,
-        application.first_name,
-        application.last_name,
-        application.email,
-        application.phone,
-        application.school_name,
-        application.hours_needed,
-        application.course,
-        application.deployment_date,
-        application.position_applied,
-        application.years_experience,
-        application.current_company,
-        application.salary_expectation,
-        application.available_date,
-        application.agreed_terms,
-      ],
-    );
+        [
+          application.application_type,
+          application.other_application_type,
+          application.first_name,
+          application.last_name,
+          application.email,
+          application.phone,
+          application.school_name,
+          application.hours_needed,
+          application.course,
+          application.deployment_date,
+          application.position_applied,
+          application.years_experience,
+          application.current_company,
+          application.salary_expectation,
+          application.available_date,
+          application.agreed_terms,
+        ],
+      );
 
-    return {
-      ok: true,
-      message: 'Application submitted successfully',
-      data: res.rows[0],
-    };
+      if (res.rowCount === 0) {
+        throwAppError(
+          'bad_request',
+          'Application did not return for submission',
+        );
+      }
+
+      const data = res.rows[0];
+
+      const confirmationDto = {
+        to: data.email,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        applicationId: data.id,
+        applicationType: data.application_type,
+      };
+
+      const mailed =
+        await this.mailerService.confirmationEmail(confirmationDto);
+
+      if (!mailed) throwAppError('server_error', 'Failed to email user');
+
+      return {
+        ok: true,
+        message: 'Application submitted successfully',
+        data: res.rows[0],
+      };
+    } catch (error) {
+      console.error('[APPLICATION] Error submitting application', error);
+      throwAppError('server_error', 'Server error, try again later');
+    }
   }
 
   async submitApplicationWithFiles(
@@ -144,6 +173,20 @@ export class ApplicationsService {
 
         uploadedFileIds.push(uploadedFile.id);
       }
+      const data = res.rows[0];
+
+      const confirmationDto = {
+        to: data.email,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        applicationId: data.id,
+        applicationType: data.application_type,
+      };
+
+      const mailed =
+        await this.mailerService.confirmationEmail(confirmationDto);
+
+      if (!mailed) throwAppError('server_error', 'Failed to email user');
 
       return {
         ok: true,
@@ -265,18 +308,38 @@ export class ApplicationsService {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return settings.rows[0] || null;
     } catch (error) {
-      console.log(`[APPLICATION | SETTINGS] error updating settings`, error);
+      console.log(`[APPLICATION | SETTINGS] error fetching settings`, error);
       throwAppError('server_error', 'Error fetching settings');
     }
   }
 
-  async updateApplication(
+  async updateApplicationStatus(
     id: number,
     status: ApplicationStatus,
+    interviewDate?: string,
+    interviewTime?: string,
+    acceptedDate?: string,
+    acceptedTime?: string,
+    interviewLocation?: string,
+    adminNote?: string,
   ): Promise<GetApplicationStatusResponse> {
     const client = this.databaseService.getClient();
 
     try {
+      const exists = await client.query<Application>(
+        `
+              SELECT * FROM applications
+              WHERE id = $1
+              `,
+        [id],
+      );
+
+      if (exists.rowCount === 0) {
+        throwAppError('not_found', 'User account does not exist');
+      }
+
+      const data = exists.rows[0];
+
       await client.query('BEGIN');
 
       // 1. Update application and return updated row
@@ -296,8 +359,7 @@ export class ApplicationsService {
         throw new Error('Application not found');
       }
 
-      // 2. If accepted → move to ojt_data
-      if (status === 'accepted') {
+      if (status === 'pending accept') {
         await client.query<AllOjt>(
           `
           INSERT INTO ojt_data (
@@ -310,14 +372,12 @@ export class ApplicationsService {
             hours_needed,
             course,
             deployment_date,
-            original_status,
-            moved_to_ojt_at,
-            confirmed_at
+            moved_to_ojt_at
           )
           VALUES (
             $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10,
-            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            $6, $7, $8, $9,
+            CURRENT_TIMESTAMP
           )
         `,
           [
@@ -330,9 +390,60 @@ export class ApplicationsService {
             application.hours_needed,
             application.course,
             application.deployment_date,
-            application.status,
           ],
         );
+      }
+
+      // 2. If accepted → move confirmed_at is stamped
+      if (status === 'accepted') {
+        await client.query<AllOjt>(
+          `
+            UPDATE ojt_data
+            SET confirmed_at = CURRENT_TIMESTAMP
+            WHERE email = $1
+          `,
+          [application.email],
+        );
+      }
+
+      if (status === 'for_interview') {
+        const mailSent = await this.mailerService.responseEmail({
+          to: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: id,
+          status: 'scheduled',
+          interviewDate,
+          interviewTime,
+          interviewLocation,
+          adminNote,
+        });
+        if (!mailSent)
+          throwAppError('server_error', 'Interview mailing failed');
+      } else if (status === 'pending accept') {
+        const mailSent = await this.mailerService.responseEmail({
+          to: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: id,
+          status: 'orientation',
+          acceptedDate: acceptedDate,
+          acceptedTime: acceptedTime,
+          adminNote,
+        });
+        if (!mailSent)
+          throwAppError('server_error', 'Interview mailing failed');
+      } else {
+        const mailSent = await this.mailerService.statusUpdateEmail({
+          to: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: id,
+          status,
+          adminNote,
+        });
+        if (!mailSent)
+          throwAppError('server_error', 'Status update mailing failed');
       }
 
       await client.query('COMMIT');
@@ -363,16 +474,49 @@ export class ApplicationsService {
     const client = this.databaseService.getClient();
 
     try {
+      const exists = await client.query<Application>(
+        `
+              SELECT * FROM applications
+              WHERE id = $1
+              `,
+        [id],
+      );
+
+      if (exists.rowCount === 0) {
+        throwAppError('not_found', 'User account does not exist');
+      }
+
+      const data = exists.rows[0];
+
+      const deletionDto = {
+        to: data.email,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        applicationId: data.id,
+        applicationType: data.application_type,
+      };
+
+      const deletionMail = await this.mailerService.deletionEmail(deletionDto);
+      if (!deletionMail)
+        throwAppError('server_error', 'Deletion mailing failed');
       const res = await client.query(
         `
         DELETE FROM applications
         WHERE id = $1
+        RETURNING *
         `,
         [id],
       );
 
+      if (res.rowCount === 0) {
+        throw new Error('Application not found');
+      }
+
+      await client.query('COMMIT');
+
       return SuccessHandler('Successfully deleted user', res.rows[0]);
     } catch (error) {
+      await client.query('ROLLBACK');
       console.log(`[APPLICATION] error deleting application`, error);
       throwAppError('server_error', 'Error fetching settings');
     }

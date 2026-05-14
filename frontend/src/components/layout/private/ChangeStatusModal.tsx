@@ -210,6 +210,10 @@ const ChangeStatusModal = ({
         body: JSON.stringify({
           id: applicationId,
           status: backendStatus,
+          interviewDate,
+          interviewTime,
+          acceptedDate,
+          acceptedTime
         }),
       });
 
@@ -417,7 +421,7 @@ const ChangeStatusModal = ({
             type="button"
             className="px-6 py-2.5 text-base font-bold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             onClick={handleConfirm}
-            disabled={isUpdating}
+            disabled={isUpdating || (selectedStatus === 'for-interview' && !interviewDate)}
           >
             {isUpdating && (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
