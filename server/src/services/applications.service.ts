@@ -503,12 +503,20 @@ export class ApplicationsService {
         `
         DELETE FROM applications
         WHERE id = $1
+        RETURNING *
         `,
         [id],
       );
 
+      if (res.rowCount === 0) {
+        throw new Error('Application not found');
+      }
+
+      await client.query('COMMIT');
+
       return SuccessHandler('Successfully deleted user', res.rows[0]);
     } catch (error) {
+      await client.query('ROLLBACK');
       console.log(`[APPLICATION] error deleting application`, error);
       throwAppError('server_error', 'Error fetching settings');
     }
