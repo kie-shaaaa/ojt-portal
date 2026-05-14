@@ -1,4 +1,4 @@
-import { JSX, useId } from "react";
+import { JSX, useId, useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
 interface FilterOptions {
@@ -13,12 +13,34 @@ interface FilterInternsSectionProps {
   schoolOptions: string[];
 }
 
-export const FilterInternsSection = ({ 
-  filters, 
+export const FilterInternsSection = ({
+  filters,
   onFilterChange,
-  schoolOptions 
+  schoolOptions
 }: FilterInternsSectionProps): JSX.Element => {
   const sectionTitleId = useId();
+  const schoolDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        schoolDropdownRef.current &&
+        !schoolDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsSchoolDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredSchoolOptions = schoolOptions
+    .filter((option) => option !== "All Schools")
+    .filter((option) =>
+      option.toLowerCase().includes(schoolSearchQuery.toLowerCase())
+    );
 
   return (
     <section
@@ -44,26 +66,72 @@ export const FilterInternsSection = ({
               School
             </label>
           </div>
-          <div className="relative flex w-full items-center self-stretch">
-            <select
+          <div 
+            className="relative flex w-full items-center self-stretch"
+            ref={schoolDropdownRef}
+          >
+            <input
+              type="text"
               id="school"
               name="school"
               aria-label="School"
-              value={filters.school}
-              onChange={(event) =>
-                onFilterChange({
-                  ...filters,
-                  school: event.target.value,
-                })
+              value={
+                isSchoolDropdownOpen
+                  ? schoolSearchQuery
+                  : filters.school === "All Schools"
+                    ? ""
+                    : filters.school
               }
+              placeholder="All Schools"
+              onChange={(e) => {
+                const val = e.target.value;
+                setSchoolSearchQuery(val);
+                setIsSchoolDropdownOpen(true);
+                if (val.trim() === "") {
+                  onFilterChange({ ...filters, school: "All Schools" });
+                }
+              }}
+              onFocus={() => {
+                setIsSchoolDropdownOpen(true);
+                if (filters.school !== "All Schools") {
+                  setSchoolSearchQuery(filters.school);
+                } else {
+                  setSchoolSearchQuery("");
+                }
+              }}
+              autoComplete="off"
               className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-            >
-              {schoolOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            />
+            {isSchoolDropdownOpen && (
+              <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
+                {filteredSchoolOptions.length > 0 ? (
+                  filteredSchoolOptions.map((option) => {
+                    const isSelected = filters.school === option;
+                    return (
+                      <div
+                        key={option}
+                        onClick={() => {
+                          onFilterChange({ ...filters, school: option });
+                          setIsSchoolDropdownOpen(false);
+                          setSchoolSearchQuery("");
+                        }}
+                        className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
+                          isSelected
+                            ? "bg-slate-50 font-semibold text-slate-700 hover:bg-slate-100"
+                            : "text-slate-600"
+                        }`}
+                      >
+                        {option}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="px-4 py-3 text-sm text-slate-500">
+                    No schools found
+                  </div>
+                )}
+              </div>
+            )}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-[42px] items-center justify-center">
               <ChevronDown
                 size={18}
