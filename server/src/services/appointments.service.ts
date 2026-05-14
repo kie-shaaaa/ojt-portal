@@ -109,6 +109,44 @@ export class AppointmentsService {
     }
   }
 
+  async updateAppointment(applicationId: number, appointmentDate: Date) {
+    const client = this.databaseService.getClient();
+    console.log(applicationId, appointmentDate);
+    try {
+      const result = await client.query(
+        `
+          UPDATE appointments
+          SET appointment_date = $1
+          WHERE application_id = $2
+          RETURNING *
+        `,
+        [appointmentDate, applicationId],
+      );
+
+      if (result.rowCount === 0) {
+        throw new BadRequestException(
+          'No appointment found for this application',
+        );
+      }
+
+      return {
+        status: 200,
+        message: 'Appointment date updated successfully',
+        ok: true,
+        error: null,
+        data: result.rows[0],
+      };
+    } catch (error) {
+      console.error('[APPOINTMENT] Error updating appointment:', error);
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to update appointment');
+    }
+  }
+
   async completedAppointment(id: number) {
     try {
       await this.updateAppointmentStatus(
