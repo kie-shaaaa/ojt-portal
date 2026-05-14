@@ -282,6 +282,7 @@ const ChangeStatusModal = ({
         }
 
         if (appointmentDate) {
+          console.log(applicationId, appointmentDate);
           await apiCall("/appointments/update", {
             method: "PATCH",
             body: JSON.stringify({
