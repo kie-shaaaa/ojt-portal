@@ -2,7 +2,7 @@
 
 import type { FormEvent, JSX } from "react";
 import { useId, useMemo, useState } from "react";
-import { X, Check, ChevronDown, UserPlus, ShieldCheck } from "lucide-react";
+import { X, Check, ChevronDown, UserPlus, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import type { AccountRow } from "../../../app/(private)/accounts/page";
 
 type AccountTypeOption = {
@@ -31,6 +31,9 @@ export const CreateAccountModal = ({
   const confirmPasswordId = `${formId}-confirm-password`;
   const accountTypeId = `${formId}-account-type`;
   const passwordRequirementsId = `${formId}-password-requirements`;
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -62,19 +65,17 @@ export const CreateAccountModal = ({
         label: "Number (0-9)",
         met: /\d/.test(formData.password),
       },
-      {
-        id: "match",
-        label: "Passwords match",
-        met:
-          formData.confirmPassword.length > 0 &&
-          formData.password === formData.confirmPassword,
-      },
     ],
-    [formData.password, formData.confirmPassword],
+    [formData.password],
   );
+
+  const passwordsMatch =
+    formData.confirmPassword.length > 0 &&
+    formData.password === formData.confirmPassword;
 
   const isFormValid =
     passwordRequirements.every((req) => req.met) &&
+    passwordsMatch &&
     formData.username.trim() !== "" &&
     formData.email.trim() !== "" &&
     formData.accountType !== "";
@@ -226,19 +227,43 @@ export const CreateAccountModal = ({
                 Password *
               </label>
 
-              <div className="flex w-full items-start justify-center overflow-hidden rounded-md border border-gray-300 bg-white px-4 pb-3 pt-[13px]">
+              <div className="relative flex w-full items-start justify-center overflow-hidden rounded-md border border-gray-300 bg-white px-4 pb-3 pt-[13px]">
+                <style>{`
+                  #\\:r1\\: /* Fallback */,
+                  [id="${passwordId}"]::-ms-reveal,
+                  [id="${passwordId}"]::-ms-clear,
+                  [id="${confirmPasswordId}"]::-ms-reveal,
+                  [id="${confirmPasswordId}"]::-ms-clear {
+                    display: none;
+                  }
+                `}</style>
                 <input
                   id={passwordId}
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
                   aria-describedby={passwordRequirementsId}
                   placeholder="Enter password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="grow border-none bg-transparent px-0 pb-0.5 pt-px text-base text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                  className="grow border-none bg-transparent px-0 pr-10 pb-0.5 pt-px text-base text-gray-900 placeholder:text-gray-400 focus:outline-none"
                 />
+                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -254,22 +279,21 @@ export const CreateAccountModal = ({
                   index === 0 ? "col-[1_/_2] row-[1_/_2]" : "",
                   index === 1 ? "col-[2_/_3] row-[1_/_2]" : "",
                   index === 2 ? "col-[1_/_2] row-[2_/_3]" : "",
-                  index === 3 ? "col-[2_/_3] row-[2_/_3]" : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
 
                 return (
                   <div key={requirement.id} className={cellClassNames}>
-                    <Check
-                      className={`h-3 w-3 ${
-                        requirement.met ? "text-green-500" : "text-gray-400"
-                      }`}
-                    />
+                    {requirement.met ? (
+                      <Check className="h-3 w-3 text-green-600 transition-colors duration-300" />
+                    ) : (
+                      <X className="h-3 w-3 text-red-600 transition-colors duration-300" />
+                    )}
 
                     <span
-                      className={`text-xs leading-4 ${
-                        requirement.met ? "text-green-600" : "text-gray-500"
+                      className={`text-xs leading-4 transition-colors duration-300 ${
+                        requirement.met ? "text-green-600" : "text-red-600"
                       }`}
                     >
                       {requirement.label}
@@ -288,18 +312,48 @@ export const CreateAccountModal = ({
                 Confirm Password *
               </label>
 
-              <div className="flex w-full items-start justify-center overflow-hidden rounded-md border border-gray-300 bg-white px-4 pb-3 pt-[13px]">
+              <div className="relative flex w-full items-start justify-center overflow-hidden rounded-md border border-gray-300 bg-white px-4 pb-3 pt-[13px]">
                 <input
                   id={confirmPasswordId}
                   name="confirmPassword"
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="grow border-none bg-transparent px-0 pb-0.5 pt-px text-base text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                  className="grow border-none bg-transparent px-0 pr-10 pb-0.5 pt-px text-base text-gray-900 placeholder:text-gray-400 focus:outline-none"
                 />
+                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-1 flex items-center gap-2 pl-1">
+                {passwordsMatch ? (
+                  <Check className="h-3 w-3 text-green-600 transition-colors duration-300" />
+                ) : (
+                  <X className="h-3 w-3 text-red-600 transition-colors duration-300" />
+                )}
+                <span
+                  className={`text-xs leading-4 transition-colors duration-300 ${
+                    passwordsMatch ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {passwordsMatch ? "Passwords match" : "Password does not match"}
+                </span>
               </div>
             </div>
 
