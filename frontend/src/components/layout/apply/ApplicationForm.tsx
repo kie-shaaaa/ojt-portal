@@ -356,9 +356,9 @@ export const ApplicationForm = (): JSX.Element => {
           <FormActionsSection
             onPrevious={handlePrevious}
             onNext={currentStep === 4 ? handleSubmit : handleNext}
-            previousDisabled={currentStep === 1}
+            previousDisabled={false}
             nextDisabled={isSubmitting}
-            previousLabel="Previous"
+            previousLabel={currentStep === 1 ? "Return" : "Previous"}
             nextLabel={
               isSubmitting
                 ? "Submitting..."
