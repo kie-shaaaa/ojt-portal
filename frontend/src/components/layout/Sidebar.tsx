@@ -12,11 +12,11 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingApplications } from "@/hooks/usePendingApplication";
-// use logo from public folder
+import { fetchToken } from "@/lib/token";
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
@@ -26,12 +26,20 @@ const navigationItems = [
   { label: "Accounts", icon: Users, href: "/accounts" },
 ];
 
-export const AsideSidebar = (): JSX.Element => {
+
+interface SidebarProps {
+  email?: string;
+  account_type?: string;
+}
+
+export const AsideSidebar = ({email, account_type}:SidebarProps): JSX.Element => {
+  
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { logout } = useAuth();
   const { pendingCount } = usePendingApplications();
+
 
   const handleLogout = () => {
     logout();
@@ -67,12 +75,13 @@ export const AsideSidebar = (): JSX.Element => {
           <div className="w-22 h-22 flex items-center justify-center rounded-full bg-white">
             <UserRoundCheck className="w-12 h-12 text-[#0033A0]" />
           </div>
+          {/* Show email as display name since there's no username field */}
           <div className="mt-2 text-white text-s font-semibold hidden md:block">
-            admin
+            {email ?? "—"}
           </div>
           <div className="mt-1 hidden md:block">
-            <div className="px-2 py-0.5 bg-white/20 rounded opacity-80 text-[10px] text-white">
-              admin
+            <div className="px-2 py-0.5 bg-white/20 rounded opacity-80 text-[10px] text-white capitalize">
+              {account_type ?? "—"}
             </div>
           </div>
         </div>
@@ -149,14 +158,13 @@ export const AsideSidebar = (): JSX.Element => {
                   className={`w-6 h-6 ${isActive ? "text-white" : "text-white/80"}`}
                 />
                 <span
-                  className={`mt-1  text-[10px] leading-tight text-center ${isActive ? "text-white" : "text-white/80"}`}
+                  className={`mt-1 text-[10px] leading-tight text-center ${isActive ? "text-white" : "text-white/80"}`}
                 >
                   {item.label}
                 </span>
               </Link>
             );
           })}
-          {/* logout for mobile */}
           <button
             type="button"
             onClick={() => setShowLogoutModal(true)}
@@ -172,11 +180,9 @@ export const AsideSidebar = (): JSX.Element => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-[90%] max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-gray-800">Confirm Logout</h2>
-
             <p className="mt-2 text-sm text-gray-600">
               Are you sure you want to logout?
             </p>
-
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
@@ -185,7 +191,6 @@ export const AsideSidebar = (): JSX.Element => {
               >
                 Cancel
               </button>
-
               <button
                 type="button"
                 onClick={() => {

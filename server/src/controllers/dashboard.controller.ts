@@ -5,9 +5,11 @@ import { DashboardService } from '../services/dashboard.service';
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
-  //TODO
+
   @Get('')
-  async getDashboardData() {}
+  async getDashboardData() {
+    return await this.dashboardService.getDashboardData();
+  }
 
   @Patch('settings')
   async updateApplicationSettings(

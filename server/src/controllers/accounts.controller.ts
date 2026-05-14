@@ -40,7 +40,6 @@ export class AccountsController {
    * @returns Array of accounts matching the provided criteria
    */
   @Get('active')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async getActiveAccounts(
     @Param('count') count: number,
     @Param('type') type?: string,

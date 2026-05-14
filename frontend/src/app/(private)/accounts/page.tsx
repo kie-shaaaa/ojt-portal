@@ -5,6 +5,7 @@ import { AccountsStatsSection } from "../../../components/layout/private/Account
 import { AccountsTableSection } from "../../../components/layout/private/Accounts/AccountsTableSection";
 import { JSX, useState, useMemo, useEffect } from "react";
 import { apiCall } from "@/lib/api";
+import { fetchToken } from "@/lib/token";
 
 export type AccountRow = {
   id: number;
@@ -22,7 +23,15 @@ type AccountsResponse = {
   data: AccountRow[];
 };
 
+interface StoredUser {
+  id: number;
+  email: string;
+  account_type: string;
+}
+
+
 export const MainContentArea = (): JSX.Element => {
+  const [currentUser, setCurrentUser] = useState<StoredUser | null>(null);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,11 +43,25 @@ export const MainContentArea = (): JSX.Element => {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
+    const data = fetchToken();
+    if (!data?.user) return;
+
+    try {
+      // fetchToken returns user as a raw JSON string — parse it
+      const parsed: StoredUser =
+        typeof data.user === "string" ? JSON.parse(data.user) : data.user;
+      setCurrentUser(parsed);
+    } catch {
+      // Ignore malformed data
+    }
+  }, []);
+  
+  useEffect(() => {
     const fetchAccounts = async () => {
       try {
         setLoading(true);
 
-        const result: AccountsResponse = await apiCall(`/accounts/active`, {
+        const result: AccountsResponse = await apiCall(`/accounts/active?count=50`, {
           method: "GET",
         });
 
@@ -52,7 +75,7 @@ export const MainContentArea = (): JSX.Element => {
     };
 
     fetchAccounts();
-  }, []); // fetch once on mount — all filtering is client-side
+  }, []);
 
   const filteredAccounts = useMemo(() => {
     let result = [...accounts];
@@ -107,6 +130,7 @@ export const MainContentArea = (): JSX.Element => {
         <AccountsTableSection
           accounts={filteredAccounts}
           onAccountsChange={handleAccountsChange}
+          isAdmin={currentUser?.account_type == 'admin'}
         />
       )}
     </main>

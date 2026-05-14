@@ -9,6 +9,9 @@ export const ApplicationsHeaderSection = (): JSX.Element => {
         <h1 className="text-2xl font-bold leading-8 text-[#003366]">
           Dashboard Analytics
         </h1>
+        <h3>
+          Overview of all data.
+        </h3>
       </div>
 
       <div className="w-72 max-[767px]:w-full">
