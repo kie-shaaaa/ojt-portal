@@ -74,6 +74,9 @@ type ApiApplicationRecord = {
 function mapApplicationRecord(
   application: ApiApplicationRecord,
 ): ApplicationRecord {
+  const normalizedStatus =
+    typeof application.status === "string" ? application.status : "pending";
+
   return {
     id: String(application.id).padStart(6, "0"),
     email: application.email,
@@ -84,7 +87,7 @@ function mapApplicationRecord(
       application.other_application_type ??
       application.application_type.toUpperCase(),
     submissionDate: application.submission_date,
-    status: application.status,
+    status: normalizedStatus,
     positionApplied: application.position_applied ?? undefined,
     schoolName: application.school_name ?? undefined,
     course: application.course ?? undefined,
@@ -189,7 +192,11 @@ const fallbackStatusMeta = {
     "Your application is being processed. Please check back later or monitor your email for updates.",
 };
 
-function normalizeStatus(value: string): KnownApplicationStatus | null {
+function normalizeStatus(value: unknown): KnownApplicationStatus | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
   const normalizedValue = value
     .trim()
     .toLowerCase()
@@ -206,7 +213,7 @@ function normalizeStatus(value: string): KnownApplicationStatus | null {
   return null;
 }
 
-function getStatusMeta(value: string) {
+function getStatusMeta(value: unknown) {
   const normalizedStatus = normalizeStatus(value);
   return normalizedStatus ? statusMeta[normalizedStatus] : fallbackStatusMeta;
 }
