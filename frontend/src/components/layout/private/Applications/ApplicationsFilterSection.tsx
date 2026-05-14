@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useId } from "react";
+import { JSX, useId, useState, useRef, useEffect } from "react";
 import { ChevronDown, Filter, RotateCcw } from "lucide-react";
 
 type FilterOption = {
@@ -37,6 +37,28 @@ export const ApplicationsFilterSection = ({
   schoolOptions,
 }: Props): JSX.Element => {
   const sectionTitleId = useId();
+  const schoolDropdownRef = useRef<HTMLDivElement>(null);
+  const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        schoolDropdownRef.current &&
+        !schoolDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsSchoolDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredSchoolOptions = schoolOptions
+    .filter((option) => option.value !== "all-schools")
+    .filter((option) =>
+      option.label.toLowerCase().includes(schoolSearchQuery.toLowerCase())
+    );
 
   const filterFields: FilterField[] = [
     {
@@ -79,10 +101,10 @@ export const ApplicationsFilterSection = ({
   return (
     <section
       aria-labelledby={sectionTitleId}
-      className="relative w-full overflow-hidden rounded-2xl border border-slate-200/60 bg-linear-to-br from-slate-50 to-slate-100/50 px-8 py-8 shadow-sm"
+      className="relative w-full rounded-2xl border border-slate-200/60 bg-linear-to-br from-slate-50 to-slate-100/50 px-8 py-8 shadow-sm"
     >
       {/* Decorative background elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
         <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-blue-100/30 opacity-40 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-slate-200/20 opacity-30 blur-3xl" />
       </div>
@@ -146,22 +168,95 @@ export const ApplicationsFilterSection = ({
                   )}
                 </label>
 
-                <div className="relative w-full">
-                  <select
-                    id={field.key}
-                    name={field.key}
-                    value={filters[field.key]}
-                    onChange={(event) =>
-                      handleFilterChange(field.key, event.target.value)
-                    }
-                    className="h-11 w-full cursor-pointer appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
-                  >
-                    {field.options.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                <div 
+                  className="relative w-full"
+                  ref={field.key === "school" ? schoolDropdownRef : undefined}
+                >
+                  {field.key === "school" ? (
+                    <>
+                      <input
+                        type="text"
+                        id={field.key}
+                        name={field.key}
+                        value={
+                          isSchoolDropdownOpen
+                            ? schoolSearchQuery
+                            : filters.school === "all-schools"
+                              ? ""
+                              : field.options.find((o) => o.value === filters.school)
+                                  ?.label || ""
+                        }
+                        placeholder="All Schools"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSchoolSearchQuery(val);
+                          setIsSchoolDropdownOpen(true);
+                          if (val.trim() === "") {
+                            handleFilterChange("school", "all-schools");
+                          }
+                        }}
+                        onFocus={() => {
+                          setIsSchoolDropdownOpen(true);
+                          if (filters.school !== "all-schools") {
+                            setSchoolSearchQuery(
+                              field.options.find((o) => o.value === filters.school)
+                                ?.label || ""
+                            );
+                          } else {
+                            setSchoolSearchQuery("");
+                          }
+                        }}
+                        autoComplete="off"
+                        className="h-11 w-full cursor-text appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
+                      />
+                      {isSchoolDropdownOpen && (
+                        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-slate-200 bg-white py-1 shadow-lg outline-none">
+                          {filteredSchoolOptions.length > 0 ? (
+                            filteredSchoolOptions.map((option) => {
+                              const isSelected = filters.school === option.value;
+                              return (
+                                <div
+                                  key={option.value}
+                                  onClick={() => {
+                                    handleFilterChange("school", option.value);
+                                    setIsSchoolDropdownOpen(false);
+                                    setSchoolSearchQuery("");
+                                  }}
+                                  className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
+                                    isSelected
+                                      ? "bg-blue-50 font-semibold text-blue-700 hover:bg-blue-100"
+                                      : "text-slate-900"
+                                  }`}
+                                >
+                                  {option.label}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="px-4 py-3 text-sm text-slate-500">
+                              No schools found
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <select
+                      id={field.key}
+                      name={field.key}
+                      value={filters[field.key]}
+                      onChange={(event) =>
+                        handleFilterChange(field.key, event.target.value)
+                      }
+                      className="h-11 w-full cursor-pointer appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
+                    >
+                      {field.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
 
                   <ChevronDown
                     size={18}

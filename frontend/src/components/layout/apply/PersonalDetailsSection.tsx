@@ -51,7 +51,7 @@ export const PersonalDetailsSection = ({
     };
 
   return (
-    <section className="flex flex-col items-start gap-4 pt-12 pb-16 px-12 relative self-stretch w-full flex-[0_0_auto]">
+    <section className="flex flex-col items-start gap-4 pt-12 pb-16 px-6 md:px-12 relative self-stretch w-full flex-[0_0_auto]">
       <div className="flex items-center gap-2 pt-0 pb-2 px-0 relative self-stretch w-full flex-[0_0_auto]">
         <FileText className="w-6 h-6 text-[#002b80]" aria-hidden="true" />
         <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
@@ -62,8 +62,8 @@ export const PersonalDetailsSection = ({
       </div>
       <div className="relative self-stretch w-full h-px border-t [border-top-style:solid] border" />
       <form className="flex flex-col items-start gap-6 pt-4 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
-        <div className="grid grid-cols-2 grid-rows-[78px] h-fit gap-6 self-stretch w-full">
-          <div className="relative row-[1_/_2] col-[1_/_2] w-full h-fit flex flex-col items-start gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[78px] h-fit gap-6 self-stretch w-full">
+          <div className="relative w-full h-fit flex flex-col items-start gap-2">
             <label
               htmlFor={firstNameId}
               className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]"
@@ -103,7 +103,7 @@ export const PersonalDetailsSection = ({
               </div>
             )}
           </div>
-          <div className="relative row-[1_/_2] col-[2_/_3] w-full h-fit flex flex-col items-start gap-2">
+          <div className="relative w-full h-fit flex flex-col items-start gap-2">
             <label
               htmlFor={lastNameId}
               className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]"

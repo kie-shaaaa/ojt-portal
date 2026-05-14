@@ -36,9 +36,9 @@ export const LoginFormSection = (): JSX.Element => {
   };
 
   return (
-    <section className="relative flex items-center justify-center pt-16 pb-16 px-8 self-stretch w-full flex-[0_0_auto] bg-[url('/login/login-bg.png')] bg-cover bg-center bg-no-repeat">
+    <section className="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16 self-stretch w-full flex-[0_0_auto] bg-[url('/login/login-bg.png')] bg-cover bg-center bg-no-repeat">
       <div className="absolute inset-0 bg-black/35" />
-      <div className="flex flex-col max-w-md w-[448px] items-center p-8 relative bg-white rounded-lg border border-solid border-[#c4c5d5]">
+      <div className=" relative flex w-full flex-col max-w-md items-center relative bg-white rounded-lg border border-solid border-[#c4c5d5] p-5 sm:p-8">
         <div
           aria-hidden="true"
           className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-lg shadow-[0px_4px_6px_-4px_#0000001a,0px_10px_15px_-3px_#0000001a]"
@@ -56,7 +56,7 @@ export const LoginFormSection = (): JSX.Element => {
                 />
               </div>
             </div>
-            <h1 className="relative flex items-center justify-center w-fit [font-family:'Public_Sans-Bold',Helvetica] font-bold text-[#002068] text-2xl text-center tracking-[0] leading-8 whitespace-nowrap">
+            <h1 className="relative flex items-center justify-center [font-family:'Public_Sans-Bold',Helvetica] font-bold text-[#002068] text-xl text-center tracking-[0] leading-7">
               Login to Portal
             </h1>
             <div className="inline-flex flex-col items-start pt-2 pb-0 px-0 relative flex-[0_0_auto]">
@@ -176,7 +176,7 @@ export const LoginFormSection = (): JSX.Element => {
                   <Loader2 className="relative w-[13.33px] h-[13.33px] animate-spin text-white" />
                 ) : (
                   <ArrowRight
-                    className="relative w-[13.33px] h-[13.33px]"
+                    className="relative w-[13.33px] h-[13.33px] text-white"
                     aria-hidden="true"
                   />
                 )}

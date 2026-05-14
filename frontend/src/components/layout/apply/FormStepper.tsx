@@ -33,7 +33,7 @@ export const FormStepper = ({ currentStep }: FormStepperProps): JSX.Element => {
   const progressPercentage = ((currentStep - 1) / 3) * 100;
 
   return (
-    <section className="flex flex-col items-center px-12 py-6 relative self-stretch w-full flex-[0_0_auto] bg-white" aria-label="Application progress">
+    <section className="flex flex-col items-center px-4 md:px-12 py-6 relative self-stretch w-full flex-[0_0_auto] bg-white" aria-label="Application progress">
       <div className="relative flex w-full max-w-4xl items-center justify-between">
         <div aria-hidden="true" className="absolute left-0 right-0 top-5 h-0.5 bg-slate-200" />
         <div aria-hidden="true" className="absolute left-0 top-5 h-0.5 bg-green-500" style={{ width: `${progressPercentage}%` }} />
@@ -67,9 +67,9 @@ export const FormStepper = ({ currentStep }: FormStepperProps): JSX.Element => {
                     {step.id}
                   </div>
                 </div>
-                <div className="inline-flex flex-col items-start pt-2 pb-0 px-0 relative flex-[0_0_auto]">
+                <div className="inline-flex flex-col items-center pt-2 pb-0 px-0 relative flex-[0_0_auto] w-full max-w-[70px] sm:max-w-[100px] md:max-w-none">
                   <div
-                    className={`relative flex items-center w-fit [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-xs tracking-[0] leading-4 whitespace-nowrap ${
+                    className={`relative flex items-center justify-center w-full [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-[10px] sm:text-xs tracking-[0] leading-tight text-center md:whitespace-nowrap ${
                       isCompleted
                         ? "text-green-600"
                         : isCurrent

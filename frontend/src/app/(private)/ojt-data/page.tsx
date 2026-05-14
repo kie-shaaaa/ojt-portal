@@ -88,12 +88,12 @@ export default function OJTDataPage() {
         }
         const schoolNames = Array.isArray(schools)
           ? schools
-              .map((school: any) => {
-                // Handle different school object formats
-                if (typeof school === "string") return school;
-                return school.name || school.school_name || "";
-              })
-              .filter((name: string) => name.trim())
+            .map((school: any) => {
+              // Handle different school object formats
+              if (typeof school === "string") return school;
+              return school.name || school.school_name || "";
+            })
+            .filter((name: string) => name.trim())
           : [];
 
         const seen = new Set<string>();
