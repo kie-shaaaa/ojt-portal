@@ -17,7 +17,7 @@ export const ApplicationSubmittedModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[#002b80] shadow-2xl">
         <div className="flex flex-col items-center bg-emerald-600 px-8 py-8 text-white">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
             <CheckCircle2 className="h-10 w-10" aria-hidden="true" />
