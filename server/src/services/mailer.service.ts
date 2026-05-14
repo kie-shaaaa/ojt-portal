@@ -273,7 +273,7 @@ export class MailerService {
       `Submission ID   : ${ref}`,
       `Application Type: ${applicationType}`,
       `Date Submitted  : ${submittedDate}`,
-      `Status          : Under Review`,
+      `Status          : Pending`,
       '',
       'David M. Zaldua',
       'Administrative Officer IV | Human Resource Division',
