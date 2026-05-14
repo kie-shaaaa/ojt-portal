@@ -308,7 +308,7 @@ export class ApplicationsService {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return settings.rows[0] || null;
     } catch (error) {
-      console.log(`[APPLICATION | SETTINGS] error updating settings`, error);
+      console.log(`[APPLICATION | SETTINGS] error fetching settings`, error);
       throwAppError('server_error', 'Error fetching settings');
     }
   }
@@ -318,6 +318,8 @@ export class ApplicationsService {
     status: ApplicationStatus,
     interviewDate?: string,
     interviewTime?: string,
+    acceptedDate?: string,
+    acceptedTime?: string,
     interviewLocation?: string,
     adminNote?: string,
   ): Promise<GetApplicationStatusResponse> {
@@ -406,6 +408,19 @@ export class ApplicationsService {
           interviewDate,
           interviewTime,
           interviewLocation,
+          adminNote,
+        });
+        if (!mailSent)
+          throwAppError('server_error', 'Interview mailing failed');
+      } else if (status === 'pending accept') {
+        const mailSent = await this.mailerService.responseEmail({
+          to: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: id,
+          status: 'orientation',
+          acceptedDate: acceptedDate,
+          acceptedTime: acceptedTime,
           adminNote,
         });
         if (!mailSent)

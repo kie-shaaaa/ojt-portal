@@ -321,6 +321,8 @@ export class ApplicationsController {
       body.status,
       body.interviewDate,
       body.interviewTime,
+      body.acceptedDate,
+      body.acceptedTime,
       body.interviewLocation,
       body.adminNote,
     );

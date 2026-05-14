@@ -25,6 +25,8 @@ export interface ResponseEmailDto {
   status: ResponseStatus;
   interviewDate?: string;
   interviewTime?: string;
+  acceptedDate?: string;
+  acceptedTime?: string;
   interviewLocation?: string;
   adminNote?: string;
 }
@@ -43,6 +45,8 @@ export interface UpdateApplicationDto {
   status: ApplicationStatus;
   interviewDate?: string;
   interviewTime?: string;
+  acceptedDate?: string;
+  acceptedTime?: string;
   interviewLocation?: string;
   adminNote?: string;
 }
