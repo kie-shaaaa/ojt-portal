@@ -372,12 +372,11 @@ export class ApplicationsService {
             hours_needed,
             course,
             deployment_date,
-            original_status,
             moved_to_ojt_at
           )
           VALUES (
             $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10,
+            $6, $7, $8, $9,
             CURRENT_TIMESTAMP
           )
         `,
@@ -391,7 +390,6 @@ export class ApplicationsService {
             application.hours_needed,
             application.course,
             application.deployment_date,
-            application.status,
           ],
         );
       }
@@ -403,7 +401,8 @@ export class ApplicationsService {
             UPDATE ojt_data
             SET confirmed_at = CURRENT_TIMESTAMP
             WHERE email = $1
-          `, [application.email]
+          `,
+          [application.email],
         );
       }
 
