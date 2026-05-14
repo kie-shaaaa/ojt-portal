@@ -104,8 +104,8 @@ export const HeroSection = (): JSX.Element => {
         {actions.map((action) => {
           const isPrimary = action.variant === "primary";
           const className = isPrimary
-            ? "all-[unset] box-border inline-flex items-center justify-center gap-2 md:gap-3 px-6 md:px-12 py-3 md:py-4 bg-[#2668ff] rounded-full md:rounded-[28px] shadow-[0_16px_40px_-24px_rgba(0,0,0,0.8)] text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white hover:bg-[#1e52e0] transition-colors"
-            : "all-[unset] box-border inline-flex items-center justify-center gap-2 md:gap-3 px-6 md:px-12 py-3 md:py-4 rounded-full md:rounded-[28px] border border-white/70 bg-transparent text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white hover:bg-white/10 transition-colors";
+            ? "group all-[unset] box-border inline-flex items-center justify-center gap-2 md:gap-3 px-6 md:px-12 py-3 md:py-4 bg-[#2668ff] rounded-full md:rounded-[28px] shadow-[0_16px_40px_-24px_rgba(0,0,0,0.8)] text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white hover:bg-[#1e52e0] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_-22px_rgba(0,0,0,0.9)] transition-all duration-300 ease-out"
+            : "group all-[unset] box-border inline-flex items-center justify-center gap-2 md:gap-3 px-6 md:px-12 py-3 md:py-4 rounded-full md:rounded-[28px] border border-white/70 bg-transparent text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white hover:bg-white/10 hover:-translate-y-0.5 hover:border-white/90 hover:shadow-[0_18px_40px_-26px_rgba(0,0,0,0.7)] transition-all duration-300 ease-out";
 
           if (action.label === "Submit Application") {
             return (
@@ -119,7 +119,7 @@ export const HeroSection = (): JSX.Element => {
                 <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
                   {action.icon && (
                     <action.icon
-                      className="relative w-4 md:w-5 h-4 md:h-5 text-white"
+                      className="relative w-4 md:w-5 h-4 md:h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
                       aria-hidden="true"
                     />
                   )}
@@ -137,7 +137,7 @@ export const HeroSection = (): JSX.Element => {
                 <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
                   {action.icon && (
                     <action.icon
-                      className="relative w-4 md:w-5 h-4 md:h-5 text-white"
+                      className="relative w-4 md:w-5 h-4 md:h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
                       aria-hidden="true"
                     />
                   )}
@@ -159,7 +159,7 @@ export const HeroSection = (): JSX.Element => {
               <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
                 {action.icon && (
                   <action.icon
-                    className="relative w-4 md:w-5 h-4 md:h-5 text-white"
+                    className="relative w-4 md:w-5 h-4 md:h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
                     aria-hidden="true"
                   />
                 )}
