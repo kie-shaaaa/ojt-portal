@@ -212,6 +212,8 @@ const ChangeStatusModal = ({
           status: backendStatus,
           interviewDate,
           interviewTime,
+          acceptedDate,
+          acceptedTime
         }),
       });
 

@@ -190,4 +190,4 @@ export type UpdateApplicationSettingsDto = {
 
 export type AppointmentType = 'interview' | 'orientation';
 
-export type ResponseStatus = 'scheduled' | 'rejected';
+export type ResponseStatus = 'scheduled' | 'rejected' | 'orientation';
