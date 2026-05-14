@@ -94,19 +94,20 @@ export const NavBar = (): JSX.Element => {
                 onClick={() => scrollToSection(link.targetId)}
                 className="inline-flex flex-col items-start relative flex-[0_0_auto] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded-sm"
               >
-                <div className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm tracking-[0] leading-5 whitespace-nowrap">
+                <div className="group relative flex items-center w-fit mt-[-1.00px] pb-1 [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm tracking-[0] leading-5 whitespace-nowrap">
                   {link.label}
+                  <span className="absolute bottom-0 left-0 h-[3px] w-0 bg-white transition-all duration-300 ease-out group-hover:w-full group-focus-visible:w-full" />
                 </div>
               </button>
             ))}
 
             <Link
               href="/login"
-              className="all-[unset] box-border inline-flex gap-3 px-5 py-2.5 rounded-full border border-white/90 bg-transparent text-white items-center relative flex-[0_0_auto] cursor-pointer hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              className="group all-[unset] box-border inline-flex gap-3 px-5 py-2.5 rounded-full border border-white/90 bg-transparent text-white items-center relative flex-[0_0_auto] cursor-pointer hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-26px_rgba(0,0,0,0.7)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
               <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
                 <UserRound
-                  className="relative w-5 h-5 text-white"
+                  className="relative w-5 h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
                   aria-hidden="true"
                 />
               </div>
@@ -147,16 +148,19 @@ export const NavBar = (): JSX.Element => {
                 key={link.label}
                 type="button"
                 onClick={() => scrollToSection(link.targetId)}
-                className="text-left px-4 py-3 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [font-family:'Inter-Medium',Helvetica] font-medium text-sm"
+                className="group text-left px-4 py-3 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [font-family:'Inter-Medium',Helvetica] font-medium text-sm"
               >
-                {link.label}
+                <span className="relative inline-flex w-fit pb-1">
+                  {link.label}
+                  <span className="absolute bottom-0 left-0 h-[3px] w-0 bg-white transition-all duration-300 ease-out group-hover:w-full group-focus-visible:w-full" />
+                </span>
               </button>
             ))}
             <Link
               href="/login"
-              className="mx-3 mb-3 mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white px-4 py-3 text-[#0b49d4] shadow-[0_10px_20px_rgba(0,0,0,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [font-family:'Inter-SemiBold',Helvetica] font-semibold text-sm"
+              className="group mx-3 mb-3 mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white px-4 py-3 text-[#0b49d4] shadow-[0_10px_20px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 hover:shadow-[0_18px_32px_rgba(0,0,0,0.24)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [font-family:'Inter-SemiBold',Helvetica] font-semibold text-sm"
             >
-              <UserRound className="w-4 h-4" />
+              <UserRound className="w-4 h-4 transition-transform duration-300 ease-out group-hover:translate-x-0.5" />
               Login
             </Link>
           </nav>
