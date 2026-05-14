@@ -33,7 +33,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
   const lastSavedDate = useRef<string>("");
   const lastSavedClosingDate = useRef<string>("");
   const [closingDate, setClosingDate] = useState("");
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [scheduledDate, setScheduledDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<{
@@ -41,6 +41,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
     scheduledDate: string;
     closingDate: string;
   } | null>(null);
+  const isLoading = originalSettings === null;
   const hasChanges =
     originalSettings === null ||
     isOpen !== originalSettings.isOpen ||
@@ -144,11 +145,13 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
             <div
               className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${
-                isOpen ? "bg-green-100" : "bg-red-100"
+                isLoading ? "bg-slate-100" : isOpen ? "bg-green-100" : "bg-red-100"
               }`}
-              aria-label={`Portal status ${isOpen ? "OPEN" : "CLOSED"}`}
+              aria-label={`Portal status ${isLoading ? "Loading" : isOpen ? "OPEN" : "CLOSED"}`}
             >
-              {isOpen ? (
+              {isLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" aria-hidden="true" />
+              ) : isOpen ? (
                 <LockOpen
                   className="h-5 w-5 animate-pulse text-green-600"
                   aria-hidden="true"
@@ -162,94 +165,106 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
               <span
                 className={`text-xs font-bold ${
-                  isOpen ? "text-green-600" : "text-red-600"
+                  isLoading ? "text-slate-600" : isOpen ? "text-green-600" : "text-red-600"
                 }`}
               >
-                {isOpen ? "OPEN" : "CLOSED"}
+                {isLoading ? "Loading" : isOpen ? "OPEN" : "CLOSED"}
               </span>
             </div>
           </div>
 
           <div className="mt-6 space-y-6">
-            <div className="flex items-center">
-              <label
-                htmlFor="portal-status-toggle"
-                className="w-16 text-sm font-semibold text-slate-600"
-              >
-                Status:
-              </label>
-
-              <div className="flex items-center gap-3 pl-6">
-                <button
-                  id="portal-status-toggle"
-                  type="button"
-                  role="switch"
-                  aria-checked={isOpen}
-                  aria-label={`Portal is currently ${
-                    isOpen ? "open" : "closed"
-                  }. Toggle portal status.`}
-                  onClick={() => {
-                    const next = !isOpen;
-                    setIsOpen(next);
-                    if (!next) {
-                      setScheduledDate("");
-                      setClosingDate("");
-                    } else {
-                      setScheduledDate(lastSavedDate.current);
-                      setClosingDate(lastSavedClosingDate.current);
-                    }
-                  }}
-                  className={`relative flex h-6 w-12 items-center rounded-full transition-colors ${
-                    isOpen ? "bg-green-500" : "bg-red-500"
-                  }`}
-                >
-                  <span
-                    className={`absolute h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                      isOpen ? "translate-x-6" : "translate-x-0.5"
-                    }`}
-                  />
-                </button>
-
-                <span
-                  className={`text-sm font-bold ${
-                    isOpen ? "text-green-500" : "text-red-500"
-                  }`}
-                >
-                  {isOpen ? "OPEN" : "CLOSED"}
-                </span>
+            {isLoading ? (
+              <div className="flex items-center">
+                <label className="w-16 text-sm font-semibold text-slate-600">Status:</label>
+                <div className="flex items-center gap-3 pl-6">
+                  <div className="h-6 w-12 animate-pulse rounded-full bg-slate-200" />
+                  <div className="h-5 w-16 animate-pulse rounded bg-slate-200" />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center">
+                <label
+                  htmlFor="portal-status-toggle"
+                  className="w-16 text-sm font-semibold text-slate-600"
+                >
+                  Status:
+                </label>
 
-            <div className="space-y-2">
-              <DatePicker
-                id="scheduled-opening-date"
-                label="Scheduled Opening Date (Optional)"
-                value={scheduledDate}
-                disabled={!isOpen}
-                onChange={setScheduledDate}
-                placeholder="yyyy/mm/dd"
-              />
+                <div className="flex items-center gap-3 pl-6">
+                  <button
+                    id="portal-status-toggle"
+                    type="button"
+                    role="switch"
+                    aria-checked={isOpen ?? false}
+                    aria-label={`Portal is currently ${
+                      isOpen ? "open" : "closed"
+                    }. Toggle portal status.`}
+                    onClick={() => {
+                      const next = !isOpen;
+                      setIsOpen(next);
+                      if (!next) {
+                        setScheduledDate("");
+                        setClosingDate("");
+                      } else {
+                        setScheduledDate(lastSavedDate.current);
+                        setClosingDate(lastSavedClosingDate.current);
+                      }
+                    }}
+                    className={`relative flex h-6 w-12 items-center rounded-full transition-colors ${
+                      isOpen ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  >
+                    <span
+                      className={`absolute h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                        isOpen ? "translate-x-6" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+
+                  <span
+                    className={`text-sm font-bold ${
+                      isOpen ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {isOpen ? "OPEN" : "CLOSED"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {!isLoading && (
               <div className="space-y-2">
                 <DatePicker
-                  id="scheduled-closing-date"
-                  label="Scheduled Closing Date (Optional)"
-                  value={closingDate}
-                  disabled={!isOpen}
-                  onChange={setClosingDate}
+                  id="scheduled-opening-date"
+                  label="Scheduled Opening Date (Optional)"
+                  value={scheduledDate}
+                  disabled={isLoading || !isOpen}
+                  onChange={setScheduledDate}
                   placeholder="yyyy/mm/dd"
-                  minDate={scheduledDate || undefined}
                 />
+                <div className="space-y-2">
+                  <DatePicker
+                    id="scheduled-closing-date"
+                    label="Scheduled Closing Date (Optional)"
+                    value={closingDate}
+                    disabled={isLoading || !isOpen}
+                    onChange={setClosingDate}
+                    placeholder="yyyy/mm/dd"
+                    minDate={scheduledDate || undefined}
+                  />
+                  <p className="text-[10px] italic text-slate-400">
+                    Leave empty for manual control only. Portal will auto-close on
+                    this date.
+                  </p>
+                </div>
+
                 <p className="text-[10px] italic text-slate-400">
-                  Leave empty for manual control only. Portal will auto-close on
+                  Leave empty for manual control only. Portal will auto-open on
                   this date.
                 </p>
               </div>
-
-              <p className="text-[10px] italic text-slate-400">
-                Leave empty for manual control only. Portal will auto-open on
-                this date.
-              </p>
-            </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <button
