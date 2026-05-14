@@ -68,6 +68,7 @@ const formatStatus = (status: string) => {
   if (s === "under_review") return "Under Review";
   if (s === "for_interview") return "For Interview";
   if (s === "accepted") return "Accepted";
+  if (s === "pending accept") return "Pending Accept"
   if (s === "rejected") return "Rejected";
 
   return status;

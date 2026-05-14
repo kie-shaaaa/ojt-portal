@@ -2,7 +2,11 @@ import { JSX } from "react";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export const HeaderSection = (): JSX.Element => {
+interface HeaderSectionProps {
+  currentStep?: number;
+}
+
+export const HeaderSection = ({ currentStep }: HeaderSectionProps): JSX.Element => {
   const router = useRouter();
   const accentBars = ["bg-red-600", "bg-gray-100", "bg-blue-700"];
 
@@ -24,14 +28,16 @@ export const HeaderSection = (): JSX.Element => {
 
         {/* Right Close Button */}
         <div className="flex items-center justify-end shrink-0">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg text-white transition-colors hover:bg-white/20"
-            aria-label="Exit to landing page"
-          >
-            <X className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" strokeWidth={2.5} />
-          </button>
+          {currentStep !== 1 && (
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg text-white transition-colors hover:bg-white/20"
+              aria-label="Exit to landing page"
+            >
+              <X className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       </div>
       <div className="mt-6 flex w-full justify-center">

@@ -23,7 +23,15 @@ type StatusOption = {
 
 interface ChangeStatusModalProps {
   open: boolean;
-  application?: { id?: string; applicantName?: string; status?: string } | null;
+  mode?: "status" | "appointment-date";
+  application?: {
+    id?: string | number;
+    applicationId?: string | number;
+    applicantName?: string;
+    status?: string;
+    appointmentDate?: string;
+    appointmentTime?: string;
+  } | null;
   onClose: () => void;
   onConfirm: (
     newStatus: string,
@@ -116,8 +124,23 @@ const idToBackendStatus = (id: string): string => {
   }
 };
 
+const extractNumericId = (value?: string | number): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  const matchedDigits = value.match(/\d+/g);
+  if (!matchedDigits || matchedDigits.length === 0) return undefined;
+
+  const parsed = Number(matchedDigits.join(""));
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const ChangeStatusModal = ({
   open,
+  mode = "status",
   application,
   onClose,
   onConfirm,
@@ -142,6 +165,41 @@ const ChangeStatusModal = ({
   useEffect(() => {
     setSelectedStatus(statusToId(application?.status));
   }, [application]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const parsedAppointmentDate = application?.appointmentDate
+      ? new Date(application.appointmentDate)
+      : null;
+
+    if (
+      parsedAppointmentDate &&
+      !Number.isNaN(parsedAppointmentDate.getTime())
+    ) {
+      const hydratedDate = `${parsedAppointmentDate.getFullYear()}-${String(
+        parsedAppointmentDate.getMonth() + 1,
+      ).padStart(
+        2,
+        "0",
+      )}-${String(parsedAppointmentDate.getDate()).padStart(2, "0")}`;
+      const hydratedTime = `${String(parsedAppointmentDate.getHours()).padStart(2, "0")}:${String(parsedAppointmentDate.getMinutes()).padStart(2, "0")}`;
+
+      setInterviewDate(hydratedDate);
+      setInterviewTime(hydratedTime);
+      setAcceptedDate(hydratedDate);
+      setAcceptedTime(hydratedTime);
+      return;
+    }
+
+    const fallbackTime = application?.appointmentTime || "09:00";
+    setInterviewDate("");
+    setInterviewTime(fallbackTime);
+    setAcceptedDate("");
+    setAcceptedTime(fallbackTime);
+  }, [open, application]);
 
   useEffect(() => {
     if (open) {
@@ -184,7 +242,7 @@ const ChangeStatusModal = ({
     switch (status) {
       case "for_interview":
         return "interview";
-      case "accepted":
+      case "pending accept":
         return "orientation";
       default:
         return undefined;
@@ -195,60 +253,118 @@ const ChangeStatusModal = ({
     try {
       setIsUpdating(true);
 
-      const backendStatus = idToBackendStatus(selectedStatus);
-
-      const applicationId = application?.id
-        ? Number(application.id.replace("NTC-", ""))
-        : undefined;
+      const applicationId =
+        extractNumericId(application?.applicationId) ??
+        extractNumericId(application?.id);
 
       if (!applicationId) throw new Error("Invalid application ID");
-      const appointmentType = getAppointmentType(backendStatus);
 
-      // 1. Update application status first
-      await apiCall("/applications/update", {
-        method: "PATCH",
-        body: JSON.stringify({
-          id: applicationId,
-          status: backendStatus,
-        }),
-      });
+      if (mode === "appointment-date") {
+        // Only update appointment dates for existing appointment
+        let appointmentDate: string | undefined;
+        let scheduleDate: string | undefined;
+        let scheduleTime: string | undefined;
 
-      // 2. Determine if we need to create appointment
-      let appointmentDate: string | undefined;
+        if (selectedStatus === "for-interview" && interviewDate) {
+          scheduleDate = interviewDate;
+          scheduleTime = interviewTime;
+          appointmentDate = new Date(
+            `${interviewDate}T${interviewTime}`,
+          ).toISOString();
+        }
 
-      if (selectedStatus === "for-interview" && interviewDate) {
-        appointmentDate = new Date(
-          `${interviewDate}T${interviewTime}`,
-        ).toISOString();
-      }
+        if (selectedStatus === "accepted" && acceptedDate) {
+          scheduleDate = acceptedDate;
+          scheduleTime = acceptedTime;
+          appointmentDate = new Date(
+            `${acceptedDate}T${acceptedTime}`,
+          ).toISOString();
+        }
 
-      if (selectedStatus === "accepted" && acceptedDate) {
-        appointmentDate = new Date(
-          `${acceptedDate}T${acceptedTime}`,
-        ).toISOString();
-      }
+        if (appointmentDate) {
+          await apiCall("/appointments/update", {
+            method: "PATCH",
+            body: JSON.stringify({
+              applicationId,
+              appointmentDate,
+            }),
+          });
+        }
 
-      // 3. Create appointment ONLY if needed
-      if (appointmentDate) {
-        await apiCall("/appointments/create", {
-          method: "POST",
+        const mappedStatus = idToStatus(selectedStatus);
+        onConfirm(
+          mappedStatus,
+          String(application?.applicationId ?? application?.id ?? ""),
+          scheduleDate,
+          scheduleTime,
+        );
+      } else {
+        // Status mode: update status + create appointment if needed
+        const backendStatus = idToBackendStatus(selectedStatus);
+        const appointmentType = getAppointmentType(backendStatus);
+
+        // 1. Update application status first
+        await apiCall("/applications/update", {
+          method: "PATCH",
           body: JSON.stringify({
-            type: appointmentType, // or map to interview/orientation if needed
-            appointmentDate,
-            applicationId: applicationId
+            id: applicationId,
+            status: backendStatus,
+            interviewDate,
+            interviewTime,
+            acceptedDate,
+            acceptedTime,
           }),
         });
+
+        // 2. Determine if we need to create appointment
+        let appointmentDate: string | undefined;
+        let scheduleDate: string | undefined;
+        let scheduleTime: string | undefined;
+
+        if (selectedStatus === "for-interview" && interviewDate) {
+          scheduleDate = interviewDate;
+          scheduleTime = interviewTime;
+          appointmentDate = new Date(
+            `${interviewDate}T${interviewTime}`,
+          ).toISOString();
+        }
+
+        if (selectedStatus === "accepted" && acceptedDate) {
+          scheduleDate = acceptedDate;
+          scheduleTime = acceptedTime;
+          appointmentDate = new Date(
+            `${acceptedDate}T${acceptedTime}`,
+          ).toISOString();
+        }
+
+        // 3. Create appointment ONLY if needed
+        if (appointmentDate) {
+          await apiCall("/appointments/create", {
+            method: "POST",
+            body: JSON.stringify({
+              type: appointmentType,
+              appointmentDate,
+              applicationId: applicationId,
+            }),
+          });
+        }
+
+        // 4. UI update
+        const mappedStatus = idToStatus(selectedStatus);
+        onConfirm(
+          mappedStatus,
+          String(application?.applicationId ?? application?.id ?? ""),
+          scheduleDate,
+          scheduleTime,
+        );
       }
-
-      // 4. UI update
-      const mappedStatus = idToStatus(selectedStatus);
-
-      onConfirm(mappedStatus, application?.id ?? "", appointmentDate);
 
       onClose();
     } catch (error) {
       console.error("Failed to update:", error);
-      alert("Failed to update application status. Please try again.");
+      alert(
+        `Failed to update ${mode === "appointment-date" ? "appointment" : "application status"}. Please try again.`,
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -274,7 +390,9 @@ const ChangeStatusModal = ({
         {/* Header */}
         <header className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
           <h2 id={headingId} className="text-lg font-bold text-blue-800">
-            Change Application Status
+            {mode === "appointment-date"
+              ? "Change Appointment Date"
+              : "Change Application Status"}
           </h2>
 
           <button
@@ -289,64 +407,77 @@ const ChangeStatusModal = ({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4" ref={bodyRef}>
-          <p id={descriptionId} className="text-sm text-gray-600 mb-4">
-            Select new status for {application?.applicantName ?? "application"}:
-          </p>
+          {mode === "status" && (
+            <>
+              <p id={descriptionId} className="text-sm text-gray-600 mb-4">
+                Select new status for{" "}
+                {application?.applicantName ?? "application"}:
+              </p>
 
-          <fieldset className="flex flex-col gap-3 mb-6">
-            <legend className="sr-only">Application status options</legend>
+              <fieldset className="flex flex-col gap-3 mb-6">
+                <legend className="sr-only">Application status options</legend>
 
-            {statusOptions.map((option) => {
-              const isSelected = selectedStatus === option.id;
-              const isCurrent = statusToId(application?.status) === option.id;
+                {statusOptions.map((option) => {
+                  const isSelected = selectedStatus === option.id;
+                  const isCurrent =
+                    statusToId(application?.status) === option.id;
 
-              return (
-                <label
-                  key={option.id}
-                  className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all ${
-                    isSelected
-                      ? "bg-blue-50 border-2 border-blue-600"
-                      : "bg-white border border-gray-300 hover:border-gray-400"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="application-status"
-                    value={option.id}
-                    checked={isSelected}
-                    onChange={() => setSelectedStatus(option.id)}
-                    className="sr-only"
-                  />
-
-                  {/* Icon */}
-                  <div
-                    className={`flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0 ${option.iconBgClass} ${option.iconColorClass}`}
-                  >
-                    {option.icon}
-                  </div>
-
-                  {/* Label */}
-                  <div className="flex items-center justify-between flex-1">
-                    <span
-                      className={`text-base ${
+                  return (
+                    <label
+                      key={option.id}
+                      className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all ${
                         isSelected
-                          ? "font-bold text-gray-800"
-                          : "font-normal text-gray-700"
+                          ? "bg-blue-50 border-2 border-blue-600"
+                          : "bg-white border border-gray-300 hover:border-gray-400"
                       }`}
                     >
-                      {option.label}
-                    </span>
+                      <input
+                        type="radio"
+                        name="application-status"
+                        value={option.id}
+                        checked={isSelected}
+                        onChange={() => setSelectedStatus(option.id)}
+                        className="sr-only"
+                      />
 
-                    {isCurrent && (
-                      <span className="text-sm font-bold text-blue-600">
-                        (Current)
-                      </span>
-                    )}
-                  </div>
-                </label>
-              );
-            })}
-          </fieldset>
+                      {/* Icon */}
+                      <div
+                        className={`flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0 ${option.iconBgClass} ${option.iconColorClass}`}
+                      >
+                        {option.icon}
+                      </div>
+
+                      {/* Label */}
+                      <div className="flex items-center justify-between flex-1">
+                        <span
+                          className={`text-base ${
+                            isSelected
+                              ? "font-bold text-gray-800"
+                              : "font-normal text-gray-700"
+                          }`}
+                        >
+                          {option.label}
+                        </span>
+
+                        {isCurrent && (
+                          <span className="text-sm font-bold text-blue-600">
+                            (Current)
+                          </span>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </fieldset>
+            </>
+          )}
+
+          {mode === "appointment-date" && (
+            <p id={descriptionId} className="text-sm text-gray-600 mb-4">
+              Update appointment date for{" "}
+              {application?.applicantName ?? "appointment"}:
+            </p>
+          )}
 
           {/* Schedule Sections at Bottom */}
           {selectedStatus === "for-interview" && (
@@ -417,12 +548,22 @@ const ChangeStatusModal = ({
             type="button"
             className="px-6 py-2.5 text-base font-bold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             onClick={handleConfirm}
-            disabled={isUpdating}
+            disabled={
+              isUpdating ||
+              (selectedStatus === "for-interview" && !interviewDate) ||
+              (selectedStatus === "accepted" &&
+                !acceptedDate &&
+                mode === "status")
+            }
           >
             {isUpdating && (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
             )}
-            {isUpdating ? "Updating..." : "Update Status"}
+            {isUpdating
+              ? "Updating..."
+              : mode === "appointment-date"
+                ? "Update Date"
+                : "Update Status"}
           </button>
         </div>
       </section>

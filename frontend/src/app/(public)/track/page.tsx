@@ -15,7 +15,7 @@ import {
 
 import { apiCall } from "@/lib/api";
 
-type ApplicationStatus =
+type KnownApplicationStatus =
   | "pending"
   | "under_review"
   | "for_interview"
@@ -36,7 +36,7 @@ interface ApplicationRecord {
   phone: string;
   applicationType: string;
   submissionDate: string;
-  status: ApplicationStatus;
+  status: string;
   positionApplied?: string;
   schoolName?: string;
   course?: string;
@@ -66,7 +66,7 @@ type ApiApplicationRecord = {
   salary_expectation: number | null;
   available_date: string | null;
   submission_date: string;
-  status: ApplicationStatus;
+  status: string;
   admin_notes: string | null;
   reviewed_date: string | null;
 };
@@ -74,6 +74,9 @@ type ApiApplicationRecord = {
 function mapApplicationRecord(
   application: ApiApplicationRecord,
 ): ApplicationRecord {
+  const normalizedStatus =
+    typeof application.status === "string" ? application.status : "pending";
+
   return {
     id: String(application.id).padStart(6, "0"),
     email: application.email,
@@ -81,9 +84,10 @@ function mapApplicationRecord(
     lastName: application.last_name,
     phone: application.phone,
     applicationType:
-      application.other_application_type ?? application.application_type.toUpperCase(),
+      application.other_application_type ??
+      application.application_type.toUpperCase(),
     submissionDate: application.submission_date,
-    status: application.status,
+    status: normalizedStatus,
     positionApplied: application.position_applied ?? undefined,
     schoolName: application.school_name ?? undefined,
     course: application.course ?? undefined,
@@ -121,7 +125,7 @@ async function fetchApplicationRecord(id: string, email: string) {
 }
 
 const statusMeta: Record<
-  ApplicationStatus,
+  KnownApplicationStatus,
   {
     label: string;
     badgeClassName: string;
@@ -178,6 +182,42 @@ const statusMeta: Record<
   },
 };
 
+const fallbackStatusMeta = {
+  label: "In Progress",
+  badgeClassName: "bg-slate-100 text-slate-700",
+  panelClassName: "border-slate-200 bg-slate-50 text-slate-900",
+  icon: Clock3,
+  title: "Application Update",
+  description:
+    "Your application is being processed. Please check back later or monitor your email for updates.",
+};
+
+function normalizeStatus(value: unknown): KnownApplicationStatus | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalizedValue = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (normalizedValue in statusMeta) {
+    return normalizedValue as KnownApplicationStatus;
+  }
+
+  if (normalizedValue === "pending_accept") {
+    return "pending";
+  }
+
+  return null;
+}
+
+function getStatusMeta(value: unknown) {
+  const normalizedStatus = normalizeStatus(value);
+  return normalizedStatus ? statusMeta[normalizedStatus] : fallbackStatusMeta;
+}
+
 function normalizeApplicationId(value: string) {
   return value.replace(/\D/g, "");
 }
@@ -194,8 +234,8 @@ function formatDate(value: string) {
   });
 }
 
-function statusLabel(value: ApplicationStatus) {
-  return statusMeta[value].label;
+function statusLabel(value: string) {
+  return getStatusMeta(value).label;
 }
 
 function buildTimeline(application: ApplicationRecord): TimelineEntry[] {
@@ -254,7 +294,7 @@ function InfoCard({
 function TimelineItem({ date, title, description }: TimelineEntry) {
   return (
     <div className="relative rounded-xl border border-slate-200 bg-white p-4 pl-8 sm:pl-10 shadow-sm">
-      <div className="absolute left-3 top-5 h-2.5 w-2.5 rounded-full bg-blue-600 sm: left-4 sm:h-3 sm:w-3" />
+      <div className="absolute left-3 top-5 h-2.5 w-2.5 rounded-full bg-blue-600 sm:left-4 sm:h-3 sm:w-3" />
       <div className="mb-1 text-sm font-semibold text-blue-700">{date}</div>
       <div className="text-base font-semibold text-slate-900">{title}</div>
       <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
@@ -263,7 +303,7 @@ function TimelineItem({ date, title, description }: TimelineEntry) {
 }
 
 function StatusPanel({ application }: { application: ApplicationRecord }) {
-  const meta = statusMeta[application.status];
+  const meta = getStatusMeta(application.status);
   const StatusIcon = meta.icon;
 
   return (
@@ -279,7 +319,7 @@ function StatusPanel({ application }: { application: ApplicationRecord }) {
 
 function ResultSection({ application }: { application: ApplicationRecord }) {
   const timeline = buildTimeline(application);
-  const meta = statusMeta[application.status];
+  const meta = getStatusMeta(application.status);
 
   return (
     <section className="mt-10 space-y-6 rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">

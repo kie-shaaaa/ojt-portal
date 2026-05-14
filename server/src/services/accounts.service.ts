@@ -33,7 +33,12 @@ export class AccountsService {
   VALUES($1, $2, $3, $4)
   RETURNING id, email, username, account_type, created_at, updated_at
   `,
-        [account.email, hashedPassword, account.username, account.account_type],
+        [
+          account.email,
+          hashedPassword,
+          account.username,
+          account.account_type.toLowerCase(),
+        ],
       );
 
       return SuccessHandler('Successfully created account', res.rows[0]);
@@ -53,6 +58,20 @@ export class AccountsService {
         `,
         [id],
       );
+
+      const remainingAdmins = await client.query<Account>(
+        `
+        SELECT * FROM user_accounts 
+        WHERE account_type = 'admin'
+        `,
+      );
+
+      if (
+        remainingAdmins.rowCount === 1 &&
+        exists.rows[0].account_type === 'admin'
+      ) {
+        throwAppError('forbidden', 'Accounts should have at least 1');
+      }
 
       if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
@@ -200,8 +219,22 @@ export class AccountsService {
         `,
         [id],
       );
-      if (!exists) {
+      if (exists.rowCount === 0) {
         throwAppError('not_found', 'User account does not exist');
+      }
+
+      const remainingAdmins = await client.query<Account>(
+        `
+        SELECT * FROM user_accounts
+        WHERE account_type = 'admin'
+        `,
+      );
+
+      if (
+        remainingAdmins.rowCount === 1 &&
+        exists.rows[0].account_type === 'admin'
+      ) {
+        throwAppError('forbidden', 'Accounts should have at least 1');
       }
 
       const res = await client.query(
