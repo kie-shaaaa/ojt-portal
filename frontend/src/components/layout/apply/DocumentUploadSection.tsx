@@ -158,15 +158,17 @@ const UploadCardItem = ({
   const isValid = !!fileName && !hasError;
 
   // Determine content class: if missing/invalid, show red styling; otherwise use card's default
-  const contentClass = hasError
+  const baseContentClass = hasError
     ? "flex flex-col items-start gap-1 p-6 bg-red-50 rounded-xl border-2 border-dashed border-red-400"
     : isValid
       ? "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-emerald-400 bg-white"
       : card.contentClassName;
 
+  const contentClass = `${baseContentClass} cursor-pointer`;
+
   return (
     <div className={card.areaClassName}>
-      <div className={contentClass}>
+      <label htmlFor={inputId} className={contentClass}>
         <div className={card.iconWrapperClassName}>
           <UploadIllustration icon={card.icon} className="text-blue-700" />
         </div>
@@ -193,16 +195,14 @@ const UploadCardItem = ({
             onSelectFile(card.id, file);
           }}
         />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="all-[unset] box-border gap-1 pt-3 pb-0 px-0 inline-flex items-center relative flex-[0_0_auto] cursor-pointer"
+        <div
+          className="box-border gap-1 pt-3 pb-0 px-0 inline-flex items-center relative flex-[0_0_auto]"
         >
-          <Upload size={16} />
+          <Upload size={16} className="text-blue-700" />
           <div className="relative flex items-center justify-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-xs text-center tracking-[0] leading-4 whitespace-nowrap">
             {fileName || "No file chosen"}
           </div>
-        </button>
+        </div>
         <div className="mt-3 text-xs text-gray-500">
           {card.description}
         </div>
@@ -216,7 +216,7 @@ const UploadCardItem = ({
             </div>
           </div>
         ) : null}
-      </div>
+      </label>
     </div>
   );
 };

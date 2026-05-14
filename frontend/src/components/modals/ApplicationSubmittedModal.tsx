@@ -27,7 +27,7 @@ export const ApplicationSubmittedModal = ({
             Application Submitted
           </h2>
 
-          <p className="mt-2 text-center text-sm text-emerald-50">
+          <p className="mt-2 text-center text-sm text-white/90">
             Your submission was received successfully.
           </p>
         </div>
@@ -52,7 +52,7 @@ export const ApplicationSubmittedModal = ({
             />
           </div>
 
-          <p className="text-sm leading-6 text-slate-700">
+          <p className="text-sm leading-6 text-blue-50/80">
             We have received your application and uploaded your documents. You
             can safely close this dialog now.
           </p>
