@@ -55,7 +55,7 @@ export const FormActionsSection = ({
   ];
 
   return (
-    <footer className="flex items-center justify-between px-12 py-8 relative self-stretch w-full flex-[0_0_auto] bg-transparent">
+    <footer className="flex items-center justify-between px-6 md:px-12 py-8 relative self-stretch w-full flex-[0_0_auto] bg-transparent">
       {buttons.map((button) => (
         <button
           key={button.key}
