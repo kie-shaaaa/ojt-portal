@@ -111,7 +111,6 @@ export default function ApplicationPage(): JSX.Element {
 
         if (Array.isArray(response)) {
           data = response;
-          console.log(data);
         } else if (response?.data) {
           data = response.data;
         }

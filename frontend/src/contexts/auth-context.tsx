@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         const storage = rememberMe ? localStorage : sessionStorage;
+        console.log(data)
 
         if (data.access_token) {
           storage.setItem("access_token", data.access_token);
