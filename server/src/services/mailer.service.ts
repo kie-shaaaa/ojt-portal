@@ -1,0 +1,460 @@
+import { Injectable, Logger } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
+import { Transporter } from 'nodemailer';
+
+// ─── DTOs ────────────────────────────────────────────────────────────────────
+
+export interface DeletionEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  applicationType?: string;
+}
+
+export interface ConfirmationEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  applicationType: string;
+  submittedAt?: Date;
+}
+
+export type ResponseStatus = 'scheduled' | 'rejected';
+
+export interface ResponseEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  status: ResponseStatus;
+  interviewDate?: string;
+  interviewTime?: string;
+  interviewLocation?: string;
+  adminNote?: string;
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+const year = new Date().getFullYear();
+
+const ntcFooter = `
+  <div style="background:#0038A8;color:#fff;padding:24px;text-align:center;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;">
+    <p style="margin:0 0 6px;font-weight:bold;font-size:15px;">National Telecommunications Commission</p>
+    <p style="margin:4px 0;font-size:12px;">BIR Road, East Triangle, Diliman, Quezon City 1101, Philippines</p>
+    <p style="margin:4px 0;font-size:12px;">
+      📞 8-924-3775 &nbsp;|&nbsp;
+      🌐 <a href="https://ntc.gov.ph" style="color:#FFD700;text-decoration:none;">www.ntc.gov.ph</a>
+    </p>
+    <p style="margin:14px 0 0;font-size:11px;color:#ccc;">© ${year} National Telecommunications Commission. All rights reserved.</p>
+  </div>
+`;
+
+const ntcHeader = (subtitle: string) =>
+  `<div style="background:#0038A8;color:#fff;padding:22px 20px;text-align:center;border-bottom:5px solid #FF0000;font-family:Arial,sans-serif;">
+    <h1 style="margin:10px 0 4px;font-size:22px;">National Telecommunications Commission</h1>
+    <h2 style="margin:0;font-size:16px;font-weight:normal;">${subtitle}</h2>
+  </div>`;
+
+const infoBox = (content: string) =>
+  `<div style="background:#e8f0fe;border-left:4px solid #0038A8;padding:14px 16px;margin:20px 0;border-radius:0 5px 5px 0;font-family:Arial,sans-serif;">
+    ${content}
+  </div>`;
+
+const alertBox = (content: string, color = '#FF0000') =>
+  `<div style="background:#fff3f3;border-left:4px solid ${color};padding:14px 16px;margin:20px 0;border-radius:0 5px 5px 0;font-family:Arial,sans-serif;">
+    ${content}
+  </div>`;
+
+const wrapEmail = (header: string, body: string) =>
+  `<!DOCTYPE html>
+  <html>
+  <head><meta charset="UTF-8"/><title>NTC Portal</title></head>
+  <body style="margin:0;padding:0;background:#f5f5f5;">
+    <div style="max-width:620px;margin:0 auto;background:#fff;">
+      ${header}
+      <div style="padding:30px;font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.7;">
+        ${body}
+        <p style="margin-top:32px;padding-top:18px;border-top:1px solid #eaeaea;color:#555;font-size:13px;">
+          <em>This is an automated message. Please do not reply directly to this email.<br/>
+          For inquiries, contact <a href="mailto:human.resource@ntc.gov.ph" style="color:#0038A8;">human.resource@ntc.gov.ph</a>.</em>
+        </p>
+      </div>
+      ${ntcFooter}
+    </div>
+  </body>
+  </html>`;
+
+const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
+
+// ─── Service ──────────────────────────────────────────────────────────────────
+
+@Injectable()
+export class MailerService {
+  private readonly transporter: Transporter;
+  private readonly logger = new Logger(MailerService.name);
+  private readonly fromAddress: string;
+
+  constructor() {
+    const host = process.env.MAIL_HOST;
+    const port = Number(process.env.MAIL_PORT);
+    const user = process.env.MAIL_USER;
+    const pass = process.env.MAIL_PASS;
+    console.log({ host, port, user, pass: !!pass });
+    if (!host || !port || !user || !pass) {
+      throw new Error(
+        'Missing required mail env vars: MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS',
+      );
+    }
+
+    this.fromAddress = `"NTC Portal" <${user}>`;
+
+    this.transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+    });
+
+    this.transporter.verify((err) => {
+      if (err) {
+        this.logger.error(`SMTP connection failed: ${err.message}`);
+      } else {
+        this.logger.log('SMTP connection verified ✅');
+      }
+    });
+  }
+
+  // ─── Internal send helper ─────────────────────────────────────────────────
+
+  private async send(options: {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+  }): Promise<boolean> {
+    try {
+      await this.transporter.sendMail({
+        from: this.fromAddress,
+        replyTo: 'human.resource@ntc.gov.ph',
+        ...options,
+      });
+      this.logger.log(`Mail sent → ${options.to} | ${options.subject}`);
+      return true;
+    } catch (err: unknown) {
+      this.logger.error(
+        `Mail failed → ${options.to} | ${(err as Error).message}`,
+      );
+      return false;
+    }
+  }
+
+  // ─── 1. Deletion email ────────────────────────────────────────────────────
+
+  async deletionEmail(dto: DeletionEmailDto): Promise<boolean> {
+    const { to, firstName, lastName, applicationId } = dto;
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${fullName}</strong>,</p>
+      <p>Good day!</p>
+      <p>We are writing to inform you that your application record on the <strong>NTC OJT Application Portal</strong> has been <strong>deleted</strong> from our system by an administrator.</p>
+
+      ${infoBox(`<strong>Reference No.:</strong> ${ref}<br/><strong>Action:</strong> Application Record Deleted`)}
+
+      <p>This action may have been taken for one or more of the following reasons:</p>
+      <ul style="padding-left:20px;">
+        <li>Duplicate application submission</li>
+        <li>Incomplete or invalid requirements</li>
+        <li>Failure to respond within the required period</li>
+        <li>Routine system data cleanup</li>
+      </ul>
+
+      <p>Please be informed that this action is carried out in compliance with NTC's <strong>Data Retention Policy</strong>, established under the <em>Data Privacy Act of 2012 (RA 10173)</em>.</p>
+      <p>We apologize for any inconvenience this may have caused.</p>
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>David M. Zaldua</strong><br/>
+        Administrative Officer IV<br/>
+        Human Resource Division
+      </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      `Dear ${fullName},`,
+      '',
+      'Your application record has been deleted.',
+      `Reference No.: ${ref}`,
+      '',
+      'Possible reasons:',
+      '  - Duplicate application submission',
+      '  - Incomplete or invalid requirements',
+      '  - Failure to respond',
+      '  - System data cleanup',
+      '',
+      'This is in compliance with the Data Privacy Act of 2012 (RA 10173).',
+      '',
+      'David M. Zaldua',
+      'Administrative Officer IV | Human Resource Division',
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Record Deletion Notification [${ref}]`,
+      html,
+      text,
+    });
+  }
+
+  // ─── 2. Confirmation email ────────────────────────────────────────────────
+
+  async confirmationEmail(dto: ConfirmationEmailDto): Promise<boolean> {
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      applicationType,
+      submittedAt = new Date(),
+    } = dto;
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const submittedDate = submittedAt.toLocaleString('en-PH', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    });
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${fullName}</strong>,</p>
+      <p>Good day!</p>
+      <p>Thank you for submitting your application to the <strong>National Telecommunications Commission OJT Application Portal</strong>. We have successfully received your application and it is now under review.</p>
+
+      ${infoBox(`
+        <strong>Submission ID:</strong> ${ref}<br/>
+        <strong>Application Type:</strong> ${applicationType}<br/>
+        <strong>Date Submitted:</strong> ${submittedDate}<br/>
+        <strong>Status:</strong> Under Review
+      `)}
+
+      <p>Please keep this email for your records and use your <strong>Submission ID (${ref})</strong> when following up.</p>
+
+      <p><strong>What happens next?</strong></p>
+      <ol style="padding-left:20px;">
+        <li>Our team reviews your submitted documents.</li>
+        <li>You will receive a separate email regarding the outcome.</li>
+        <li>If scheduled, you will be informed of your interview details via email.</li>
+      </ol>
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>David M. Zaldua</strong><br/>
+        Administrative Officer IV<br/>
+        Human Resource Division
+      </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      `Dear ${fullName},`,
+      '',
+      'Your application has been received and is now under review.',
+      '',
+      `Submission ID   : ${ref}`,
+      `Application Type: ${applicationType}`,
+      `Date Submitted  : ${submittedDate}`,
+      `Status          : Under Review`,
+      '',
+      'David M. Zaldua',
+      'Administrative Officer IV | Human Resource Division',
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Submission Confirmed [${ref}]`,
+      html,
+      text,
+    });
+  }
+
+  // ─── 3. Response email (scheduled / rejected) ─────────────────────────────
+
+  async responseEmail(dto: ResponseEmailDto): Promise<boolean> {
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      status,
+      interviewDate,
+      interviewTime,
+      interviewLocation,
+      adminNote,
+    } = dto;
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const isScheduled = status === 'scheduled';
+
+    const subjectLine = isScheduled
+      ? `NTC Application – Interview Scheduled [${ref}]`
+      : `NTC Application – Application Status Update [${ref}]`;
+
+    const statusBadge = isScheduled
+      ? `<span style="display:inline-block;background:#1a7f37;color:#fff;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:bold;">INTERVIEW SCHEDULED</span>`
+      : `<span style="display:inline-block;background:#cf222e;color:#fff;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:bold;">APPLICATION NOT APPROVED</span>`;
+
+    const interviewBlock = isScheduled
+      ? infoBox(`
+          <strong>Interview Details</strong><br/><br/>
+          📅 <strong>Date:</strong> ${interviewDate ?? 'To be announced'}<br/>
+          🕐 <strong>Time:</strong> ${interviewTime ?? 'To be announced'}<br/>
+          📍 <strong>Location:</strong> ${interviewLocation ?? 'NTC Main Office, Quezon City'}<br/>
+          🔖 <strong>Reference No.:</strong> ${ref}
+        `)
+      : '';
+
+    const noteBlock = adminNote
+      ? alertBox(
+          `<strong>Note from the Administrator:</strong><br/>${adminNote}`,
+          isScheduled ? '#0038A8' : '#FF0000',
+        )
+      : '';
+
+    const bodyContent = isScheduled
+      ? `<p>Dear <strong>${fullName}</strong>,</p>
+        <p>Good day!</p>
+        <p>We are pleased to inform you that your application has been reviewed and you have been <strong>selected for an interview</strong>.</p>
+        <p style="margin:16px 0 6px;">${statusBadge}</p>
+        ${interviewBlock}
+        ${noteBlock}
+        <p><strong>Important reminders:</strong></p>
+        <ul style="padding-left:20px;">
+          <li>Arrive at least <strong>15 minutes</strong> before your scheduled interview.</li>
+          <li>Bring a valid government-issued ID and a printed copy of your application.</li>
+          <li>Dress appropriately in <strong>business attire</strong>.</li>
+          <li>If you are unable to attend, please notify us <strong>at least 24 hours</strong> in advance.</li>
+        </ul>
+        <p>We look forward to meeting you. Good luck!</p>
+        <p style="margin-top:28px;">
+          Sincerely,<br/>
+          <strong>David M. Zaldua</strong><br/>
+          Administrative Officer IV<br/>
+          Human Resource Division
+        </p>`
+      : `<p>Dear <strong>${fullName}</strong>,</p>
+        <p>Good day!</p>
+        <p>Thank you for your interest in the <strong>NTC OJT Program</strong>. After careful review, we regret to inform you that your application has <strong>not been approved</strong> at this time.</p>
+        <p style="margin:16px 0 6px;">${statusBadge}</p>
+        ${infoBox(`<strong>Reference No.:</strong> ${ref}`)}
+        ${noteBlock}
+        <p>We encourage you to apply again in future application periods.</p>
+        <p style="margin-top:28px;">
+          Sincerely,<br/>
+          <strong>David M. Zaldua</strong><br/>
+          Administrative Officer IV<br/>
+          Human Resource Division
+        </p>`;
+
+    const html = wrapEmail(ntcHeader('OJT Application Portal'), bodyContent);
+
+    const text = isScheduled
+      ? [
+          'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+          '='.repeat(60),
+          'INTERVIEW SCHEDULED',
+          '='.repeat(60),
+          '',
+          `Dear ${fullName},`,
+          '',
+          `Reference No. : ${ref}`,
+          `Date          : ${interviewDate ?? 'TBA'}`,
+          `Time          : ${interviewTime ?? 'TBA'}`,
+          `Location      : ${interviewLocation ?? 'NTC Main Office, Quezon City'}`,
+          '',
+          adminNote ? `Note: ${adminNote}\n` : '',
+          'David M. Zaldua',
+          'Administrative Officer IV | Human Resource Division',
+          '',
+          '(Automated message — do not reply.)',
+        ].join('\n')
+      : [
+          'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+          '='.repeat(60),
+          'APPLICATION STATUS: NOT APPROVED',
+          '='.repeat(60),
+          '',
+          `Dear ${fullName},`,
+          '',
+          `Reference No.: ${ref}`,
+          '',
+          adminNote ? `Note: ${adminNote}\n` : '',
+          'We encourage you to apply again in future periods.',
+          '',
+          'David M. Zaldua',
+          'Administrative Officer IV | Human Resource Division',
+          '',
+          '(Automated message — do not reply.)',
+        ].join('\n');
+
+    return this.send({ to, subject: subjectLine, html, text });
+  }
+
+  // ─── Dev-only: fire all 4 email types ────────────────────────────────────
+
+  async sendAllTestEmails(to: string) {
+    const base = {
+      to,
+      firstName: 'Juan',
+      lastName: 'dela Cruz',
+      applicationId: 42,
+    };
+
+    const results = await Promise.allSettled([
+      this.confirmationEmail({
+        ...base,
+        applicationType: 'OJT',
+        submittedAt: new Date(),
+      }),
+      this.deletionEmail({ ...base, applicationType: 'OJT' }),
+      this.responseEmail({
+        ...base,
+        status: 'scheduled',
+        interviewDate: 'June 10, 2025',
+        interviewTime: '10:00 AM',
+        interviewLocation: 'NTC Main Office, Diliman, Quezon City',
+        adminNote: 'Please bring 2 copies of your resume and a valid ID.',
+      }),
+      this.responseEmail({
+        ...base,
+        status: 'rejected',
+        adminNote: 'All slots for this semester are currently filled.',
+      }),
+    ]);
+
+    const labels = ['confirmation', 'deletion', 'scheduled', 'rejected'];
+
+    return labels.reduce(
+      (acc, label, i) => {
+        const result = results[i];
+        acc[label] =
+          result.status === 'fulfilled'
+            ? { ok: result.value }
+            : { ok: false, error: (result.reason as Error).message };
+        return acc;
+      },
+      {} as Record<string, { ok: boolean; error?: string }>,
+    );
+  }
+}

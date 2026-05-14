@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
 import chalk from 'chalk';
 import { createApplications } from '../../services/database/models/applications.model';
@@ -18,7 +18,7 @@ console.log(chalk.bgBlue.black('[SERVICE] Database service loaded'));
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
-  private client: Client;
+  private pool: Pool;
 
   constructor() {
     const connectionString = process.env.DATABASE_URL;
@@ -30,7 +30,7 @@ export class DatabaseService implements OnModuleInit {
       throw new Error('DATABASE_URL is missing');
     }
 
-    this.client = new Client({
+    this.pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
     });
@@ -41,25 +41,25 @@ export class DatabaseService implements OnModuleInit {
   async onModuleInit() {
     console.log(chalk.yellow('Connecting to the database...'));
 
-    await this.client.connect();
+    await this.pool.query('SELECT 1');
     console.log(chalk.green('Connected to the database!'));
 
     console.log(chalk.cyan('Creating tables...'));
 
-    await createUserAccounts(this.client);
-    await createApplications(this.client);
-    await createFileUploads(this.client);
-    await createOjtData(this.client);
-    await createApplicationSettings(this.client);
-    await createLogs(this.client);
-    await createAppointment(this.client);
-    await createSchool(this.client);
-    await createCourses(this.client);
+    await createUserAccounts(this.pool);
+    await createApplications(this.pool);
+    await createFileUploads(this.pool);
+    await createOjtData(this.pool);
+    await createApplicationSettings(this.pool);
+    await createLogs(this.pool);
+    await createAppointment(this.pool);
+    await createSchool(this.pool);
+    await createCourses(this.pool);
 
     console.log(chalk.bgGreen.black('[SUPABASE] All tables are ready!'));
   }
 
-  getClient(): Client {
-    return this.client;
+  getClient(): Pool {
+    return this.pool;
   }
 }

@@ -1,33 +1,32 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 import * as argon2 from 'argon2';
 
-export async function createApplicationSettings(client: Client) {
+export async function createApplicationSettings(client: Pool) {
   await client.query(`
         CREATE TABLE IF NOT EXISTS application_settings (
             id SERIAL PRIMARY KEY,
-            setting_key VARCHAR(50) UNIQUE NOT NULL,
-            setting_value TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_by_name VARCHAR(100)
+            portal_status BOOLEAN DEFAULT FALSE,
+            opening_date TIMESTAMPTZ,
+            closing_date TIMESTAMP,
+            created_by INTEGER REFERENCES user_accounts(id) ON DELETE SET NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
-  await client
-    .query(
-      `
-        CREATE INDEX idx_setting_key ON application_settings (setting_key);
-    `,
-    )
-    .catch(() => {
-      // Index may already exist, ignore error
-    });
+  await client.query(
+    `DROP INDEX IF EXISTS idx_application_settings_singleton;`,
+  );
 
   await client.query(`
-        INSERT INTO application_settings (setting_key, setting_value) VALUES
-            ('portal_status', 'closed'),
-            ('opening_date', NULL),
-            ('last_updated_by', NULL)
-        ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value;
+        CREATE INDEX IF NOT EXISTS idx_application_settings_latest
+        ON application_settings (created_at DESC, id DESC);
+    `);
+
+  await client.query(`
+        INSERT INTO application_settings (portal_status)
+        SELECT FALSE
+        WHERE NOT EXISTS (SELECT 1 FROM application_settings);
     `);
 
   // Hash passwords using Argon2

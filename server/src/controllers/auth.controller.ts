@@ -1,80 +1,37 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
-import type {
-  AccountCreate,
-  AccountRegister,
-  SignInResponse,
-  RegisterResponse,
-  ChangePasswordResponse,
-} from '../data/types';
+import type { AccountRegister, ChangePasswordResponse } from '../data/types';
 import { AuthService } from '../services/auth.service';
-import { JwtService } from '@nestjs/jwt';
-import { AccountsService } from '../services/accounts.service';
-
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly jwtService: JwtService,
-    private readonly accountService: AccountsService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signin')
-  async signIn(@Body() body: AccountRegister): Promise<SignInResponse> {
-    console.log('SignIn Request Body:', body);
-
-    if (!body || !body.email || !body.password) {
+  async signIn(@Body() body: AccountRegister): Promise<{
+    access_token: string;
+    user: { id: number; email: string; account_type: string };
+  }> {
+    if (!body?.email || !body?.password) {
       throw new BadRequestException('Email and password are required');
     }
 
-    try {
-      // Sign in user with plain text password
-      const user = await this.authService.signInAccount(
-        body.email,
-        body.password,
-      );
+    const result = await this.authService.signInAccount(
+      body.email,
+      body.password,
+    );
 
-      // Create JWT token
-      const payload = {
-        sub: user.id,
-        email: user.email,
-      };
-      const token = await this.jwtService.signAsync(payload);
-
-      return {
-        token,
-        user,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sign in failed';
-      throw new BadRequestException(message);
+    if (result.user.id === undefined) {
+      throw new BadRequestException('Invalid user id');
     }
-  }
 
-  @Post('register')
-  async register(
-    @Body() credentials: AccountCreate,
-  ): Promise<RegisterResponse> {
-    try {
-      // Register new user
-      const user = await this.accountService.createAccount(credentials);
-
-      // Create JWT token
-      const payload = {
-        sub: user.id,
-        email: user.email,
-      };
-      const token = await this.jwtService.signAsync(payload);
-
-      return {
-        token,
-        user,
-        message: 'User registered successfully',
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Registration failed';
-      throw new BadRequestException(message);
-    }
+    return {
+      access_token: result.access_token,
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        account_type: result.user.account_type,
+      },
+    };
   }
 
   @Post('change-password')

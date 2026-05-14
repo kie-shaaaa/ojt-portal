@@ -8,7 +8,8 @@ export type ApplicationStatus =
   | 'under_review'
   | 'rejected'
   | 'for_interview'
-  | 'accepted';
+  | 'accepted'
+  | 'pending accept';
 
 export type Application = {
   id: number;
@@ -27,15 +28,12 @@ export type Application = {
   school_name: string | null;
   hours_needed: number | null;
   course: string | null;
-  ojt_resume_path: string | null;
   deployment_date: string | null;
 
   // Job Fields
   position_applied: string | null;
   years_experience: number | null;
   current_company: string | null;
-  job_resume_path: string | null;
-  cover_letter_path: string | null;
   salary_expectation: number | null;
   available_date: string | null;
 
@@ -50,20 +48,13 @@ export type Application = {
   admin_notes: string | null;
   reviewed_by: number | null;
   reviewed_date: string | null;
-
-  // File Metadata
-  ojt_resume_size: number | null;
-  job_resume_size: number | null;
-  cover_letter_size: number | null;
-
-  ojt_resume_name: string | null;
-  job_resume_name: string | null;
-  cover_letter_name: string | null;
 };
 
 export type Account = {
   id?: number;
   email: string;
+  username: string;
+  account_type: AccountType;
   password: string;
   created_at: Date;
   updated_at: Date;
@@ -77,12 +68,11 @@ export type AccountCreate = {
   account_type: string;
 };
 
-export type Response = {
-  status: number;
-  message: string;
+export type SuccessResponse = {
+  status: string;
   ok: boolean;
-  error?: [];
-  data?: any;
+  message: string;
+  data: any;
 };
 
 // Submit application response
@@ -133,8 +123,6 @@ export type AllOjt = {
   school_name: string | null;
   hours_needed: number | null;
   course: string | null;
-  ojt_resume_path: string | null;
-  ojt_resume_name: string | null;
   deployment_date: string | null;
   end_date: string | null;
   certificate_issuance_date: string | null;
@@ -147,3 +135,43 @@ export type AllOjt = {
   moved_to_ojt_at: string;
   admin_notes: string | null;
 };
+
+export type AccountType = 'admin' | 'employee';
+export type Token = {
+  sub: number;
+  email: string;
+  account_type: AccountType;
+};
+
+export type DashboardData = {
+  totalApplications: number;
+};
+
+export type ApplicationSettings = {
+  state: 'open' | 'closed';
+  openingDate?: Date;
+};
+
+export type AccountPagination = {
+  count?: number;
+  type?: AccountType;
+  createdDate?: Date;
+};
+
+export type Schools = {
+  id: number;
+  schoolName: string;
+};
+
+export type Courses = {
+  id: number;
+  courseName: string;
+};
+
+export type UpdateApplicationSettingsDto = {
+  portal_status: boolean;
+  opening_date?: Date;
+  closing_date?: Date;
+  created_by: number;
+};
+export type AppointmentType = 'interview' | 'orientation';

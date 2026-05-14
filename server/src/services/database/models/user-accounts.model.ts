@@ -1,6 +1,6 @@
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-export async function createUserAccounts(client: Client) {
+export async function createUserAccounts(client: Pool) {
   await client.query(`
         DO $$
         BEGIN

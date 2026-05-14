@@ -1,0 +1,390 @@
+"use client";
+
+import { AccountRow } from "../../../../app/(private)/accounts/page";
+import { JSX, useState } from "react";
+import { UserPlus, KeyRound, SquarePen, Trash2 } from "lucide-react";
+import { EditAccountModal } from "../EditAccountModal";
+import { ResetPasswordModal } from "../ResetPasswordModal";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
+import { CreateAccountModal } from "../CreateAccountModal";
+import { apiCall } from "@/lib/api";
+
+const columns = [
+  { key: "id", label: "ID", width: "w-[68.98px]", align: "items-start" },
+  {
+    key: "username",
+    label: "USERNAME",
+    width: "w-[149.08px]",
+    align: "items-start",
+  },
+  { key: "email", label: "EMAIL", width: "w-[239.05px]", align: "items-start" },
+  {
+    key: "accountType",
+    label: "ACCOUNT TYPE",
+    width: "w-[170.5px]",
+    align: "items-start",
+  },
+  {
+    key: "dateCreated",
+    label: "DATE CREATED",
+    width: "w-[163.66px]",
+    align: "items-start",
+  },
+  {
+    key: "actions",
+    label: "ACTIONS",
+    width: "w-[166.73px]",
+    align: "items-center",
+  },
+];
+
+interface AccountsTableSectionProps {
+  accounts: AccountRow[];
+  onAccountsChange: (accounts: AccountRow[]) => void;
+}
+
+export const AccountsTableSection = ({
+  accounts,
+  onAccountsChange,
+}: AccountsTableSectionProps): JSX.Element => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
+    null,
+  );
+
+  const handleEditClick = (account: AccountRow) => {
+    setSelectedAccount(account);
+    setIsEditModalOpen(true);
+  };
+
+  const handleResetClick = (account: AccountRow) => {
+    setSelectedAccount(account);
+    setIsResetModalOpen(true);
+  };
+
+  const handleDeleteClick = (account: AccountRow) => {
+    setSelectedAccount(account);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handleCloseResetModal = () => {
+    setIsResetModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handleUpdateAccount = async (updatedAccount: AccountRow) => {
+    try {
+      const result = await apiCall("/accounts/update", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: updatedAccount.id,
+          newUser: updatedAccount.username,
+          newType: updatedAccount.account_type,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // ✅ If the updated account belongs to the current user,
+      // patch their localStorage token to reflect the new account_type.
+      const raw = localStorage.getItem("access_token");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed?.user?.id === updatedAccount.id) {
+            parsed.user.account_type = updatedAccount.account_type;
+            // Also update the username in the stored session if it changed
+            parsed.user.username = updatedAccount.username;
+            localStorage.setItem("access_token", JSON.stringify(parsed));
+
+            // Force a full reload so the app re-reads the new role from the
+            // updated token and re-renders guards/navigation accordingly.
+            window.location.reload();
+          }
+        } catch {
+          // Malformed token — leave it alone
+        }
+      }
+
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+
+    onAccountsChange(
+      accounts.map((account) =>
+        account.id === updatedAccount.id ? updatedAccount : account,
+      ),
+    );
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedAccount) return;
+    try {
+      const result = await apiCall("/accounts/disable", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: selectedAccount.id,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+    onAccountsChange(
+      accounts.filter((account) => account.id !== selectedAccount.id),
+    );
+    setIsDeleteModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handlePasswordReset = async (newPassword: string) => {
+    if (!selectedAccount) return;
+    try {
+      const result = await apiCall("/accounts/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          id: selectedAccount.id,
+          newPassword: newPassword,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error updating account information", error);
+      throw new Error("Error updating account information");
+    }
+    setIsResetModalOpen(false);
+    setSelectedAccount(null);
+  };
+
+  const handleCreateClick = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const handleAccountCreated = async (
+    newAccount: AccountRow & { password: string },
+  ) => {
+    try {
+      const result = await apiCall("/accounts/create", {
+        method: "POST",
+        body: JSON.stringify({
+          newAccount,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Updating account data failed");
+      }
+
+      // Modal success
+      console.log("Successfully updated account");
+    } catch (error) {
+      console.error("Error creating account", error);
+      throw new Error("Error creating account");
+    }
+
+    onAccountsChange([newAccount, ...accounts].sort((a, b) => a.id - b.id));
+  };
+
+  const nextId =
+    accounts.length > 0 ? Math.max(...accounts.map((a) => a.id)) + 1 : 1;
+
+  return (
+    <>
+      <section className="flex flex-col items-start pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-xl overflow-hidden border border-solid border-gray-100 shadow-sm">
+        <div className="flex items-start justify-between p-6 relative self-stretch w-full flex-[0_0_auto]">
+          <div className="flex items-center gap-3">
+            <h2 className="m-0 font-bold text-gray-700 text-lg">
+              Admin &amp; Employee Accounts
+            </h2>
+            <p className="text-sm text-gray-400">
+              ({accounts.length} of {accounts.length})
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleCreateClick}
+            aria-label="Create account"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#0033a0] text-white rounded-lg hover:bg-[#002a80] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0033a0]"
+          >
+            <UserPlus className="w-4 h-4 text-white" aria-hidden="true" />
+            <span className="text-sm font-semibold">Create Account</span>
+          </button>
+        </div>
+
+        <div className="px-6 pb-6 w-full">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left table-fixed">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  {columns.map((column) => (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className={`px-6 py-4 text-sm font-semibold text-slate-700 ${column.key === "actions" ? "text-right" : ""}`}
+                      style={{
+                        width:
+                          column.key === "id"
+                            ? "6%"
+                            : column.key === "username"
+                              ? "24%"
+                              : column.key === "email"
+                                ? "30%"
+                                : column.key === "accountType"
+                                  ? "14%"
+                                  : column.key === "dateCreated"
+                                    ? "16%"
+                                    : "10%",
+                      }}
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white">
+                {accounts.map((account) => {
+                  const isAdmin = account.account_type === "admin";
+
+                  return (
+                    <tr
+                      key={account.id}
+                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        {account.id}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-800">
+                        {account.username}{" "}
+                        {account.isCurrentUser && (
+                          <span className="ml-2 text-xs text-[#0b5cff]">
+                            You
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {account.email}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                          style={{
+                            backgroundColor: isAdmin ? "#e0e7ff" : "#DCFCE7",
+                            color: isAdmin ? "#4338ca" : "#15803D",
+                          }}
+                        >
+                          {account.account_type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {new Date(account.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => handleEditClick(account)}
+                            aria-label={`Edit ${account.username}`}
+                            className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100"
+                            title="Edit Account"
+                          >
+                            <SquarePen className="w-4.5 h-4.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResetClick(account)}
+                            aria-label={`Reset password for ${account.username}`}
+                            className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
+                            title="Reset Password"
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(account)}
+                            aria-label={`Delete ${account.username}`}
+                            className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
+                            title="Delete Account"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {isEditModalOpen && selectedAccount && (
+        <EditAccountModal
+          account={selectedAccount}
+          onClose={handleCloseEditModal}
+          onUpdate={handleUpdateAccount}
+        />
+      )}
+      {isResetModalOpen && selectedAccount && (
+        <ResetPasswordModal
+          account={selectedAccount}
+          onReset={handlePasswordReset}
+          onClose={handleCloseResetModal}
+        />
+      )}
+      <ConfirmDeleteModal
+        open={isDeleteModalOpen && selectedAccount !== null}
+        title="Delete account"
+        message={`Are you sure you want to delete ${selectedAccount?.username}? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCloseDeleteModal}
+      />
+      <CreateAccountModal
+        open={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
+        onCreate={handleAccountCreated}
+        nextId={nextId}
+      />
+    </>
+  );
+};
