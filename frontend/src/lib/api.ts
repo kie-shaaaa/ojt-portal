@@ -6,6 +6,7 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   const token =
     localStorage.getItem("access_token") ||
     sessionStorage.getItem("access_token");
+
   const isFormData = options.body instanceof FormData;
   const headers = new Headers(options.headers);
 
@@ -16,25 +17,48 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   }
+
+  // console.log("Token", token);
+
   const { body, method, ...rest } = options;
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...rest,
-    method,
-    headers,
-    credentials: "include",
-    ...(method !== "GET" && method !== "HEAD" && body ? { body } : {}),
-  });
+  let response: Response;
 
-  const data = await response.json();
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...rest,
+      method,
+      headers,
+      credentials: "include",
+      ...(method !== "GET" && method !== "HEAD" && body ? { body } : {}),
+    });
+  } catch (error) {
+    console.error("Fetch failed:", error);
 
-  if (response.status === 401) {
-    localStorage.removeItem("access_token");
-    window.location.href = "/login";
+    throw new Error(
+      "Unable to connect to the server. Please check if the backend is running.",
+    );
   }
 
-  if (response.ok !== true) {
-    throw new Error(data?.message || "API Error");
+  let data;
+
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  // if (response.status === 401) {
+  //   localStorage.removeItem("access_token");
+  //   sessionStorage.removeItem("access_token");
+
+  //   window.location.href = "/login";
+  // }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || `API Error: ${response.status} ${response.statusText}`,
+    );
   }
 
   return data;

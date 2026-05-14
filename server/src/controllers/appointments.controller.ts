@@ -5,6 +5,7 @@ import {
   Get,
   Post,
   Query,
+  Patch,
 } from '@nestjs/common';
 import { AppointmentType } from '../data/types';
 import { AppointmentsService } from '../services/appointments.service';
@@ -31,19 +32,66 @@ export class AppointmentsController {
     }
   }
 
+  @Patch('cancel-appointment')
+  async cancelAppointment(
+    @Body()
+    body: {
+      appointmentId: number;
+    },
+  ) {
+    try {
+      const { appointmentId } = body;
+
+      if (!appointmentId) {
+        throw new BadRequestException('appointment id are required');
+      }
+
+      return await this.appointmentService.cancelAppointment(appointmentId);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to cancel appointment',
+      );
+    }
+  }
+
+  @Patch('completed-appointment')
+  async completedAppointment(
+    @Body()
+    body: {
+      appointmentId: number;
+    },
+  ) {
+    try {
+      const { appointmentId } = body;
+
+      if (!appointmentId) {
+        throw new BadRequestException('appointment id are required');
+      }
+
+      return await this.appointmentService.completedAppointment(appointmentId);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to complete appointment',
+      );
+    }
+  }
+
   @Post('create')
   async createAppointment(
     @Body()
     body: {
       type: AppointmentType;
-      appointmentDate: string; // ISO string from frontend
+      appointmentDate: string;
+      applicationId: number;
     },
   ) {
     try {
-      const { type, appointmentDate } = body;
+      const { type, appointmentDate, applicationId } = body;
 
-      if (!type || !appointmentDate) {
-        throw new BadRequestException('type and appointmentDate are required');
+      if (!type || !appointmentDate || !applicationId) {
+        throw new BadRequestException(
+          'type, application_id, and appointmentDate are required',
+        );
       }
 
       const parsedDate = new Date(appointmentDate);
@@ -52,7 +100,11 @@ export class AppointmentsController {
         throw new BadRequestException('Invalid appointmentDate');
       }
 
-      return await this.appointmentService.addAppointment(type, parsedDate);
+      return await this.appointmentService.addAppointment(
+        type,
+        parsedDate,
+        applicationId,
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to create appointment',

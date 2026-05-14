@@ -57,7 +57,7 @@ export const FaqSection = (): JSX.Element => {
       question: "What documents are required for OJT/Internship applications?",
       answer: (
         <p className="mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-600 text-sm tracking-[0] leading-[22.8px] relative w-fit">
-          Prepare the following documents in a single PDF File:
+          Prepare the following documents:
           <br />
           1. Updated Resume/CV
           <br />
@@ -69,6 +69,7 @@ export const FaqSection = (): JSX.Element => {
           <br />
           5. (Draft) Memorandum of Agreement
           <br />
+          6. 1x1 ID Photo
           <br />
           <i>
             Draft means that the document does not require a signature.
@@ -149,28 +150,28 @@ export const FaqSection = (): JSX.Element => {
     <section
       id="faqs"
       aria-labelledby={`${accordionId}-heading`}
-      className="w-full flex-1 min-h-[calc(100vh-96px)] scroll-mt-[96px] gap-8 px-4 py-14 flex relative flex-col items-center bg-white"
+      className="w-full flex-none md:flex-1 md:min-h-screen scroll-mt-[72px] gap-6 md:gap-8 px-3 md:px-8 lg:px-12 py-10 md:py-14 flex relative flex-col items-center bg-white"
       style={{ backgroundAttachment: "fixed" }}
     >
       <div className="flex items-center self-stretch w-full flex-col relative flex-[0_0_auto]">
         <h2
           id={`${accordionId}-heading`}
-          className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-[#0047ab] text-3xl text-center tracking-[0] leading-9 whitespace-nowrap relative w-fit"
+          className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-[#0047ab] text-2xl md:text-3xl text-center tracking-[0] leading-8 md:leading-9 relative w-fit"
         >
           Frequently Asked Questions
         </h2>
       </div>
-      <div className="flex flex-col items-start gap-4 relative w-full max-w-[900px] flex-[0_0_auto]">
+      <div className="flex flex-col items-start gap-3 md:gap-4 relative w-full max-w-[900px] flex-[0_0_auto]">
         {faqItems.map((item) => {
           const isOpen = openItemId === item.id;
           const panelId = `${accordionId}-${item.id}-panel`;
           const buttonId = `${accordionId}-${item.id}-button`;
-          const iconClassName = isOpen ? "relative w-7 h-7 text-white transition-transform duration-300 ease-in-out rotate-180" : "relative w-7 h-7 text-[#0047ab] transition-transform duration-300 ease-in-out rotate-0";
+          const iconClassName = isOpen ? "relative w-5 md:w-7 h-5 md:h-7 text-white transition-transform duration-300 ease-in-out rotate-180" : "relative w-5 md:w-7 h-5 md:h-7 text-[#0047ab] transition-transform duration-300 ease-in-out rotate-0";
 
           return (
             <div
               key={item.id}
-              className="self-stretch w-full flex-[0_0_auto] bg-[#ffffff01] rounded-[24px] overflow-hidden border border-solid border-slate-200 shadow-[0px_8px_24px_rgba(15,23,42,0.06)] flex relative flex-col items-start"
+              className="self-stretch w-full flex-[0_0_auto] bg-[#ffffff01] rounded-lg md:rounded-[24px] overflow-hidden border border-solid border-slate-200 shadow-[0px_8px_24px_rgba(15,23,42,0.06)] flex relative flex-col items-start"
             >
               <h3 className="relative self-stretch w-full flex-[0_0_auto]">
                 <button
@@ -179,14 +180,14 @@ export const FaqSection = (): JSX.Element => {
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                   onClick={() => setOpenItemId(isOpen ? "" : item.id)}
-                  className={`flex w-full items-center justify-between px-5 py-5 relative self-stretch flex-[0_0_auto] text-left transition-colors duration-300 ease-in-out ${
+                  className={`flex w-full items-center justify-between px-2.5 md:px-5 py-4 md:py-5 relative self-stretch flex-[0_0_auto] text-left transition-colors duration-300 ease-in-out ${
                     isOpen
                       ? "bg-[#0047ab]"
                       : "bg-white border-b [border-bottom-style:solid] border-transparent hover:bg-slate-50"
                   }`}
                 >
-                  <span className="inline-flex items-center gap-3 relative flex-[0_0_auto]">
-                    <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+                  <span className="inline-flex items-start gap-2 md:gap-3 relative flex-1 min-w-0">
+                    <span className="inline-flex flex-col items-start relative flex-[0_0_auto] flex-shrink-0 mt-0.5">
                       {item.leftIcon && (
                         <item.leftIcon
                           className={iconClassName}
@@ -194,9 +195,9 @@ export const FaqSection = (): JSX.Element => {
                         />
                       )}
                     </span>
-                    <span className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+                    <span className="inline-flex flex-col items-start relative flex-1 min-w-0">
                       <span
-                        className={`flex items-center mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-semibold text-base tracking-[0] leading-6 whitespace-nowrap relative w-fit ${
+                        className={`flex items-start mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-semibold text-sm md:text-base tracking-[0] leading-5 md:leading-6 relative w-full ${
                           isOpen ? "text-white" : "text-black"
                         }`}
                       >
@@ -205,13 +206,13 @@ export const FaqSection = (): JSX.Element => {
                     </span>
                   </span>
                   <span
-                    className={`inline-flex flex-col items-start relative flex-[0_0_auto] ${
+                    className={`inline-flex flex-col items-start relative flex-[0_0_auto] flex-shrink-0 ml-2 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   >
                     {item.rightIcon && (
                       <item.rightIcon
-                        className={`relative w-8 h-8 transition-transform duration-200 ${isOpen ? "rotate-180 text-white" : "text-[#0047ab]"}`}
+                        className={`relative w-6 md:w-8 h-6 md:h-8 transition-transform duration-200 ${isOpen ? "rotate-180 text-white" : "text-[#0047ab]"}`}
                         aria-hidden="true"
                       />
                     )}
@@ -224,11 +225,11 @@ export const FaqSection = (): JSX.Element => {
                 aria-labelledby={buttonId}
                 className={`overflow-hidden transition-all duration-300 ease-in-out self-stretch w-full flex-[0_0_auto] bg-white ${
                   isOpen
-                    ? "max-h-[520px] opacity-100 pt-[20px] pb-[20px] px-5"
-                    : "max-h-0 opacity-0 py-0 px-5"
+                    ? "max-h-[520px] opacity-100 pt-4 md:pt-[20px] pb-4 md:pb-[20px] px-2.5 md:px-5"
+                    : "max-h-0 opacity-0 py-0 px-2.5 md:px-5"
                 }`}
               >
-                <div className={`transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "opacity-0"}`}>
+                <div className={`transition-opacity duration-300 ease-in-out text-sm md:text-base ${isOpen ? "opacity-100" : "opacity-0"}`}>
                   {item.answer}
                 </div>
               </div>

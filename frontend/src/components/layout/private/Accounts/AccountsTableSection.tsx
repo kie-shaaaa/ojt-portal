@@ -10,50 +10,30 @@ import { CreateAccountModal } from "../CreateAccountModal";
 import { apiCall } from "@/lib/api";
 
 const columns = [
-  { key: "id", label: "ID", width: "w-[68.98px]", align: "items-start" },
-  {
-    key: "username",
-    label: "USERNAME",
-    width: "w-[149.08px]",
-    align: "items-start",
-  },
-  { key: "email", label: "EMAIL", width: "w-[239.05px]", align: "items-start" },
-  {
-    key: "accountType",
-    label: "ACCOUNT TYPE",
-    width: "w-[170.5px]",
-    align: "items-start",
-  },
-  {
-    key: "dateCreated",
-    label: "DATE CREATED",
-    width: "w-[163.66px]",
-    align: "items-start",
-  },
-  {
-    key: "actions",
-    label: "ACTIONS",
-    width: "w-[166.73px]",
-    align: "items-center",
-  },
+  { key: "id", label: "ID" },
+  { key: "username", label: "USERNAME" },
+  { key: "email", label: "EMAIL" },
+  { key: "accountType", label: "ACCOUNT TYPE" },
+  { key: "dateCreated", label: "DATE CREATED" },
+  { key: "actions", label: "ACTIONS" },
 ];
 
 interface AccountsTableSectionProps {
   accounts: AccountRow[];
   onAccountsChange: (accounts: AccountRow[]) => void;
+  isAdmin: boolean; // 👈 added
 }
 
 export const AccountsTableSection = ({
   accounts,
   onAccountsChange,
+  isAdmin, // 👈 added
 }: AccountsTableSectionProps): JSX.Element => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(
-    null,
-  );
+  const [selectedAccount, setSelectedAccount] = useState<AccountRow | null>(null);
 
   const handleEditClick = (account: AccountRow) => {
     setSelectedAccount(account);
@@ -100,24 +80,30 @@ export const AccountsTableSection = ({
         throw new Error("Updating account data failed");
       }
 
-      // ✅ If the updated account belongs to the current user,
-      // patch their localStorage token to reflect the new account_type.
-      const raw = localStorage.getItem("access_token");
+      const localUser = localStorage.getItem("user");
+      const sessionUser = sessionStorage.getItem("user");
+      const raw = localUser || sessionUser;
+
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
-          if (parsed?.user?.id === updatedAccount.id) {
-            parsed.user.account_type = updatedAccount.account_type;
-            // Also update the username in the stored session if it changed
-            parsed.user.username = updatedAccount.username;
-            localStorage.setItem("access_token", JSON.stringify(parsed));
 
-            // Force a full reload so the app re-reads the new role from the
-            // updated token and re-renders guards/navigation accordingly.
+          // 👇 Fixed: stored user is flat { id, email, account_type }, no nested .user
+          if (parsed?.id === updatedAccount.id) {
+            parsed.account_type = updatedAccount.account_type;
+            parsed.username = updatedAccount.username;
+
+            if (localUser) {
+              localStorage.setItem("user", JSON.stringify(parsed));
+            }
+            if (sessionUser) {
+              sessionStorage.setItem("user", JSON.stringify(parsed));
+            }
+
             window.location.reload();
           }
         } catch {
-          // Malformed token — leave it alone
+          // Ignore malformed data
         }
       }
 
@@ -139,21 +125,19 @@ export const AccountsTableSection = ({
     try {
       const result = await apiCall("/accounts/disable", {
         method: "PATCH",
-        body: JSON.stringify({
-          id: selectedAccount.id,
-        }),
+        body: JSON.stringify({ id: selectedAccount.id }),
       });
 
       if (!result.ok) {
         throw new Error("Updating account data failed");
       }
 
-      // Modal success
-      console.log("Successfully updated account");
+      console.log("Successfully deleted account");
     } catch (error) {
-      console.error("Error updating account information", error);
-      throw new Error("Error updating account information");
+      console.error("Error deleting account", error);
+      throw new Error("Error deleting account");
     }
+
     onAccountsChange(
       accounts.filter((account) => account.id !== selectedAccount.id),
     );
@@ -176,23 +160,18 @@ export const AccountsTableSection = ({
         throw new Error("Updating account data failed");
       }
 
-      // Modal success
-      console.log("Successfully updated account");
+      console.log("Successfully reset password");
     } catch (error) {
-      console.error("Error updating account information", error);
-      throw new Error("Error updating account information");
+      console.error("Error resetting password", error);
+      throw new Error("Error resetting password");
     }
+
     setIsResetModalOpen(false);
     setSelectedAccount(null);
   };
 
-  const handleCreateClick = () => {
-    setIsCreateModalOpen(true);
-  };
-
-  const handleCloseCreateModal = () => {
-    setIsCreateModalOpen(false);
-  };
+  const handleCreateClick = () => setIsCreateModalOpen(true);
+  const handleCloseCreateModal = () => setIsCreateModalOpen(false);
 
   const handleAccountCreated = async (
     newAccount: AccountRow & { password: string },
@@ -200,17 +179,14 @@ export const AccountsTableSection = ({
     try {
       const result = await apiCall("/accounts/create", {
         method: "POST",
-        body: JSON.stringify({
-          newAccount,
-        }),
+        body: JSON.stringify({ newAccount }),
       });
 
       if (!result.ok) {
-        throw new Error("Updating account data failed");
+        throw new Error("Creating account failed");
       }
 
-      // Modal success
-      console.log("Successfully updated account");
+      console.log("Successfully created account");
     } catch (error) {
       console.error("Error creating account", error);
       throw new Error("Error creating account");
@@ -234,15 +210,19 @@ export const AccountsTableSection = ({
               ({accounts.length} of {accounts.length})
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleCreateClick}
-            aria-label="Create account"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#0033a0] text-white rounded-lg hover:bg-[#002a80] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0033a0]"
-          >
-            <UserPlus className="w-4 h-4 text-white" aria-hidden="true" />
-            <span className="text-sm font-semibold">Create Account</span>
-          </button>
+
+          {/* 👇 Only admins see Create Account */}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleCreateClick}
+              aria-label="Create account"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0033a0] text-white rounded-lg hover:bg-[#002a80] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0033a0]"
+            >
+              <UserPlus className="w-4 h-4 text-white" aria-hidden="true" />
+              <span className="text-sm font-semibold">Create Account</span>
+            </button>
+          )}
         </div>
 
         <div className="px-6 pb-6 w-full">
@@ -250,34 +230,31 @@ export const AccountsTableSection = ({
             <table className="w-full text-left table-fixed">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  {columns.map((column) => (
-                    <th
-                      key={column.key}
-                      scope="col"
-                      className={`px-6 py-4 text-sm font-semibold text-slate-700 ${column.key === "actions" ? "text-right" : ""}`}
-                      style={{
-                        width:
-                          column.key === "id"
-                            ? "6%"
-                            : column.key === "username"
-                              ? "24%"
-                              : column.key === "email"
-                                ? "30%"
-                                : column.key === "accountType"
-                                  ? "14%"
-                                  : column.key === "dateCreated"
-                                    ? "16%"
-                                    : "10%",
-                      }}
-                    >
-                      {column.label}
-                    </th>
-                  ))}
+                  {columns
+                    .filter((col) => isAdmin || col.key !== "actions")
+                    .map((column) => (
+                      <th
+                        key={column.key}
+                        scope="col"
+                        className={`px-6 py-4 text-sm font-semibold text-slate-700 ${column.key === "actions" ? "text-right" : ""}`}
+                        style={{
+                          width:
+                            column.key === "id" ? "6%" :
+                            column.key === "username" ? "24%" :
+                            column.key === "email" ? "30%" :
+                            column.key === "accountType" ? "14%" :
+                            column.key === "dateCreated" ? "16%" : "10%",
+                        }}
+                      >
+                        {column.label}
+                      </th>
+                    ))}
                 </tr>
               </thead>
+
               <tbody className="bg-white">
                 {accounts.map((account) => {
-                  const isAdmin = account.account_type === "admin";
+                  const accountIsAdmin = account.account_type === "admin";
 
                   return (
                     <tr
@@ -288,11 +265,9 @@ export const AccountsTableSection = ({
                         {account.id}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-800">
-                        {account.username}{" "}
+                        {account.username}
                         {account.isCurrentUser && (
-                          <span className="ml-2 text-xs text-[#0b5cff]">
-                            You
-                          </span>
+                          <span className="ml-2 text-xs text-[#0b5cff]">You</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
@@ -302,53 +277,53 @@ export const AccountsTableSection = ({
                         <span
                           className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                           style={{
-                            backgroundColor: isAdmin ? "#e0e7ff" : "#DCFCE7",
-                            color: isAdmin ? "#4338ca" : "#15803D",
+                            backgroundColor: accountIsAdmin ? "#e0e7ff" : "#DCFCE7",
+                            color: accountIsAdmin ? "#4338ca" : "#15803D",
                           }}
                         >
                           {account.account_type}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {new Date(account.created_at).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )}
+                        {new Date(account.created_at).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
                       </td>
-                      <td className="px-6 py-4 text-sm text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => handleEditClick(account)}
-                            aria-label={`Edit ${account.username}`}
-                            className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100"
-                            title="Edit Account"
-                          >
-                            <SquarePen className="w-4.5 h-4.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleResetClick(account)}
-                            aria-label={`Reset password for ${account.username}`}
-                            className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
-                            title="Reset Password"
-                          >
-                            <KeyRound className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteClick(account)}
-                            aria-label={`Delete ${account.username}`}
-                            className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
-                            title="Delete Account"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+
+                      {isAdmin && (
+                        <td className="px-6 py-4 text-sm text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => handleEditClick(account)}
+                              aria-label={`Edit ${account.username}`}
+                              className="rounded-md bg-amber-50 p-2 text-[#CA8A04] transition hover:bg-amber-100"
+                              title="Edit Account"
+                            >
+                              <SquarePen className="w-4.5 h-4.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleResetClick(account)}
+                              aria-label={`Reset password for ${account.username}`}
+                              className="rounded-md bg-blue-50 p-2 text-blue-500 transition hover:bg-blue-100"
+                              title="Reset Password"
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(account)}
+                              aria-label={`Delete ${account.username}`}
+                              className="rounded-md bg-red-50 p-2 text-red-500 transition hover:bg-red-100"
+                              title="Delete Account"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

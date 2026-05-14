@@ -69,12 +69,6 @@ export default function ApplicationPage(): JSX.Element {
         (application) => application.id !== applicationId,
       );
 
-      window.localStorage.setItem(
-        "ojt_applications",
-        JSON.stringify(nextApplications),
-      );
-      window.dispatchEvent(new Event("applications:update"));
-
       return nextApplications;
     });
   };
@@ -88,12 +82,6 @@ export default function ApplicationPage(): JSX.Element {
           ? { ...application, status: nextStatus }
           : application,
       );
-
-      window.localStorage.setItem(
-        "ojt_applications",
-        JSON.stringify(nextApplications),
-      );
-      window.dispatchEvent(new Event("applications:update"));
 
       return nextApplications;
     });
@@ -111,18 +99,12 @@ export default function ApplicationPage(): JSX.Element {
 
         if (Array.isArray(response)) {
           data = response;
-          console.log(data);
         } else if (response?.data) {
           data = response.data;
         }
 
         setApplications(data);
 
-        // Sync to localStorage for dashboard stats
-        if (data && data.length > 0) {
-          window.localStorage.setItem("ojt_applications", JSON.stringify(data));
-          window.dispatchEvent(new Event("applications:update"));
-        }
       } catch (error) {
         console.error("Failed to fetch applications:", error);
       } finally {

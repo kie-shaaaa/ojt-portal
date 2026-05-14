@@ -235,6 +235,7 @@ const ChangeStatusModal = ({
           body: JSON.stringify({
             type: appointmentType, // or map to interview/orientation if needed
             appointmentDate,
+            applicationId: applicationId
           }),
         });
       }

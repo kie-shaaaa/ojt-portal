@@ -311,12 +311,13 @@ export class ApplicationsService {
             course,
             deployment_date,
             original_status,
-            moved_to_ojt_at
+            moved_to_ojt_at,
+            confirmed_at
           )
           VALUES (
             $1, $2, $3, $4, $5,
             $6, $7, $8, $9, $10,
-            CURRENT_TIMESTAMP
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
           )
         `,
           [

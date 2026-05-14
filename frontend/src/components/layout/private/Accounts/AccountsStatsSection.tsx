@@ -9,7 +9,6 @@ interface AccountsStatsSectionProps {
 }
 
 export const AccountsStatsSection = ({ accounts }: AccountsStatsSectionProps): JSX.Element => {
-  console.log("Existing Accounts", accounts)
   const totalAccounts = accounts.length;
   const admins = accounts.filter(acc => acc.account_type === "admin").length;
   const employees = accounts.filter(acc => acc.account_type === "employee").length;

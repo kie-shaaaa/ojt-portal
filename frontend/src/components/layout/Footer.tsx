@@ -73,11 +73,11 @@ export const Footer = (): JSX.Element => {
   };
 
   return (
-    <footer className="flex flex-1 max-h-[421px] relative flex-col w-full items-center gap-8 pt-16 pb-8 px-6 md:px-16 bg-[#001d4e]">
-      <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-4 h-fit gap-12 pb-16 border-b border-[#ffffff1a]">
-        <section className="relative row-[1_/_2] col-[1_/_2] w-full h-fit flex flex-col items-start gap-6 pt-0 pb-[32.5px] px-0">
-          <div className="flex items-center gap-3 relative self-stretch w-full flex-[0_0_auto]">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white/10">
+    <footer className="flex flex-1 relative flex-col w-full items-center gap-6 md:gap-8 pt-8 md:pt-16 pb-6 md:pb-8 px-4 sm:px-6 md:px-8 lg:px-16 bg-[#001d4e] overflow-x-hidden">
+      <div className="w-full max-w-7xl grid grid-cols-2 lg:grid-cols-4 h-fit gap-6 md:gap-8 lg:gap-12 pb-8 md:pb-16 border-b border-[#ffffff1a]">
+        <section className="relative col-span-2 lg:col-span-1 w-full h-fit flex flex-col items-start gap-4 md:gap-6 pt-0 pb-0 md:pb-8 px-0">
+          <div className="flex items-center gap-2 md:gap-3 relative self-stretch w-full flex-[0_0_auto]">
+            <div className="relative w-8 md:w-10 h-8 md:h-10 rounded-full overflow-hidden bg-white/10 flex-shrink-0">
               <Image
                 src="/ntc-logo.png"
                 alt="NTC logo"
@@ -87,58 +87,50 @@ export const Footer = (): JSX.Element => {
                 priority
               />
             </div>
-            <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+            <div className="inline-flex flex-col items-start relative flex-[0_0_auto] min-w-0">
               <div className="flex items-start self-stretch w-full flex-col relative flex-[0_0_auto]">
-                <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-white text-base tracking-[0] leading-6 whitespace-nowrap relative w-fit">
+                <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-white text-sm md:text-base tracking-[0] leading-5 md:leading-6 relative">
                   NTC OJT APPLICATION
                 </div>
               </div>
               <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[12px] tracking-[0] leading-[16px] whitespace-nowrap relative w-fit">
+                <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] md:text-[12px] tracking-[0] leading-3 md:leading-4 relative">
                   HR Department
                 </div>
               </div>
             </div>
           </div>
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-            <p className="relative self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-sm tracking-[0] leading-6">
-              Official application portal for internship
-              <br />
-              opportunities or on-the-job training
-              <br />
-              programs at the National
-              <br />
-              Telecommunications Commission of the
-              <br />
-              Philippines.
+            <p className="relative self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-xs md:text-sm tracking-[0] leading-5 md:leading-6">
+              Official application portal for internship opportunities or on-the-job training programs at the National Telecommunications Commission of the Philippines.
             </p>
           </div>
         </section>
         <nav
           aria-label="Quick Links"
-          className="relative row-[1_/_2] col-[2_/_3] w-full h-fit flex flex-col items-start gap-6 pt-0 pb-[70px] px-0"
+          className="relative col-span-1 lg:col-span-1 w-full h-fit flex flex-col items-start gap-4 md:gap-6 pt-0 pb-0 md:pb-8 px-0"
         >
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-            <div className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-slate-300 text-base tracking-[0] leading-6">
+            <div className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-slate-300 text-sm md:text-base tracking-[0] leading-5 md:leading-6">
               Quick Links
             </div>
-            <div className="mt-2 h-px w-10 bg-[#3b82f6] rounded-full" />
+            <div className="mt-1 md:mt-2 h-px w-8 md:w-10 bg-[#3b82f6] rounded-full" />
           </div>
-          <ul className="flex flex-col items-start gap-[15.5px] relative self-stretch w-full flex-[0_0_auto]">
+          <ul className="flex flex-col items-start gap-2 md:gap-3 relative self-stretch w-full flex-[0_0_auto]">
             {quickLinks.map((item) => (
               <li
                 key={item.label}
                 className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]"
               >
-                <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+                <div className="inline-flex flex-col items-start relative flex-[0_0_auto] flex-shrink-0">
                   {item.icon && (
-                    <item.icon className={`relative ${item.iconClassName}`} aria-hidden="true" />
+                    <item.icon className={`relative w-3 md:w-4 h-3 md:h-4 text-slate-200`} aria-hidden="true" />
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => scrollToSection(item.href.replace("#", ""))}
-                  className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-sm tracking-[0] leading-5 whitespace-nowrap relative w-fit focus:outline-none focus:underline hover:underline"
+                  className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-xs md:text-sm tracking-[0] leading-4 md:leading-5 relative w-fit focus:outline-none focus:underline hover:underline"
                 >
                   {item.label}
                 </button>
@@ -146,29 +138,29 @@ export const Footer = (): JSX.Element => {
             ))}
           </ul>
         </nav>
-        <address className="not-italic row-[1_/_2] col-[3_/_4] w-full h-fit gap-6 flex relative flex-col items-start">
+        <address className="not-italic col-span-1 lg:col-span-1 w-full h-fit gap-4 md:gap-6 flex relative flex-col items-start pb-0 md:pb-8">
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-            <div className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-white text-base tracking-[0] leading-6">
+            <div className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-white text-sm md:text-base tracking-[0] leading-5 md:leading-6">
               Contact Info
             </div>
-            <div className="mt-2 h-px w-10 bg-[#3b82f6] rounded-full" />
+            <div className="mt-1 md:mt-2 h-px w-8 md:w-10 bg-[#3b82f6] rounded-full" />
           </div>
-          <div className="flex flex-col items-start gap-5 relative self-stretch w-full flex-[0_0_auto]">
+          <div className="flex flex-col items-start gap-3 md:gap-4 relative self-stretch w-full flex-[0_0_auto]">
             {contactItems.map((item) => (
               <div
                 key={item.label}
-                className="flex items-start gap-3 relative self-stretch w-full flex-[0_0_auto]"
+                className="flex items-start gap-2 md:gap-3 relative self-stretch w-full flex-[0_0_auto]"
               >
-                <div className="inline-flex flex-col items-start justify-center pt-0.5 pb-0 px-0 relative self-stretch flex-[0_0_auto]">
-                  <div className="inline-flex flex-col items-start relative flex-1 grow">
+                <div className="inline-flex flex-col items-start justify-center pt-0.5 pb-0 px-0 relative flex-[0_0_auto] flex-shrink-0">
+                  <div className="inline-flex flex-col items-start relative">
                     {item.icon && (
-                      <item.icon className={`relative ${item.iconClassName}`} aria-hidden="true" />
+                      <item.icon className={`relative w-4 md:w-5 h-4 md:h-5 text-slate-200`} aria-hidden="true" />
                     )}
                   </div>
                 </div>
-                <div className="inline-flex flex-col items-start relative self-stretch flex-[0_0_auto]">
+                <div className="inline-flex flex-col items-start relative self-stretch flex-1 min-w-0">
                   <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                    <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-200 text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit">
+                    <div className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-200 text-[10px] md:text-xs tracking-[0] leading-3 md:leading-4 relative">
                       {item.label}
                     </div>
                   </div>
@@ -176,12 +168,12 @@ export const Footer = (): JSX.Element => {
                     {item.href ? (
                       <a
                         href={item.href}
-                        className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit focus:outline-none focus:underline hover:underline"
+                        className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] md:text-xs tracking-[0] leading-3 md:leading-4 relative w-fit focus:outline-none focus:underline hover:underline break-all"
                       >
                         {item.value}
                       </a>
                     ) : (
-                      <p className="mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-xs tracking-[0] leading-[15px] relative w-fit">
+                      <p className="mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] md:text-xs tracking-[0] leading-4 md:leading-[15px] relative">
                         {item.value}
                       </p>
                     )}
@@ -193,29 +185,29 @@ export const Footer = (): JSX.Element => {
         </address>
         <nav
           aria-label="Resources"
-          className="relative row-[1_/_2] col-[4_/_5] w-full h-fit flex flex-col items-start gap-[23.5px] pt-0 pb-[134px] px-0"
+          className="relative col-span-1 lg:col-span-1 w-full h-fit flex flex-col items-start gap-4 md:gap-6 pt-0 pb-0 md:pb-8 px-0"
         >
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-            <div className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-white text-base tracking-[0] leading-6">
+            <div className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-semibold text-white text-sm md:text-base tracking-[0] leading-5 md:leading-6">
               Resources
             </div>
-            <div className="mt-2 h-px w-10 bg-[#3b82f6] rounded-full" />
+            <div className="mt-1 md:mt-2 h-px w-8 md:w-10 bg-[#3b82f6] rounded-full" />
           </div>
-          <ul className="flex flex-col items-start gap-0 relative self-stretch w-full flex-[0_0_auto]">
+          <ul className="flex flex-col items-start gap-2 md:gap-3 relative self-stretch w-full flex-[0_0_auto]">
             {resourceItems.map((item) => (
               <li
                 key={item.label}
                 className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]"
               >
-                <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+                <div className="inline-flex flex-col items-start relative flex-[0_0_auto] flex-shrink-0">
                   {item.icon && (
-                    <item.icon className={`relative ${item.iconClassName}`} aria-hidden="true" />
+                    <item.icon className={`relative w-4 md:w-5 h-4 md:h-5 text-slate-200`} aria-hidden="true" />
                   )}
                 </div>
                 <a
                   href={item.href}
                   download={item.download ? true : undefined}
-                  className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-xs tracking-[0] leading-4 whitespace-nowrap relative w-fit focus:outline-none focus:underline hover:underline"
+                  className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-xs md:text-sm tracking-[0] leading-4 md:leading-5 relative w-fit focus:outline-none focus:underline hover:underline"
                 >
                   {item.label}
                 </a>
@@ -224,39 +216,28 @@ export const Footer = (): JSX.Element => {
           </ul>
         </nav>
       </div>
-      <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-4 text-center md:text-left">
-    
+      <div className="w-full max-w-7xl mx-auto flex flex-col gap-4 md:gap-6 text-center md:text-left">
         {/* Left Side */}
         <div className="flex flex-col gap-1">
-          <p className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-300 text-[12px] tracking-[0] leading-[15px]">
+          <p className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-300 text-[10px] md:text-[11px] tracking-[0] leading-4 md:leading-[15px]">
             © 2026 National Telecommunications Commission - Philippines. All rights reserved.
           </p>
-
-          <p className="[font-family:'Inter-Italic',Helvetica] font-normal italic text-slate-400 text-[10px] tracking-[0] leading-[15px]">
+          <p className="[font-family:'Inter-Italic',Helvetica] font-normal italic text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px]">
             This is an official OJT application portal of NTC. Unauthorized access is prohibited.
           </p>
         </div>
 
         {/* Right Side */}
-        <nav
-          aria-label="Legal"
-          className="flex flex-wrap items-center justify-center md:justify-end gap-4 md:gap-6"
-        >
+        <nav aria-label="Legal" className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-4">
           {legalLinks.map((item, index) => (
-            <div
-              key={item.label}
-              className="flex items-center gap-4 md:gap-6"
-            >
+            <div key={item.label} className="flex items-center gap-2 md:gap-4">
               <a
                 href={item.href}
-                className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] tracking-[0] leading-[15px] hover:underline focus:outline-none focus:underline"
+                className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] hover:underline focus:outline-none focus:underline"
               >
                 {item.label}
               </a>
-
-              {index < legalLinks.length - 1 && (
-                <span className="text-slate-400 text-[10px]">|</span>
-              )}
+              {index < legalLinks.length - 1 && <span className="text-slate-400 text-[9px] md:text-[10px]">|</span>}
             </div>
           ))}
         </nav>

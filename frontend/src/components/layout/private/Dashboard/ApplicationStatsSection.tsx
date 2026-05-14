@@ -12,12 +12,23 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+import { apiCall } from "@/lib/api";
+
 type StatCard = {
   value: string;
   label: string[];
   iconBgClass: string;
   filter?: string | null;
   icon: ReactNode;
+};
+
+type DashboardStats = {
+  totalApplications: number;
+  pendingApplications: number;
+  underReviewApplications: number;
+  forInterviewApplications: number;
+  rejectedApplications: number;
+  acceptedApplications: number;
 };
 
 // default labels and icons — values are computed at runtime
@@ -62,75 +73,69 @@ const statDefs: Omit<StatCard, "value">[] = [
 
 export const ApplicationStatsSection = (): JSX.Element => {
   const router = useRouter();
-  const [applications, setApplications] = useState<Array<any>>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    totalApplications: 0,
+    pendingApplications: 0,
+    underReviewApplications: 0,
+    forInterviewApplications: 0,
+    rejectedApplications: 0,
+    acceptedApplications: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<
     string | null | undefined
   >(undefined);
 
   useEffect(() => {
-    const load = () => {
+    const load = async () => {
       try {
-        const raw = localStorage.getItem("ojt_applications");
-        const parsed = raw ? JSON.parse(raw) : [];
-        setApplications(parsed ?? []);
-      } catch (err) {
-        setApplications([]);
+        setIsLoading(true);
+
+        const response = await apiCall("/dashboard");
+        const stats = response?.data ?? response;
+
+        setDashboardStats({
+          totalApplications: Number(stats?.totalApplications ?? 0),
+          pendingApplications: Number(stats?.pendingApplications ?? 0),
+          underReviewApplications: Number(stats?.underReviewApplications ?? 0),
+          forInterviewApplications: Number(
+            stats?.forInterviewApplications ?? 0,
+          ),
+          rejectedApplications: Number(stats?.rejectedApplications ?? 0),
+          acceptedApplications: Number(stats?.acceptedApplications ?? 0),
+        });
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+        setDashboardStats({
+          totalApplications: 0,
+          pendingApplications: 0,
+          underReviewApplications: 0,
+          forInterviewApplications: 0,
+          rejectedApplications: 0,
+          acceptedApplications: 0,
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     load();
-
-    const onUpdate = () => load();
-    window.addEventListener("applications:update", onUpdate);
-    window.addEventListener("storage", onUpdate);
-    return () => {
-      window.removeEventListener("applications:update", onUpdate);
-      window.removeEventListener("storage", onUpdate);
-    };
   }, []);
 
-  const counts = {
-    total: applications.length,
-    pending: applications.filter((a: any) =>
-      String(a.status ?? "")
-        .toLowerCase()
-        .includes("pending"),
-    ).length,
-    underReview: applications.filter((a: any) =>
-      String(a.status ?? "")
-        .toLowerCase()
-        .includes("under"),
-    ).length,
-    forInterview: applications.filter((a: any) =>
-      String(a.status ?? "")
-        .toLowerCase()
-        .includes("interview"),
-    ).length,
-    rejected: applications.filter((a: any) =>
-      String(a.status ?? "")
-        .toLowerCase()
-        .includes("reject"),
-    ).length,
-    accepted: applications.filter((a: any) =>
-      String(a.status ?? "")
-        .toLowerCase()
-        .includes("accept"),
-    ).length,
-  };
-
   const stats: StatCard[] = statDefs.map((s, i) => ({
-    value:
-      i === 0
-        ? String(counts.total)
+    value: isLoading
+      ? "..."
+      : i === 0
+        ? String(dashboardStats.totalApplications)
         : i === 1
-          ? String(counts.pending)
+          ? String(dashboardStats.pendingApplications)
           : i === 2
-            ? String(counts.underReview)
+            ? String(dashboardStats.underReviewApplications)
             : i === 3
-              ? String(counts.forInterview)
+              ? String(dashboardStats.forInterviewApplications)
               : i === 4
-                ? String(counts.rejected)
-                : String(counts.accepted),
+                ? String(dashboardStats.rejectedApplications)
+                : String(dashboardStats.acceptedApplications),
     label: s.label,
     iconBgClass: s.iconBgClass,
     filter: s.filter,
@@ -138,7 +143,7 @@ export const ApplicationStatsSection = (): JSX.Element => {
   }));
   return (
     <section aria-label="Application statistics" className="w-full pb-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-4">
         {stats.map((stat) => (
           <article
             role="button"
