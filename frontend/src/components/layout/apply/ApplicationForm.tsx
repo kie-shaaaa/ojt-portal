@@ -295,75 +295,77 @@ export const ApplicationForm = (): JSX.Element => {
     <main className="flex min-h-screen w-full items-center justify-center px-4 py-8 [background:radial-gradient(50%_50%_at_50%_50%,rgba(30,58,138,1)_0%,rgba(15,23,42,1)_100%),linear-gradient(0deg,rgba(255,255,255,1)_0%,rgba(255,255,255,1)_100%)]">
       <section
         aria-label="OJT application form"
-        className="relative flex w-full max-w-4xl flex-col items-start overflow-hidden rounded-3xl bg-white shadow-[0px_25px_50px_-12px_#00000040]"
+        className="relative flex w-full max-w-4xl flex-col items-start overflow-hidden rounded-3xl bg-[#002b80] shadow-[0px_25px_50px_-12px_#00000040]"
       >
         <div className="self-stretch w-full overflow-hidden rounded-t-3xl bg-[#002b80]">
           <HeaderSection />
         </div>
 
-        {/* Step Indicator */}
-        <FormStepper currentStep={currentStep} />
+        <div className="self-stretch w-full bg-white">
+          {/* Step Indicator */}
+          <FormStepper currentStep={currentStep} />
 
-        {/* Step 1: Personal Details */}
-        {currentStep === 1 && (
-          <PersonalDetailsSection
-            data={personalDetails}
-            onDataChange={setPersonalDetails}
-            errors={validationErrors}
+          {/* Step 1: Personal Details */}
+          {currentStep === 1 && (
+            <PersonalDetailsSection
+              data={personalDetails}
+              onDataChange={setPersonalDetails}
+              errors={validationErrors}
+            />
+          )}
+
+          {/* Step 2: OJT Information */}
+          {currentStep === 2 && (
+            <OjtInformationSection
+              data={ojtInformation}
+              onDataChange={setOjtInformation}
+              errors={validationErrors}
+            />
+          )}
+
+          {/* Step 3: Document Upload */}
+          {currentStep === 3 && (
+            <DocumentUploadSection
+              documents={uploadedDocuments}
+              onDocumentsChange={setUploadedDocuments}
+              errors={validationErrors}
+            />
+          )}
+
+          {/* Step 4: Data Privacy */}
+          {currentStep === 4 && (
+            <DataPrivacySection
+              data={dataPrivacy}
+              onDataChange={setDataPrivacy}
+              errors={validationErrors}
+            />
+          )}
+
+          {submitError && (
+            <div
+              role="alert"
+              className="mx-6 md:mx-12 mt-6 w-[calc(100%-3rem)] md:w-[calc(100%-6rem)] rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {submitError}
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <FormActionsSection
+            onPrevious={handlePrevious}
+            onNext={currentStep === 4 ? handleSubmit : handleNext}
+            previousDisabled={currentStep === 1}
+            nextDisabled={isSubmitting}
+            previousLabel="Previous"
+            nextLabel={
+              isSubmitting
+                ? "Submitting..."
+                : currentStep === 4
+                  ? "Submit"
+                  : "Next"
+            }
           />
-        )}
-
-        {/* Step 2: OJT Information */}
-        {currentStep === 2 && (
-          <OjtInformationSection
-            data={ojtInformation}
-            onDataChange={setOjtInformation}
-            errors={validationErrors}
-          />
-        )}
-
-        {/* Step 3: Document Upload */}
-        {currentStep === 3 && (
-          <DocumentUploadSection
-            documents={uploadedDocuments}
-            onDocumentsChange={setUploadedDocuments}
-            errors={validationErrors}
-          />
-        )}
-
-        {/* Step 4: Data Privacy */}
-        {currentStep === 4 && (
-          <DataPrivacySection
-            data={dataPrivacy}
-            onDataChange={setDataPrivacy}
-            errors={validationErrors}
-          />
-        )}
-
-        {submitError && (
-          <div
-            role="alert"
-            className="mx-6 md:mx-12 mt-6 w-[calc(100%-3rem)] md:w-[calc(100%-6rem)] rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {submitError}
-          </div>
-        )}
-
-        {/* Navigation Buttons */}
-        <FormActionsSection
-          onPrevious={handlePrevious}
-          onNext={currentStep === 4 ? handleSubmit : handleNext}
-          previousDisabled={currentStep === 1}
-          nextDisabled={isSubmitting}
-          previousLabel="Previous"
-          nextLabel={
-            isSubmitting
-              ? "Submitting..."
-              : currentStep === 4
-                ? "Submit"
-                : "Next"
-          }
-        />
+        </div>
       </section>
 
       <ApplicationSubmittedModal
