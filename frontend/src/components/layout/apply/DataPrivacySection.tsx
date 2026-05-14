@@ -40,7 +40,7 @@ export const DataPrivacySection = ({
   };
 
   return (
-    <section className="flex flex-col items-start gap-12 p-12 relative self-stretch w-full flex-[0_0_auto]">
+    <section className="flex flex-col items-start gap-12 p-6 md:p-12 relative self-stretch w-full flex-[0_0_auto]">
       <div className="flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
         <div className="relative w-6 h-6" aria-hidden="true">
           <Lock className="absolute inset-0 w-full h-full text-blue-900" />
@@ -82,8 +82,8 @@ export const DataPrivacySection = ({
             </p>
           </div>
         </div>
-        <div className="relative self-stretch w-full h-5">
-          <div className="inline-flex h-5 items-center absolute top-0 -left-px">
+        <div className="relative flex items-start gap-3 self-stretch w-full">
+          <div className="inline-flex h-5 items-center flex-shrink-0 mt-0.5">
             <input
               id={checkboxId}
               type="checkbox"
@@ -124,7 +124,7 @@ export const DataPrivacySection = ({
           </div>
           <label
             htmlFor={checkboxId}
-            className="absolute top-0 left-8 h-5 flex items-center [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-transparent text-sm tracking-[0] leading-5 whitespace-nowrap cursor-pointer"
+            className="flex items-start [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-transparent text-sm tracking-[0] leading-5 cursor-pointer"
           >
             <span className="text-gray-800">
               I have read, understood, and agree to the terms and conditions

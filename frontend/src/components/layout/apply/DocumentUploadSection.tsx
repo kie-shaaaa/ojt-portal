@@ -240,7 +240,7 @@ export const DocumentUploadSection = ({
       title: "Proof of Enrollment",
       required: true,
       description: "PDF only • Max 5 MB",
-      areaClassName: "relative row-[1_/_2] col-[2_/_3] w-full h-fit",
+      areaClassName: "relative w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
       iconWrapperClassName:
@@ -254,7 +254,7 @@ export const DocumentUploadSection = ({
       title: "Draft Endorsement Letter",
       required: true,
       description: "Addressed to CHIEF, FLORA R. RALAR • PDF • Max 5 MB",
-      areaClassName: "relative row-[2_/_3] col-[1_/_2] w-full h-fit",
+      areaClassName: "relative w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
       iconWrapperClassName:
@@ -268,7 +268,7 @@ export const DocumentUploadSection = ({
       title: "Vaccine Card / Medical Cert.",
       required: true,
       description: "Xerox copy • PDF • Max 5 MB",
-      areaClassName: "relative row-[2_/_3] col-[2_/_3] w-full h-fit",
+      areaClassName: "relative w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
       iconWrapperClassName:
@@ -282,7 +282,7 @@ export const DocumentUploadSection = ({
       title: "Draft Memorandum of Agreement",
       required: true,
       description: "PDF only • Max 5 MB",
-      areaClassName: "relative row-[3_/_4] col-[1_/_2] w-full h-fit",
+      areaClassName: "relative w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
       iconWrapperClassName:
@@ -297,7 +297,7 @@ export const DocumentUploadSection = ({
       required: true,
       description: "PDF only • Max 5 MB",
       error: errors["resume-cv"],
-      areaClassName: "relative row-[1_/_2] col-[1_/_2] w-full h-fit",
+      areaClassName: "relative w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
       iconWrapperClassName:
@@ -312,7 +312,7 @@ export const DocumentUploadSection = ({
       required: true,
       description: "JPG / PNG only • Square (1:1) • Max 2 MB",
       error: errors["picture-1x1"],
-      areaClassName: "relative row-[3_/_4] col-[2_/_3] w-full h-fit",
+      areaClassName: "relative w-full h-fit",
       contentClassName:
         "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
       iconWrapperClassName:
@@ -406,7 +406,7 @@ export const DocumentUploadSection = ({
   };
 
   return (
-    <section className="flex flex-col items-center gap-6 p-8 self-stretch w-full relative flex-[0_0_auto]">
+    <section className="flex flex-col items-center gap-6 p-6 md:p-8 self-stretch w-full relative flex-[0_0_auto]">
       <div className="flex items-center gap-3 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto]">
         <Info size={24} className="text-[#0047ab]" />
         <div className="inline-flex items-start flex-col relative flex-[0_0_auto]">
@@ -418,12 +418,12 @@ export const DocumentUploadSection = ({
       <div className="relative self-stretch w-full h-px border-t border-gray-100" />
       <div className="flex flex-col items-start p-4 relative self-stretch w-full flex-[0_0_auto] bg-blue-50 rounded-lg border border-solid border-blue-100">
         <div className="flex items-start gap-3 self-stretch w-full relative flex-[0_0_auto]">
-          <div className="flex flex-col w-5 h-[22px] items-start pt-0.5 pb-0 px-0 relative">
+          <div className="flex flex-col w-5 h-[22px] items-start pt-0.5 pb-0 px-0 relative shrink-0">
             <AlertCircle size={20} />
           </div>
-          <div className="inline-flex flex-col items-start gap-1 relative flex-[0_0_auto]">
+          <div className="flex flex-col items-start gap-1 relative flex-1 min-w-0">
             <div className="flex flex-col items-start self-stretch w-full relative flex-[0_0_auto]">
-              <p className="relative w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5">
+              <p className="relative w-full mt-[-1.00px] [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5 break-words">
                 <span className="[font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5">
                   Upload all required documents below. Each PDF must be under{" "}
                 </span>
@@ -437,7 +437,7 @@ export const DocumentUploadSection = ({
                   JPG/PNG, square, and
                 </span>
                 <span className="[font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5">
-                  <br />
+                  {" "}
                 </span>
                 <span className="[font-family:'Nimbus_Sans-Bold',Helvetica] font-bold">
                   under 2 MB.
@@ -446,7 +446,7 @@ export const DocumentUploadSection = ({
             </div>
             <button
               type="button"
-              className="all-[unset] box-border flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto] cursor-pointer"
+              className="all-[unset] box-border flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto] cursor-pointer mt-1"
             >
               <a href= "/NTC-OJT-Requirements.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto]">
               <Download size={16} />
@@ -458,7 +458,7 @@ export const DocumentUploadSection = ({
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 auto-rows-min h-fit gap-8 pt-2 pb-0 px-0 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 auto-rows-min h-fit gap-8 pt-2 pb-0 px-0 w-full">
         {orderedCards.map((card) => (
           <UploadCardItem
             key={card.id}
