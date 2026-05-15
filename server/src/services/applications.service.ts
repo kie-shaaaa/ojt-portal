@@ -229,6 +229,21 @@ export class ApplicationsService {
   ): Promise<GetApplicationResponse> {
     const client = this.databaseService.getClient();
 
+    // If both id and email are provided, perform a strict match (id AND email).
+    // This enforces proper verification when callers supply both fields.
+    if (id && email) {
+      const res = await client.query<Application>(
+        `
+        SELECT * FROM applications
+        WHERE id = $1 AND LOWER(email) = LOWER($2)
+        `,
+        [id, email],
+      );
+
+      return res.rows || [];
+    }
+
+    // Fallback: if one of the params is missing, preserve existing behavior (OR match)
     const res = await client.query<Application>(
       `
       SELECT * FROM applications

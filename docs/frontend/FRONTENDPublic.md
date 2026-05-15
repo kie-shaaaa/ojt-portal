@@ -35,7 +35,7 @@ The Home page serves as the first point of contact for users. It introduces NTC 
 
 1. User arrives on the Home page
 2. Views hero section and the whole website
-3. USer clicks a CTA (**Submit Application** or **Track Application**)
+3. User clicks a CTA (**Submit Application** or **Track Application**)
 4. If the user selects **Submit Application** 
     - User is directed to the application form
     - User fills out all required fields
@@ -74,26 +74,112 @@ The Home page serves as the first point of contact for users. It introduces NTC 
 
 ## Purpose
 
+Enables users to submit application easily and efficiently through an online submission process. 
+
 ## UI Elements
+* Personal Information Fields
+* Education Information Fields
+* File Upload Section/Required Document checklist
+* Data Privacy Policy notice
+* Submit Button
+* Cancel/Reset Button
+* Previous & Next Button
+* Progress Indicator
+* Validation Messages
 
 ## Process Overview
+1. User access the application form
+2. User fills out the required information
+3. User uploads the necessary documents
+4. System validates the entered data
+5. User reviews the information before submission
+6. Users agree to the Data Privacy Policy
+7. Users submits the application
+8. System stores the application and displays a confirmation message
 
 ## Step-by-Step
+1. Enter personal information
+2. Enter OJT details
+3. Upload required documents
+4. Accept the Data Privacy Agreement
+5. Click the Submit button
+6. Receive confirmation via email and Application ID
+
+## Validation Rules
+* Required fields must not be empty
+* Email must follow a valid email format
+* Contact numbers must contain valid digits only
+* Uploade files must meet allowed file type and size requirements
+* Duplicate submission may be restricted
+
+## Error Handling
+* Display inline validation messages for incorrect inputs
+* Show upload errors for unsupported file types or oversized files
+* Prevent submission when required fields are incomplete
+* Display a message when the application submission period is closed
+* Display server or network messages when submission fails
+
+## Security considerations
+* Validate and sanitize all user inputs
+* Restrict malicious file uploads
+* Protect applicant data through secure storage and transmission
 
 ## Design Notes
+* Maintain a clean and user-friendly interface
+* Use responsive design for mobile, tablet, and desktop devices
+* Keep the form layout organized and easy to follow
+* Highlight required fields clearly
 
 
 ## Track Application
 
 ## Purpose
 
+Allow users to monitor the status and progress of their submitted application using their Application ID and Email Address.
+
 ## UI Elements
+
+* Application ID Input Field
+* Email Address Input Field
+* Track Application Button
+* User Personal Infromation Display Section
+* Application Progress Indicator
+* Error Messages
 
 ## Process Overview
 
+* User access the Track Application page
+* User enters the Application ID and Email Address
+* System validates the entered credentials
+* System retrieves the application data
+* User views the current application and progress
+
 ## Step-by-Step
 
+1. Enter the Application ID
+2. Enter the registered Email Address 
+3. Click the Track Application button
+4. View the application status and updates
+
+## Validation Rules
+* Application ID field must not be empty
+* Email Address field must not be empty or must follow a valid email format
+* Application ID and Email Address must match the existing record
+
+## Error Handling
+* Display an error message for invalid Application ID and Email Address
+* Notify users when no matching application record is found
+* Prevents submission when fields are incomplete
+* Display server or network messages when retrieval fails
+
+## Security Considerations
+* Protect applicant information from unauthorized access
+* Validate and sanitize users inputs
+
 ## Design Notes
+* Keep the interface simple and easy to use
+* Clearly display the application and status and progress
+* Ensure responsive layout accross devices
 
 ## Login
 

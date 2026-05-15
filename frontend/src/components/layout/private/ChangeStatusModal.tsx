@@ -12,6 +12,7 @@ import {
 import DatePicker from "../DatePicker";
 import TimePicker from "../TimePicker";
 import { apiCall } from "@/lib/api";
+import { toast } from "sonner";
 
 type StatusOption = {
   id: string;
@@ -25,8 +26,8 @@ interface ChangeStatusModalProps {
   open: boolean;
   mode?: "status" | "appointment-date";
   application?: {
-    id?: string | number;
-    applicationId?: string | number;
+    id?: string;
+    applicationId?: string;
     applicantName?: string;
     status?: string;
     appointmentDate?: string;
@@ -124,20 +125,6 @@ const idToBackendStatus = (id: string): string => {
   }
 };
 
-const extractNumericId = (value?: string | number): number | undefined => {
-  if (value === undefined || value === null) return undefined;
-
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : undefined;
-  }
-
-  const matchedDigits = value.match(/\d+/g);
-  if (!matchedDigits || matchedDigits.length === 0) return undefined;
-
-  const parsed = Number(matchedDigits.join(""));
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
 const ChangeStatusModal = ({
   open,
   mode = "status",
@@ -162,44 +149,22 @@ const ChangeStatusModal = ({
   const [acceptedDate, setAcceptedDate] = useState<string>("");
   const [acceptedTime, setAcceptedTime] = useState<string>("09:00");
 
+  // For appointment date mode
+  const [appointmentDate, setAppointmentDate] = useState<string>("");
+  const [appointmentTime, setAppointmentTime] = useState<string>("09:00");
+
   useEffect(() => {
     setSelectedStatus(statusToId(application?.status));
-  }, [application]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
+    
+    // If in appointment-date mode, initialize from existing appointment date
+    if (mode === "appointment-date" && application?.appointmentDate) {
+      const date = new Date(application.appointmentDate);
+      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+      setAppointmentDate(dateStr);
+      setAppointmentTime(timeStr);
     }
-
-    const parsedAppointmentDate = application?.appointmentDate
-      ? new Date(application.appointmentDate)
-      : null;
-
-    if (
-      parsedAppointmentDate &&
-      !Number.isNaN(parsedAppointmentDate.getTime())
-    ) {
-      const hydratedDate = `${parsedAppointmentDate.getFullYear()}-${String(
-        parsedAppointmentDate.getMonth() + 1,
-      ).padStart(
-        2,
-        "0",
-      )}-${String(parsedAppointmentDate.getDate()).padStart(2, "0")}`;
-      const hydratedTime = `${String(parsedAppointmentDate.getHours()).padStart(2, "0")}:${String(parsedAppointmentDate.getMinutes()).padStart(2, "0")}`;
-
-      setInterviewDate(hydratedDate);
-      setInterviewTime(hydratedTime);
-      setAcceptedDate(hydratedDate);
-      setAcceptedTime(hydratedTime);
-      return;
-    }
-
-    const fallbackTime = application?.appointmentTime || "09:00";
-    setInterviewDate("");
-    setInterviewTime(fallbackTime);
-    setAcceptedDate("");
-    setAcceptedTime(fallbackTime);
-  }, [open, application]);
+  }, [application, mode]);
 
   useEffect(() => {
     if (open) {
@@ -242,133 +207,134 @@ const ChangeStatusModal = ({
     switch (status) {
       case "for_interview":
         return "interview";
-      case "pending accept":
+      case "accepted":
         return "orientation";
       default:
         return undefined;
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirmAppointmentDateMode = async () => {
+    if (!appointmentDate || !appointmentTime) {
+      toast.error("Please set the appointment date and time.");
+      return;
+    }
+
     try {
       setIsUpdating(true);
 
-      const applicationId =
-        extractNumericId(application?.applicationId) ??
-        extractNumericId(application?.id);
+      const applicationId = application?.applicationId
+        ? Number(application.applicationId)
+        : application?.id
+          ? Number(application.id.replace("NTC-", ""))
+          : undefined;
 
       if (!applicationId) throw new Error("Invalid application ID");
 
-      if (mode === "appointment-date") {
-        // Only update appointment dates for existing appointment
-        let appointmentDate: string | undefined;
-        let scheduleDate: string | undefined;
-        let scheduleTime: string | undefined;
+      const appointmentDateISO = new Date(
+        `${appointmentDate}T${appointmentTime}`,
+      ).toISOString();
 
-        if (selectedStatus === "for-interview" && interviewDate) {
-          scheduleDate = interviewDate;
-          scheduleTime = interviewTime;
-          appointmentDate = new Date(
-            `${interviewDate}T${interviewTime}`,
-          ).toISOString();
-        }
+      await apiCall("/appointments/update", {
+        method: "PATCH",
+        body: JSON.stringify({
+          applicationId,
+          appointmentDate: appointmentDateISO,
+        }),
+      });
 
-        if (selectedStatus === "accepted" && acceptedDate) {
-          scheduleDate = acceptedDate;
-          scheduleTime = acceptedTime;
-          appointmentDate = new Date(
-            `${acceptedDate}T${acceptedTime}`,
-          ).toISOString();
-        }
-
-        if (appointmentDate) {
-          await apiCall("/appointments/update", {
-            method: "PATCH",
-            body: JSON.stringify({
-              applicationId,
-              appointmentDate,
-            }),
-          });
-        }
-
-        const mappedStatus = idToStatus(selectedStatus);
-        onConfirm(
-          mappedStatus,
-          String(application?.applicationId ?? application?.id ?? ""),
-          scheduleDate,
-          scheduleTime,
-        );
-      } else {
-        // Status mode: update status + create appointment if needed
-        const backendStatus = idToBackendStatus(selectedStatus);
-        const appointmentType = getAppointmentType(backendStatus);
-
-        // 1. Update application status first
-        await apiCall("/applications/update", {
-          method: "PATCH",
-          body: JSON.stringify({
-            id: applicationId,
-            status: backendStatus,
-            interviewDate,
-            interviewTime,
-            acceptedDate,
-            acceptedTime,
-          }),
-        });
-
-        // 2. Determine if we need to create appointment
-        let appointmentDate: string | undefined;
-        let scheduleDate: string | undefined;
-        let scheduleTime: string | undefined;
-
-        if (selectedStatus === "for-interview" && interviewDate) {
-          scheduleDate = interviewDate;
-          scheduleTime = interviewTime;
-          appointmentDate = new Date(
-            `${interviewDate}T${interviewTime}`,
-          ).toISOString();
-        }
-
-        if (selectedStatus === "accepted" && acceptedDate) {
-          scheduleDate = acceptedDate;
-          scheduleTime = acceptedTime;
-          appointmentDate = new Date(
-            `${acceptedDate}T${acceptedTime}`,
-          ).toISOString();
-        }
-
-        // 3. Create appointment ONLY if needed
-        if (appointmentDate) {
-          await apiCall("/appointments/create", {
-            method: "POST",
-            body: JSON.stringify({
-              type: appointmentType,
-              appointmentDate,
-              applicationId: applicationId,
-            }),
-          });
-        }
-
-        // 4. UI update
-        const mappedStatus = idToStatus(selectedStatus);
-        onConfirm(
-          mappedStatus,
-          String(application?.applicationId ?? application?.id ?? ""),
-          scheduleDate,
-          scheduleTime,
-        );
-      }
-
+      toast.success("Appointment date updated successfully!");
+      onConfirm("", application?.id ?? "", appointmentDate, appointmentTime);
       onClose();
     } catch (error) {
-      console.error("Failed to update:", error);
-      alert(
-        `Failed to update ${mode === "appointment-date" ? "appointment" : "application status"}. Please try again.`,
-      );
+      console.error("Failed to update appointment date:", error);
+      toast.error("We could not update the appointment date. Please try again.");
     } finally {
       setIsUpdating(false);
     }
   };
+
+  const handleConfirmStatusMode = async () => {
+    // Validate required schedule fields when setting interview or accepted
+    if (selectedStatus === "for-interview") {
+      if (!interviewDate || !interviewTime) {
+        toast.error("Please set interview date and time before updating status.");
+        return;
+      }
+    }
+
+    if (selectedStatus === "accepted") {
+      if (!acceptedDate || !acceptedTime) {
+        toast.error("Please set orientation date and time before updating status.");
+        return;
+      }
+    }
+
+    try {
+      setIsUpdating(true);
+
+      const backendStatus = idToBackendStatus(selectedStatus);
+
+      const applicationId = application?.id
+        ? Number(application.id.replace("NTC-", ""))
+        : undefined;
+
+      if (!applicationId) throw new Error("Invalid application ID");
+      const appointmentType = getAppointmentType(backendStatus);
+
+      // 1. Update application status first
+      await apiCall("/applications/update", {
+        method: "PATCH",
+        body: JSON.stringify({
+          id: applicationId,
+          status: backendStatus,
+        }),
+      });
+
+      // 2. Determine if we need to create appointment
+      let appointmentDateISO: string | undefined;
+
+      if (selectedStatus === "for-interview" && interviewDate) {
+        appointmentDateISO = new Date(
+          `${interviewDate}T${interviewTime}`,
+        ).toISOString();
+      }
+
+      if (selectedStatus === "accepted" && acceptedDate) {
+        appointmentDateISO = new Date(
+          `${acceptedDate}T${acceptedTime}`,
+        ).toISOString();
+      }
+
+      // 3. Create appointment ONLY if needed
+      if (appointmentDateISO) {
+        await apiCall("/appointments/create", {
+          method: "POST",
+          body: JSON.stringify({
+            type: appointmentType, // or map to interview/orientation if needed
+            appointmentDate: appointmentDateISO,
+            applicationId: applicationId
+          }),
+        });
+      }
+
+      // 4. UI update
+      const mappedStatus = idToStatus(selectedStatus);
+
+      onConfirm(mappedStatus, application?.id ?? "", appointmentDateISO);
+
+      onClose();
+    } catch (error) {
+      console.error("Failed to update:", error);
+      toast.error("We could not update the application status. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleConfirm = mode === "appointment-date" 
+    ? handleConfirmAppointmentDateMode 
+    : handleConfirmStatusMode;
 
   return (
     <div
@@ -407,11 +373,40 @@ const ChangeStatusModal = ({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4" ref={bodyRef}>
-          {mode === "status" && (
+          {mode === "appointment-date" ? (
+            // Appointment Date Mode
+            <>
+              <p id={descriptionId} className="text-sm text-gray-600 mb-6">
+                Update the appointment date and time for{" "}
+                {application?.applicantName ?? "this applicant"}
+              </p>
+
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-4">
+                    New Appointment Schedule
+                  </h3>
+                  <DatePicker
+                    value={appointmentDate}
+                    onChange={setAppointmentDate}
+                    label="Appointment Date"
+                    labelClassName="text-gray-700"
+                  />
+                  <div className="mt-4">
+                    <TimePicker
+                      value={appointmentTime}
+                      onChange={setAppointmentTime}
+                      label="Appointment Time"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            // Status Mode (existing code)
             <>
               <p id={descriptionId} className="text-sm text-gray-600 mb-4">
-                Select new status for{" "}
-                {application?.applicantName ?? "application"}:
+                Select new status for {application?.applicantName ?? "application"}:
               </p>
 
               <fieldset className="flex flex-col gap-3 mb-6">
@@ -419,8 +414,7 @@ const ChangeStatusModal = ({
 
                 {statusOptions.map((option) => {
                   const isSelected = selectedStatus === option.id;
-                  const isCurrent =
-                    statusToId(application?.status) === option.id;
+                  const isCurrent = statusToId(application?.status) === option.id;
 
                   return (
                     <label
@@ -469,67 +463,60 @@ const ChangeStatusModal = ({
                   );
                 })}
               </fieldset>
+
+              {/* Schedule Sections at Bottom */}
+              {selectedStatus === "for-interview" && (
+                <div
+                  ref={interviewSectionRef}
+                  className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4"
+                >
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Set Interview Schedule
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    This date will be included in the interview invitation email
+                    sent to the applicant.
+                  </p>
+                  <DatePicker
+                    value={interviewDate}
+                    onChange={setInterviewDate}
+                    label="Interview Date"
+                    labelClassName="text-gray-700"
+                  />
+                  <TimePicker
+                    value={interviewTime}
+                    onChange={setInterviewTime}
+                    label="Interview Time"
+                  />
+                </div>
+              )}
+
+              {selectedStatus === "accepted" && (
+                <div
+                  ref={acceptedSectionRef}
+                  className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-4"
+                >
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Set Orientation Schedule
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    This date will be included in the acceptance and orientation
+                    invitation email sent to the applicant.
+                  </p>
+                  <DatePicker
+                    value={acceptedDate}
+                    onChange={setAcceptedDate}
+                    label="Orientation Date"
+                    labelClassName="text-gray-700"
+                  />
+                  <TimePicker
+                    value={acceptedTime}
+                    onChange={setAcceptedTime}
+                    label="Orientation Time"
+                  />
+                </div>
+              )}
             </>
-          )}
-
-          {mode === "appointment-date" && (
-            <p id={descriptionId} className="text-sm text-gray-600 mb-4">
-              Update appointment date for{" "}
-              {application?.applicantName ?? "appointment"}:
-            </p>
-          )}
-
-          {/* Schedule Sections at Bottom */}
-          {selectedStatus === "for-interview" && (
-            <div
-              ref={interviewSectionRef}
-              className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4"
-            >
-              <h3 className="text-sm font-semibold text-gray-800">
-                Set Interview Schedule
-              </h3>
-              <p className="text-xs text-gray-600">
-                This date will be included in the interview invitation email
-                sent to the applicant.
-              </p>
-              <DatePicker
-                value={interviewDate}
-                onChange={setInterviewDate}
-                label="Interview Date"
-                labelClassName="text-gray-700"
-              />
-              <TimePicker
-                value={interviewTime}
-                onChange={setInterviewTime}
-                label="Interview Time"
-              />
-            </div>
-          )}
-
-          {selectedStatus === "accepted" && (
-            <div
-              ref={acceptedSectionRef}
-              className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-4"
-            >
-              <h3 className="text-sm font-semibold text-gray-800">
-                Set Orientation Schedule
-              </h3>
-              <p className="text-xs text-gray-600">
-                This date will be included in the acceptance and orientation
-                invitation email sent to the applicant.
-              </p>
-              <DatePicker
-                value={acceptedDate}
-                onChange={setAcceptedDate}
-                label="Orientation Date"
-                labelClassName="text-gray-700"
-              />
-              <TimePicker
-                value={acceptedTime}
-                onChange={setAcceptedTime}
-                label="Orientation Time"
-              />
-            </div>
           )}
         </div>
 
@@ -548,19 +535,15 @@ const ChangeStatusModal = ({
             type="button"
             className="px-6 py-2.5 text-base font-bold text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             onClick={handleConfirm}
-            disabled={
-              isUpdating ||
-              (selectedStatus === "for-interview" && !interviewDate) ||
-              (selectedStatus === "accepted" &&
-                !acceptedDate &&
-                mode === "status")
-            }
+            disabled={isUpdating}
           >
             {isUpdating && (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
             )}
             {isUpdating
-              ? "Updating..."
+              ? mode === "appointment-date"
+                ? "Updating Date..."
+                : "Updating..."
               : mode === "appointment-date"
                 ? "Update Date"
                 : "Update Status"}

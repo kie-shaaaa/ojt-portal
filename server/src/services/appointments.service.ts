@@ -109,13 +109,127 @@ export class AppointmentsService {
     }
   }
 
-  async completedAppointment(id: number) {
+  async updateAppointment(applicationId: number, appointmentDate: Date) {
+    const client = this.databaseService.getClient();
+    console.log(applicationId, appointmentDate);
     try {
+      const result = await client.query(
+        `
+          UPDATE appointments
+          SET appointment_date = $1
+          WHERE application_id = $2
+          RETURNING *
+        `,
+        [appointmentDate, applicationId],
+      );
+
+      if (result.rowCount === 0) {
+        throw new BadRequestException(
+          'No appointment found for this application',
+        );
+      }
+
+      return {
+        status: 200,
+        message: 'Appointment date updated successfully',
+        ok: true,
+        error: null,
+        data: result.rows[0],
+      };
+    } catch (error) {
+      console.error('[APPOINTMENT] Error updating appointment:', error);
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to update appointment');
+    }
+  }
+
+  async completedAppointment(id: number) {
+    const client = this.databaseService.getClient();
+    let isOrientationAppointment = false;
+    
+    try {
+      // First, get the appointment details including type and application info
+      const appointmentResult = await client.query(
+        `
+        SELECT a.id, a.type, a.application_id, ap.first_name, ap.last_name, ap.email,
+               ap.school_name, ap.hours_needed, ap.course, ap.deployment_date, ap.application_type
+        FROM appointments a
+        LEFT JOIN applications ap ON ap.id = a.application_id
+        WHERE a.id = $1
+        `,
+        [id],
+      );
+
+      if (appointmentResult.rowCount === 0) {
+        throw new BadRequestException('Appointment not found');
+      }
+
+      const appointment = appointmentResult.rows[0];
+      isOrientationAppointment = appointment.type === 'orientation';
+
+      // Begin transaction for orientation appointments
+      if (isOrientationAppointment) {
+        await client.query('BEGIN');
+      }
+
+      // Mark appointment as done
       await this.updateAppointmentStatus(
         id,
         { isDone: true, isCancelled: false },
         'Appointment not found',
       );
+
+      // If it's an orientation appointment, also add to ojt_data
+      if (isOrientationAppointment && appointment.application_id) {
+        await client.query(
+          `
+          INSERT INTO ojt_data (
+            application_type,
+            first_name,
+            last_name,
+            email,
+            phone,
+            school_name,
+            hours_needed,
+            course,
+            deployment_date,
+            moved_to_ojt_at,
+            confirmed_at
+          )
+          VALUES ($1, $2, $3, $4, '', $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          ON CONFLICT (email) DO UPDATE
+          SET confirmed_at = CURRENT_TIMESTAMP
+          `,
+          [
+            appointment.application_type,
+            appointment.first_name,
+            appointment.last_name,
+            appointment.email,
+            appointment.school_name,
+            appointment.hours_needed,
+            appointment.course,
+            appointment.deployment_date,
+          ],
+        );
+
+        // Also update the application status to 'accepted' if not already
+        if (appointment.application_id) {
+          await client.query(
+            `
+            UPDATE applications
+            SET status = 'accepted'
+            WHERE id = $1 AND status != 'accepted'
+            `,
+            [appointment.application_id],
+          );
+        }
+
+        await client.query('COMMIT');
+      }
 
       return {
         status: 200,
@@ -125,6 +239,9 @@ export class AppointmentsService {
         data: null,
       };
     } catch (error) {
+      if (isOrientationAppointment) {
+        await client.query('ROLLBACK').catch(() => undefined);
+      }
       console.error('[APPOINTMENT] Error completing appointment:', error);
 
       if (error instanceof BadRequestException) {
