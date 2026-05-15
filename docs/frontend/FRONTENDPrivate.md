@@ -127,3 +127,56 @@ Allows authorized users to manage applicant applications by viewing, editing, an
 - Confirmation dialogs prevent accidental deletion of records.
 - Table layout maintains proper spacing and alignment for readability.
 - Keyboard navigation is supported for search fields.
+
+## Calendar Page 
+
+### Purpose
+
+Allows authorized users to manage interview and orientation schedules by viewing appointments, updating schedule dates and times, marking appointments as completed, or clearing scheduled events.
+
+### UI Elements
+
+- **Calendar Header:** Displays the current month and year.
+- **Navigation Buttons:** Allows users to move between previous and next months.
+- **Today Button:** Returns the calendar view to the current date.
+- **Calendar Grid:** Displays scheduled appointments by date.
+- **Appointment Cards:** Shows interview or orientation schedules within the calendar.
+- **Schedule Details:** Displays appointment title, date, and appointment type.
+- **Edit Schedule Option:** Allows users to update the schedule date and time.
+- **Mark as Completed Option:** Updates the appointment status as completed.
+- **Clear Appointment Option:** Removes the scheduled appointment from the calendar.
+
+### Authenticated User Flow (Step-by-Step)
+
+1. The authorized user logs into the admin portal.
+2. The system redirects the user to Dashboard and use sidebar to open the the Calendar page.
+3. The user views all scheduled interviews and orientations.
+4. The user navigates between months using the calendar controls.
+5. The user selects a scheduled appointment from the calendar.
+6. The system displays appointment details and available actions.
+7. The user may:
+    - Change the appointment date and time
+    - Mark the appointment as completed
+    - Clear or remove the appointment
+8. The system validates and saves the updated schedule information.
+9. The calendar automatically refreshes to display the latest appointment data.
+
+### Technical Notes
+
+- Built using an interactive calendar component.
+- Appointment schedules are dynamically retrieved from the database.
+- Calendar events update in real time after schedule modifications.
+- Schedule management is integrated with backend API endpoints.
+- Only authorized users can manage appointment schedules.
+- Appointment status updates are automatically persisted in the database.
+
+### Accessibility & UX
+
+- Uses a clean calendar layout for easier schedule tracking.
+- Appointment cards use visual indicators for quick identification.
+- Navigation controls are clearly labeled and accessible.
+- Interactive calendar elements support hover and focus states.
+- Responsive design supports desktop and tablet viewing.
+- Confirmation prompts help prevent accidental appointment removal.
+- Consistent spacing and typography improve readability.
+- Calendar interactions are designed to minimize scheduling errors.
