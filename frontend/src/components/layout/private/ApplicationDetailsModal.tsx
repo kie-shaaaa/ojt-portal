@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Eye, FileText, Download } from "lucide-react";
+import { X, Eye, FileText, Download, Maximize2 } from "lucide-react";
 import { JSX, memo, useEffect, useMemo, useState } from "react";
 import { useApplicationFiles } from "@/hooks/useApplicationFiles";
 
@@ -123,11 +123,231 @@ const FileCard = memo(
 
 FileCard.displayName = "FileCard";
 
+const CompiledFilesModal = memo(
+  ({
+    files,
+    onClose,
+  }: {
+    files: Array<{
+      id: number;
+      application_id: number;
+      file_type: string;
+      document_key: string | null;
+      file_name: string;
+      file_extension: string;
+      file_path: string;
+      file_size: number;
+      uploaded_at: string;
+      signedUrl: string;
+    }>;
+    onClose: () => void;
+  }): JSX.Element => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+      requestAnimationFrame(() => setIsVisible(true));
+
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      window.addEventListener("keydown", onKey);
+
+      return () => {
+        window.removeEventListener("keydown", onKey);
+      };
+    }, [onClose]);
+
+    return (
+      <div
+        className={`fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 p-4 transition-opacity duration-150 ease-out ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={() => onClose()}
+      >
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="compiled-files-title"
+          onClick={(e) => e.stopPropagation()}
+          className={`flex w-full max-w-4xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out ${
+            isVisible
+              ? "scale-100 translate-y-0 opacity-100"
+              : "scale-95 translate-y-2 opacity-0"
+          }`}
+        >
+          {/* Header */}
+          <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h1
+              id="compiled-files-title"
+              className="text-lg font-bold text-blue-800"
+            >
+              All File Contents
+            </h1>
+
+            <button
+              type="button"
+              aria-label="Close modal"
+              className="text-gray-400 transition hover:text-gray-600"
+              onClick={() => onClose()}
+            >
+              <X size={20} />
+            </button>
+          </header>
+
+          {/* Content - Scrollable container */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {files.length > 0 ? (
+              <div className="space-y-6">
+                {files.map((file, index) => {
+                  const title =
+                    file.document_key?.toUpperCase() ||
+                    file.file_name.toUpperCase();
+
+                  return (
+                    <div
+                      key={file.id}
+                      className="border-b border-gray-200 pb-6"
+                    >
+                      {/* File Header */}
+                      <div className="mb-3 flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {index + 1}. {title}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {formatFileSize(file.file_size)} •{" "}
+                            {file.file_extension.toUpperCase()}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = file.signedUrl;
+                            link.download = file.file_name;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-50 px-3 text-xs font-medium text-green-700 ring-1 ring-green-200 transition hover:bg-green-100"
+                          title="Download file"
+                        >
+                          <Download size={14} />
+                          Download
+                        </button>
+                      </div>
+
+                      {/* File Preview */}
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        {file.file_extension.toLowerCase() === "pdf" ? (
+                          <div className="flex flex-col gap-3">
+                            <embed
+                              src={`${file.signedUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+                              type="application/pdf"
+                              className="h-screen w-full rounded border border-gray-300"
+                              title={file.file_name}
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                window.open(file.signedUrl, "_blank")
+                              }
+                              className="mx-auto rounded-md bg-gray-800 px-4 py-2 text-xs font-medium text-white transition hover:bg-gray-700"
+                            >
+                              Open PDF in New Tab
+                            </button>
+                          </div>
+                        ) : ["jpg", "jpeg", "png", "gif", "webp"].includes(
+                            file.file_extension.toLowerCase(),
+                          ) ? (
+                          <img
+                            src={file.signedUrl}
+                            alt={file.file_name}
+                            className="max-h-96 max-w-full rounded"
+                          />
+                        ) : ["txt", "csv", "json", "xml", "html"].includes(
+                            file.file_extension.toLowerCase(),
+                          ) ? (
+                          <FileTextPreview url={file.signedUrl} />
+                        ) : (
+                          <div className="flex items-center justify-center py-8 text-center">
+                            <div>
+                              <FileText className="mx-auto mb-2 h-12 w-12 text-gray-400" />
+                              <p className="text-sm text-gray-600">
+                                Preview not available for this file type
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {file.file_extension.toUpperCase()} files cannot
+                                be previewed inline
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-gray-500">No files to display</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  },
+);
+
+CompiledFilesModal.displayName = "CompiledFilesModal";
+
+const FileTextPreview = memo(({ url }: { url: string }): JSX.Element => {
+  const [content, setContent] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch file");
+        const text = await response.text();
+        setContent(text.slice(0, 10000)); // Limit to 10KB for display
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load content");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContent();
+  }, [url]);
+
+  if (loading) {
+    return <div className="text-sm text-gray-500">Loading content...</div>;
+  }
+
+  if (error) {
+    return <div className="text-sm text-red-500">Error: {error}</div>;
+  }
+
+  return (
+    <pre className="max-h-96 overflow-auto rounded bg-gray-900 p-4 text-xs text-gray-100">
+      {content}
+    </pre>
+  );
+});
+
+FileTextPreview.displayName = "FileTextPreview";
+
 export const ApplicationDetails = ({
   application,
   onClose,
 }: ApplicationDetailsProps): JSX.Element => {
   const [isVisible, setIsVisible] = useState(false);
+  const [showCompiledView, setShowCompiledView] = useState(false);
   const applicationId = useMemo(() => {
     if (!application?.id) return undefined;
     const match = application.id.match(/(\d+)$/);
@@ -325,6 +545,18 @@ export const ApplicationDetails = ({
             </div>
 
             <div className="flex w-2/3 flex-col gap-4">
+              {fileUploads.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowCompiledView(true)}
+                  className="inline-flex h-9 w-fit items-center gap-2 rounded-md bg-blue-50 px-4 text-xs font-medium text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-100"
+                  title="View all file contents compiled in one modal"
+                >
+                  <Maximize2 size={14} />
+                  View All Contents
+                </button>
+              )}
+
               {filesLoading ? (
                 <div className="text-sm text-gray-500">Loading files...</div>
               ) : fileUploads.length > 0 ? (
@@ -338,6 +570,14 @@ export const ApplicationDetails = ({
           </div>
         </div>
       </section>
+
+      {/* Compiled Files Modal */}
+      {showCompiledView && (
+        <CompiledFilesModal
+          files={fileUploads}
+          onClose={() => setShowCompiledView(false)}
+        />
+      )}
     </div>
   );
 };
