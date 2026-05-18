@@ -11,7 +11,7 @@ import ApplicationDetails from "../ApplicationDetailsModal";
 import ChangeStatusModal from "../ChangeStatusModal";
 
 type ApplicationRow = {
-  applicationId: number;
+  applicationId: string;
   id: string;
   applicantName: string;
   applicantEmail: string;
@@ -68,7 +68,7 @@ const formatStatus = (status: string) => {
   if (s === "under_review") return "Under Review";
   if (s === "for_interview") return "For Interview";
   if (s === "accepted") return "Accepted";
-  if (s === "pending accept") return "Pending Accept"
+  if (s === "pending accept") return "Pending Accept";
   if (s === "rejected") return "Rejected";
 
   return status;
@@ -105,7 +105,7 @@ const normalizeFilterText = (value: string) =>
 
 const mapApplications = (applications: Application[]): ApplicationRow[] => {
   return applications.map((app) => ({
-    applicationId: app.id,
+    applicationId: String(app.id),
     id: `NTC-${String(app.id).padStart(6, "0")}`,
 
     applicantName: `${app.first_name} ${app.last_name}`,
@@ -240,10 +240,10 @@ export const ApplicationsTableSection = ({
 
       await apiCall("/applications/delete", {
         method: "DELETE",
-        body: JSON.stringify(applicationToDelete.applicationId),
+        body: JSON.stringify(Number(applicationToDelete.applicationId)),
       });
 
-      onDeleteApplication(applicationToDelete.applicationId);
+      onDeleteApplication(Number(applicationToDelete.applicationId));
 
       setSelectedRows((current) => {
         const next = new Set(current);
@@ -541,7 +541,10 @@ export const ApplicationsTableSection = ({
           application={changeStatusApplication}
           onClose={() => setChangeStatusApplication(null)}
           onConfirm={(newStatus) => {
-            onStatusChange(changeStatusApplication.applicationId, newStatus);
+            onStatusChange(
+              Number(changeStatusApplication.applicationId),
+              newStatus,
+            );
             setChangeStatusApplication(null);
           }}
         />

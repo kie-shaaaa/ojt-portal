@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  BadRequestException,
+  Ip,
+} from '@nestjs/common';
 import type { AccountRegister, ChangePasswordResponse } from '../data/types';
 import { AuthService } from '../services/auth.service';
 @Controller('auth')
@@ -7,17 +13,31 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signin')
-  async signIn(@Body() body: AccountRegister): Promise<{
+  async signIn(
+    @Body() body: AccountRegister,
+    @Ip() ipAddress: string,
+  ): Promise<{
     access_token: string;
-    user: { id: number; email: string; account_type: string };
+    user: {
+      id: number;
+      email: string;
+      account_type: string;
+    };
   }> {
     if (!body?.email || !body?.password) {
       throw new BadRequestException('Email and password are required');
     }
 
+    let clientIp = ipAddress;
+    if (clientIp === '::1' || clientIp === '127.0.0.1' || !clientIp) {
+      clientIp = '203.0.113.195';
+    }
+    body.ipAddress = clientIp;
+    
     const result = await this.authService.signInAccount(
       body.email,
       body.password,
+      body.ipAddress,
     );
 
     if (result.user.id === undefined) {

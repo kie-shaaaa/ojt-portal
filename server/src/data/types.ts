@@ -1,6 +1,7 @@
 export type AccountRegister = {
   email: string;
   password: string;
+  ipAddress?: string;
 };
 
 export type ApplicationStatus =
@@ -191,3 +192,85 @@ export type UpdateApplicationSettingsDto = {
 export type AppointmentType = 'interview' | 'orientation';
 
 export type ResponseStatus = 'scheduled' | 'rejected' | 'orientation';
+
+export type LogSignIn = {
+  userId?: number;
+  success: boolean;
+  ipAddress?: string;
+};
+
+export type LogChangePassword = {
+  userId?: number;
+  details: string;
+  ipAddress?: string;
+};
+
+// Log action types based on database enum `log_action`
+export type LogAction =
+  | 'User Created'
+  | 'User Updated'
+  | 'User Deleted'
+  | 'Logged In'
+  | 'User Status Update'
+  | 'Application Reviewed'
+  | 'Application Status Change'
+  | 'Admin Notes Added'
+  | 'Account Locked'
+  | 'Account Unlocked'
+  | 'Password Reset'
+  | 'Settings Updated'
+  | 'File Uploaded'
+  | 'File Deleted'
+  | 'other';
+
+export type BaseLog = {
+  userId?: number;
+  ipAddress?: string;
+  details?: string;
+};
+
+export type LogUserCreated = BaseLog;
+export type LogUserUpdated = BaseLog & { changes?: string };
+export type LogUserDeleted = BaseLog;
+export type LogUserStatusUpdate = BaseLog & {
+  oldStatus?: string;
+  newStatus?: string;
+};
+export type LogApplicationReviewed = BaseLog & {
+  applicationId?: number;
+  reviewedBy?: number;
+  notes?: string;
+};
+export type LogApplicationStatusChange = BaseLog & {
+  applicationId?: number;
+  oldStatus?: string;
+  newStatus?: string;
+};
+export type LogAdminNotesAdded = BaseLog & { notes?: string };
+export type LogAccountLock = BaseLog & { reason?: string };
+export type LogAccountUnlock = BaseLog & {};
+export type LogPasswordReset = BaseLog & { method?: string };
+export type LogSettingsUpdated = BaseLog & {
+  key?: string;
+  oldValue?: string;
+  newValue?: string;
+};
+export type LogFileUploaded = BaseLog & {
+  filename?: string;
+  path?: string;
+  size?: number;
+};
+export type LogFileDeleted = BaseLog & { filename?: string; path?: string };
+export type LogOther = BaseLog & { action?: string };
+
+
+export type Logs = {
+  id: number;
+  user_id: number;
+  action: string;
+  details: string;
+  ip_address: string;
+  created_at: Date;
+}
+
+export type FetchAllLogs = Logs[] | null;

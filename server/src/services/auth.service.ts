@@ -5,16 +5,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import type { Account, SuccessResponse } from '../data/types';
+import type { Account, LogSignIn, SuccessResponse } from '../data/types';
 import { DatabaseService } from './database/database.service';
 import { JwtService } from '@nestjs/jwt';
 import { SuccessHandler } from '../../utils/handlers';
+import { LogsService } from './logs.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly jwtService: JwtService,
+    private readonly logService: LogsService,
   ) {}
 
   /**
@@ -25,14 +27,24 @@ export class AuthService {
    * @throws UnauthorizedException if credentials are invalid
    */
 
-  async signInAccount(email: string, password: string) {
+  async signInAccount(email: string, password: string, ipAddress?: string) {
     const user = await this.findActiveUser(email);
 
     if (!user) throw new UnauthorizedException('Invalid email or password');
 
     const isValid = await this.verifyPassword(user.password, password);
 
-    if (!isValid) throw new UnauthorizedException('Invalid email or password');
+    if (!isValid) {
+      const failed: LogSignIn = {
+        userId: user.id,
+        success: false,
+        ipAddress: ipAddress
+      };
+
+      await this.logService.logSignIn(failed);
+      
+      throw new UnauthorizedException('Invalid email or password');
+    }
 
     const payload = {
       sub: user.id,
@@ -40,7 +52,15 @@ export class AuthService {
       account_type: user.account_type,
     };
 
+    const log: LogSignIn = {
+      userId: user.id,
+      success: true,
+      ipAddress: ipAddress
+    };
+
     const access_token = this.jwtService.sign(payload);
+
+    await this.logService.logSignIn(log);
 
     return {
       access_token,
@@ -90,57 +110,6 @@ export class AuthService {
    * @param ipAddress Optional IP address
    * @param userAgent Optional user agent string
    */
-  async logSignIn(
-    email: string,
-    success: boolean,
-    metadata: string | null = null,
-    userId?: number,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<void> {
-    const client = this.databaseService.getClient();
-    try {
-      const timestamp = new Date();
-      const status = success ? 'SUCCESS' : 'FAILED';
-
-      // Log to console for monitoring
-      console.log(
-        `[AUTH] Sign-in ${status} for ${email} at ${timestamp.toISOString()}`,
-      );
-
-      // Store in database audit trail
-      if (userId) {
-        // Map metadata to log action enum
-        let action = 'other';
-        if (metadata === 'registration') {
-          action = 'user_created';
-        } else if (metadata === 'password_reset') {
-          action = 'password_reset';
-        }
-
-        await client.query(
-          `
-            INSERT INTO logs (user_id, action, target_type, target_id, target_name, details, ip_address, user_agent, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
-          `,
-          [
-            userId,
-            action,
-            'user',
-            userId,
-            email,
-            metadata || (success ? 'Sign-in successful' : 'Sign-in failed'),
-            ipAddress || null,
-            userAgent || null,
-            timestamp,
-          ],
-        );
-      }
-    } catch (error) {
-      console.error('Failed to log sign-in event', error);
-      // Don't throw here - logging failure shouldn't break auth flow
-    }
-  }
 
   /**
    * Find user by email
@@ -273,8 +242,6 @@ export class AuthService {
         `,
         [hashedPassword, new Date(), email],
       );
-
-      await this.logSignIn(email, true, 'password_reset', user.id);
     } catch (error) {
       console.error('Password change failed', error);
       throw new InternalServerErrorException('Failed to change password');
