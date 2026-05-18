@@ -8,15 +8,15 @@ import {
   Users,
   UserRoundCheck,
   LogOut,
+  ScrollText
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { usePendingApplications } from "@/hooks/usePendingApplication";
-import { fetchToken } from "@/lib/token";
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
@@ -24,6 +24,7 @@ const navigationItems = [
   { label: "Calendar", icon: Calendar, href: "/calendar" },
   { label: "OJT Data", icon: GraduationCap, href: "/ojt-data" },
   { label: "Accounts", icon: Users, href: "/accounts" },
+  { label: "Logs", icon: ScrollText, href: "/admin-logs"}
 ];
 
 

@@ -5,6 +5,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from './database.module';
 import { AccountsModule } from './accounts.module';
 import { JwtStrategy } from '../data/strategy/jwt.strategy';
+import { LogsService } from '../services/logs.service';
+import { LogsModule } from './logs.module';
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { JwtStrategy } from '../data/strategy/jwt.strategy';
         expiresIn: '5d',
       },
     }),
+    LogsModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
