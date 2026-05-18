@@ -17,7 +17,7 @@ jobs:
             matrix:
                 include:
                     - label: Backend NTC Internship Portal
-                      workdir: server
+                      workdir: backend
                       lint: true
                       test: true
         defaults:
