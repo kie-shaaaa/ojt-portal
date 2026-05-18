@@ -16,7 +16,7 @@ export class AuthService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly jwtService: JwtService,
-    private readonly logService: LogsService,
+    private readonly logsService: LogsService,
   ) {}
 
   /**
@@ -38,11 +38,11 @@ export class AuthService {
       const failed: LogSignIn = {
         userId: user.id,
         success: false,
-        ipAddress: ipAddress
+        ipAddress: ipAddress,
       };
 
-      await this.logService.logSignIn(failed);
-      
+      await this.recordSignInLog(failed);
+
       throw new UnauthorizedException('Invalid email or password');
     }
 
@@ -55,12 +55,12 @@ export class AuthService {
     const log: LogSignIn = {
       userId: user.id,
       success: true,
-      ipAddress: ipAddress
+      ipAddress: ipAddress,
     };
 
     const access_token = this.jwtService.sign(payload);
 
-    await this.logService.logSignIn(log);
+    await this.recordSignInLog(log);
 
     return {
       access_token,
@@ -84,6 +84,33 @@ export class AuthService {
     } catch (error) {
       console.error('Password verification failed', error);
       return false;
+    }
+  }
+
+  private async recordSignInLog(log: LogSignIn): Promise<void> {
+    if (!log.userId) {
+      console.warn('Skipped sign-in log because userId was missing');
+      return;
+    }
+
+    const client = this.databaseService.getClient();
+
+    try {
+      const status = log.success ? 'SUCCESS' : 'FAILED';
+
+      const result = await client.query(
+        `
+          INSERT INTO logs (user_id, action, details, ip_address)
+          VALUES ($1, 'Logged In', $2, $3);
+        `,
+        [log.userId, status, log.ipAddress ?? null],
+      );
+
+      if (result.rowCount === 0) {
+        console.warn('Sign-in log insert returned no rows');
+      }
+    } catch (error) {
+      console.error('Failed to write sign-in log', error);
     }
   }
 
@@ -242,8 +269,25 @@ export class AuthService {
         `,
         [hashedPassword, new Date(), email],
       );
+
+      // Log password reset
+      await this.logsService.logPasswordReset({
+        userId: user.id,
+        method: 'password_change',
+        ipAddress: undefined,
+      });
     } catch (error) {
       console.error('Password change failed', error);
+      await this.logsService
+        .logOther({
+          userId: user.id,
+          action: 'Password Reset Failed',
+          details: `Failed to reset password for ${email}`,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log password reset error', err),
+        );
       throw new InternalServerErrorException('Failed to change password');
     }
   }

@@ -43,9 +43,10 @@ export class LogsService {
           l.ip_address,
           l.created_at
         FROM logs l
+        ORDER BY l.created_at DESC, l.id DESC
         LIMIT $1
         OFFSET $2
-      `
+      `;
 
       const offset = (page - 1) * limit;
 
@@ -105,12 +106,7 @@ export class LogsService {
         INSERT INTO logs (user_id, action, details, ip_address)
         VALUES ($1, $2, $3, $4);
         `,
-        [
-          userId || null,
-          action,
-          details || null,
-          ipAddress || null,
-        ],
+        [userId || null, action, details || null, ipAddress || null],
       );
     } catch (error) {
       console.error(`Failed to insert log (${action})`, error);
@@ -131,7 +127,7 @@ export class LogsService {
       payload.userId,
       'User Updated',
       payload.changes || payload.details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 
@@ -178,7 +174,7 @@ export class LogsService {
       payload.userId,
       'Admin Notes Added',
       payload.notes || payload.details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 
@@ -187,7 +183,7 @@ export class LogsService {
       payload.userId,
       'Account Locked',
       payload.reason || payload.details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 
@@ -205,7 +201,7 @@ export class LogsService {
       payload.userId,
       'Password Reset',
       payload.method || payload.details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 
@@ -225,7 +221,7 @@ export class LogsService {
       payload.userId,
       'File Uploaded',
       details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 
@@ -235,7 +231,7 @@ export class LogsService {
       payload.userId,
       'File Deleted',
       details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 
@@ -244,7 +240,7 @@ export class LogsService {
       payload.userId,
       (payload.action as LogAction) || 'other',
       payload.details,
-      payload.ipAddress
+      payload.ipAddress,
     );
   }
 }

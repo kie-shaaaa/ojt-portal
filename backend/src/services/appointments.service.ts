@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { AppointmentType } from '../data/types';
+import { LogsService } from './logs.service';
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly logsService: LogsService,
+  ) {}
 
   private async updateAppointmentStatus(
     id: number,
@@ -71,6 +75,18 @@ export class AppointmentsService {
         throw new InternalServerErrorException('Failed to create appointment');
       }
 
+      // Log appointment creation (system operation)
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'Appointment Created',
+          details: `Appointment created for application ${applicationId} on ${appointmentDate}`,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log appointment creation', err),
+        );
+
       return {
         success: true,
         message: 'Appointment created successfully',
@@ -85,11 +101,22 @@ export class AppointmentsService {
 
   async cancelAppointment(id: number) {
     try {
-      await this.updateAppointmentStatus(
+      const appointment = await this.updateAppointmentStatus(
         id,
         { isCancelled: true, isDone: false },
         'Appointment not found',
       );
+
+      // Log appointment cancellation
+      await this.logsService
+        .logOther({
+          action: 'Appointment Cancelled',
+          details: `Appointment ${id} cancelled`,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log appointment cancellation', err),
+        );
 
       return {
         status: 200,
@@ -129,6 +156,15 @@ export class AppointmentsService {
         );
       }
 
+      // Log appointment update
+      await this.logsService
+        .logOther({
+          action: 'Appointment Updated',
+          details: `Appointment for application ${applicationId} updated to ${appointmentDate}`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log appointment update', err));
+
       return {
         status: 200,
         message: 'Appointment date updated successfully',
@@ -150,7 +186,7 @@ export class AppointmentsService {
   async completedAppointment(id: number) {
     const client = this.databaseService.getClient();
     let isOrientationAppointment = false;
-    
+
     try {
       // First, get the appointment details including type and application info
       const appointmentResult = await client.query(
@@ -230,6 +266,17 @@ export class AppointmentsService {
 
         await client.query('COMMIT');
       }
+
+      // Log appointment completion
+      await this.logsService
+        .logOther({
+          action: 'Appointment Completed',
+          details: `Appointment ${id} marked as completed`,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log appointment completion', err),
+        );
 
       return {
         status: 200,

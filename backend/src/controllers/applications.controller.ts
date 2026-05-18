@@ -9,7 +9,10 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../data/guards/roles.guard';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject, ValidationError } from 'class-validator';
 import type { FastifyRequest } from 'fastify';
@@ -315,7 +318,12 @@ export class ApplicationsController {
    * @returns
    */
   @Patch('update')
-  async updateStatus(@Body() body: UpdateApplicationDto) {
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async updateStatus(
+    @Body() body: UpdateApplicationDto,
+    @Req() req: FastifyRequest & { user?: any },
+  ) {
+    const userId = req.user?.id;
     return this.applicationService.updateApplicationStatus(
       body.id,
       body.status,
@@ -325,6 +333,7 @@ export class ApplicationsController {
       body.acceptedTime,
       body.interviewLocation,
       body.adminNote,
+      userId,
     );
   }
 

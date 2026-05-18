@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
+import { LogsService } from './logs.service';
 import type {
   ApplicationSettings,
   DashboardData,
@@ -22,7 +23,10 @@ type DashboardSummaryRow = {
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly logsService: LogsService,
+  ) {}
 
   //** Applications Setting
   // * */
@@ -138,6 +142,17 @@ export class DashboardService {
       if (update.rowCount === 0) {
         throw new BadRequestException('Application settings not found');
       }
+
+      // Log settings update (system operation)
+      await this.logsService
+        .logSettingsUpdated({
+          userId: 0,
+          key: 'application_settings',
+          oldValue: 'previous',
+          newValue: settings.state,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log settings update', err));
 
       return {
         status: 200,

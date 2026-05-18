@@ -14,6 +14,7 @@ import { CoursesModule } from './modules/courses.module';
 import { DatabaseModule } from './modules/database.module';
 import { MailerService } from './services/mailer.service';
 import { MailerController } from './controllers/mailer.controller';
+import { LogsModule } from './modules/logs.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MailerController } from './controllers/mailer.controller';
     AppointmentsModule,
     SchoolsModule,
     CoursesModule,
+    LogsModule,
   ],
   controllers: [AppController, DashboardController, MailerController],
   providers: [AppService, DashboardService, JwtService, MailerService],

@@ -3,6 +3,7 @@ import type { Account, AccountCreate, SuccessResponse } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { LogsService } from './logs.service';
 
 @Injectable()
 export class AccountsService {
@@ -13,6 +14,7 @@ export class AccountsService {
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
     private readonly databaseService: DatabaseService,
+    private readonly logsService: LogsService,
   ) {}
 
   async createAccount(account: AccountCreate): Promise<SuccessResponse> {
@@ -41,7 +43,18 @@ export class AccountsService {
         ],
       );
 
-      return SuccessHandler('Successfully created account', res.rows[0]);
+      const newAccount = res.rows[0];
+
+      // Log user creation
+      await this.logsService
+        .logUserCreated({
+          userId: newAccount.id,
+          details: `Account created for ${account.email} with type ${account.account_type}`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log user creation', err));
+
+      return SuccessHandler('Successfully created account', newAccount);
     } catch (error) {
       console.error('[ACCOUNTS] Error creating account:', error);
       throwAppError('server_error', 'Failed to create user account');
@@ -97,6 +110,25 @@ export class AccountsService {
           `,
           [newType, id],
         );
+      }
+
+      // Log user update
+      const changes: string[] = [];
+      if (newUser)
+        changes.push(`username: ${exists.rows[0].username} -> ${newUser}`);
+      if (newType)
+        changes.push(
+          `account_type: ${exists.rows[0].account_type} -> ${newType}`,
+        );
+
+      if (changes.length > 0) {
+        await this.logsService
+          .logUserUpdated({
+            userId: id,
+            changes: changes.join(', '),
+            ipAddress: undefined,
+          })
+          .catch((err) => console.error('Failed to log user update', err));
       }
 
       return SuccessHandler('Successfully updated account');
@@ -202,6 +234,15 @@ export class AccountsService {
         [id],
       );
 
+      // Log user deletion
+      await this.logsService
+        .logUserDeleted({
+          userId: id,
+          details: `User account deleted`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log user deletion', err));
+
       return SuccessHandler('Successfully deactivated account', res || null);
     } catch (error) {
       console.error('[ACCOUNTS] Error deactivating account:', error);
@@ -244,6 +285,15 @@ export class AccountsService {
         [id],
       );
 
+      // Log account lock
+      await this.logsService
+        .logAccountLock({
+          userId: id,
+          reason: 'Account disabled',
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log account lock', err));
+
       return SuccessHandler('Successfully deactivated account', res || null);
     } catch (error) {
       console.error('[ACCOUNTS] Error deactivating account:', error);
@@ -275,6 +325,15 @@ export class AccountsService {
         `,
         [newHash, id],
       );
+
+      // Log password reset
+      await this.logsService
+        .logPasswordReset({
+          userId: id,
+          method: 'admin_reset',
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log password reset', err));
 
       return SuccessHandler('Successfully updated user account', res || null);
     } catch (error) {

@@ -66,13 +66,4 @@ export async function createLogs(client: Pool) {
       // Index may already exist, ignore error
     });
 
-  await client
-    .query(
-      `
-        CREATE INDEX IF NOT EXISTS idx_logs_target_type ON logs(target_type, target_id);
-      `,
-    )
-    .catch(() => {
-      // Index may already exist, ignore error
-    });
 }

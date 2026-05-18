@@ -1,54 +1,74 @@
-import { Injectable } from "@nestjs/common";
-import { DatabaseService } from "./database/database.service";
-import { Schools } from "../data/types";
+import { Injectable } from '@nestjs/common';
+import { DatabaseService } from './database/database.service';
+import { Schools } from '../data/types';
+import { LogsService } from './logs.service';
 
 @Injectable()
 export class SchoolService {
-    constructor(private readonly databaseService: DatabaseService) {}
-    async getAllSchools(count: number) {
-        const client = this.databaseService.getClient();
-        try {
-            if (count < 1) return null;
-            
-            const res = await client.query<Schools>(`
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly logsService: LogsService,
+  ) {}
+  async getAllSchools(count: number) {
+    const client = this.databaseService.getClient();
+    try {
+      if (count < 1) return null;
+
+      const res = await client.query<Schools>(
+        `
                 SELECT * FROM schools LIMIT $1
-            `, [count]);
+            `,
+        [count],
+      );
 
-            return {
-                ok: true,
-                message: 'School data fetched successfully',
-                data: res.rows || []
-            };
-        } catch (error: unknown) {
-            return {
-                error,
-                message: 'Failed to fetch School Data',
-                ok: false,
-            };
-        }
+      return {
+        ok: true,
+        message: 'School data fetched successfully',
+        data: res.rows || [],
+      };
+    } catch (error: unknown) {
+      return {
+        error,
+        message: 'Failed to fetch School Data',
+        ok: false,
+      };
     }
+  }
 
-    async insertSchool(school: string) {
-        const client = this.databaseService.getClient();
-        try {
-            if (!school) return null;
+  async insertSchool(school: string) {
+    const client = this.databaseService.getClient();
+    try {
+      if (!school) return null;
 
-            const inser = await client.query(`
+      const inser = await client.query(
+        `
                 INSERT INTO schools (school_name)
                 VALUES ($1)
                 RETURN *
-            `, [school]);
+            `,
+        [school],
+      );
 
-            return {
-                ok: true,
-                message: 'School has been inserted'
-            }
-        } catch (error: unknown) {
-            return {
-              error,
-              message: 'Failed to insert School Data',
-              ok: false,
-            };
-        }
+      // Log school insertion (system operation)
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'School Created',
+          details: `School '${school}' has been inserted`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log school creation', err));
+
+      return {
+        ok: true,
+        message: 'School has been inserted',
+      };
+    } catch (error: unknown) {
+      return {
+        error,
+        message: 'Failed to insert School Data',
+        ok: false,
+      };
     }
+  }
 }

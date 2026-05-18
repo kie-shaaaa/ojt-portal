@@ -16,6 +16,7 @@ import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
 import { MailerService } from './mailer.service';
+import { LogsService } from './logs.service';
 
 @Injectable()
 export class ApplicationsService {
@@ -23,6 +24,7 @@ export class ApplicationsService {
     private readonly databaseService: DatabaseService,
     private readonly fileUploadsService: FileUploadsService,
     private readonly mailerService: MailerService,
+    private readonly logsService: LogsService,
   ) {}
 
   async submitApplication(
@@ -96,6 +98,18 @@ export class ApplicationsService {
         await this.mailerService.confirmationEmail(confirmationDto);
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
+
+      // Log application submission (system operation)
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'Application Submitted',
+          details: `Application submitted by ${data.email} (${data.application_type})`,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log application submission', err),
+        );
 
       return {
         ok: true,
@@ -337,6 +351,7 @@ export class ApplicationsService {
     acceptedTime?: string,
     interviewLocation?: string,
     adminNote?: string,
+    userId?: number,
   ): Promise<GetApplicationStatusResponse> {
     const client = this.databaseService.getClient();
 
@@ -372,6 +387,31 @@ export class ApplicationsService {
 
       if (!application) {
         throw new Error('Application not found');
+      }
+
+      // Log application status change
+      const oldStatus = data.status;
+      const newStatus = status;
+      await this.logsService
+        .logApplicationStatusChange({
+          userId: userId,
+          oldStatus: oldStatus,
+          newStatus: newStatus,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log application status change', err),
+        );
+
+      // Log admin notes if provided
+      if (adminNote) {
+        await this.logsService
+          .logAdminNotesAdded({
+            userId: userId,
+            notes: adminNote,
+            ipAddress: undefined,
+          })
+          .catch((err) => console.error('Failed to log admin notes', err));
       }
 
       if (status === 'pending accept') {

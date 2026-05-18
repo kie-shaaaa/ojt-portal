@@ -7,10 +7,14 @@ import {
 import { DatabaseService } from './database/database.service';
 import { AllOjt } from '../data/types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { LogsService } from './logs.service';
 
 @Injectable()
 export class OjtService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly logsService: LogsService,
+  ) {}
 
   async getOjt(count: number) {
     const client = this.databaseService.getClient();
@@ -89,6 +93,17 @@ export class OjtService {
           'Failed to transfer application to OJT',
         );
       }
+
+      // Log application transfer to OJT (system operation)
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'Application Transferred to OJT',
+          details: `Application ${applcationId} transferred to OJT by ${applicationData.rows[0].first_name} ${applicationData.rows[0].last_name}`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log OJT transfer', err));
+
       return {
         success: true,
         ok: true,
@@ -121,6 +136,16 @@ export class OjtService {
         `,
         [id],
       );
+
+      // Log OJT deletion (system operation)
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'OJT Record Deleted',
+          details: `OJT record ${id} has been deleted`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log OJT deletion', err));
 
       return SuccessHandler('Successfully deleted user', res.rows[0]);
     } catch (error) {

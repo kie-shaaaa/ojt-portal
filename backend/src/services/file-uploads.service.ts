@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseStorage } from './supabase-storage.service';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { DatabaseService } from './database/database.service';
+import { LogsService } from './logs.service';
 
 export interface FileUploadData {
   application_id: number;
@@ -39,6 +40,7 @@ export class FileUploadsService {
   constructor(
     private readonly supabaseService: SupabaseStorage,
     private readonly dbService: DatabaseService,
+    private readonly logsService: LogsService,
   ) {}
 
   /**
@@ -105,6 +107,17 @@ export class FileUploadsService {
       });
 
       this.logger.log(`File saved to database: ID ${result.id}`);
+
+      // Log file upload (system operation)
+      await this.logsService
+        .logFileUploaded({
+          userId: 0,
+          filename: file.originalname,
+          size: file.size,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log file upload', err));
+
       return result;
     } catch (error) {
       await this.supabaseService
@@ -215,6 +228,15 @@ export class FileUploadsService {
       await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [fileId]);
 
       this.logger.log(`File deleted: ${filePath}`);
+
+      // Log file deletion (system operation)
+      await this.logsService
+        .logFileDeleted({
+          userId: 0,
+          filename: filePath,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log file deletion', err));
     } catch (error) {
       this.logger.error(`File deletion failed: ${error}`, error);
       throw error;
