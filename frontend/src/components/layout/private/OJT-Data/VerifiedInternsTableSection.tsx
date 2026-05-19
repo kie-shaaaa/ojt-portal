@@ -4,7 +4,8 @@ import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useMemo, useState } from "react";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 
@@ -115,52 +116,59 @@ export const VerifiedInternsTableSection = ({
     }
   };
 
-  const exportToExcel = (dataToExport: Intern[]) => {
-    const excelData = dataToExport.map((intern) => ({
-      "OJT ID": getOjtId(intern),
-      "Intern Name": getInternName(intern),
-      Gender: intern.gender || "Not set",
-      School: intern.school_name || "Not set",
-      "OJT Details": intern.course || "—",
-      "Deployment Date": formatDate(intern.deployment_date),
-      "End Date": formatDate(intern.end_date),
-      Email: intern.email,
-      Status: intern.original_status || "Not set",
-      "Verified Date": formatDate(intern.confirmed_at),
-    }));
+  const exportToExcel = async (dataToExport: Intern[]) => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Verified Interns");
 
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-    const colWidths = [
-      { wch: 15 },
-      { wch: 25 },
-      { wch: 10 },
-      { wch: 35 },
-      { wch: 30 },
-      { wch: 18 },
-      { wch: 15 },
-      { wch: 30 },
-      { wch: 12 },
-      { wch: 18 },
+    worksheet.columns = [
+      { header: "OJT ID", key: "ojtId", width: 15 },
+      { header: "Intern Name", key: "name", width: 25 },
+      { header: "Gender", key: "gender", width: 10 },
+      { header: "School", key: "school", width: 35 },
+      { header: "OJT Details", key: "details", width: 30 },
+      { header: "Deployment Date", key: "start", width: 18 },
+      { header: "End Date", key: "end", width: 15 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Status", key: "status", width: 12 },
+      { header: "Verified Date", key: "verified", width: 18 },
     ];
-    worksheet["!cols"] = colWidths;
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Verified Interns");
+    dataToExport.forEach((intern) => {
+      worksheet.addRow({
+        ojtId: getOjtId(intern),
+        name: getInternName(intern),
+        gender: intern.gender || "Not set",
+        school: intern.school_name || "Not set",
+        details: intern.course || "—",
+        start: formatDate(intern.deployment_date),
+        end: formatDate(intern.end_date),
+        email: intern.email,
+        status: intern.original_status || "Not set",
+        verified: formatDate(intern.confirmed_at),
+      });
+    });
 
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const fileName = `verified_interns_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-    XLSX.writeFile(workbook, fileName);
+    saveAs(blob, fileName);
   };
 
-  const handleExportExcel = () => {
-    if (selectedInterns.length > 0) {
-      const selectedData = rows.filter((intern) =>
-        selectedInterns.includes(intern.id),
-      );
-      exportToExcel(selectedData);
-    } else {
-      exportToExcel(rows);
+  const handleExportExcel = async () => {
+    try {
+      if (selectedInterns.length > 0) {
+        const selectedData = rows.filter((intern) =>
+          selectedInterns.includes(intern.id),
+        );
+        await exportToExcel(selectedData);
+      } else {
+        await exportToExcel(rows);
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to export Excel:", err);
     }
   };
 
