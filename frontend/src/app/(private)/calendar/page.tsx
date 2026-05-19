@@ -149,8 +149,6 @@ export default function Page() {
         },
       )) as AppointmentRow[];
 
-      console.log(response)
-
       setAppointments(await hydrateAppointments(response));
     } catch (error) {
       console.error("Failed to fetch appointments", error);
@@ -169,8 +167,6 @@ export default function Page() {
             method: "GET",
           },
         )) as AppointmentRow[];
-
-        console.log(response)
 
         if (!isActive) {
           return;

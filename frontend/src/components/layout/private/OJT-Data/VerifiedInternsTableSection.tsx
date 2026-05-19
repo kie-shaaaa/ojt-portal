@@ -181,7 +181,6 @@ export const VerifiedInternsTableSection = ({
       endDate: intern.end_date || undefined,
     };
 
-    console.log("Opening inline modal for:", modalData.name);
     if (onViewDetails) {
       onViewDetails(modalData);
     } else {
@@ -527,7 +526,7 @@ export const VerifiedInternsTableSection = ({
         <InternDetailsModal
           intern={viewingIntern}
           onClose={() => {
-            console.log("Closing inline modal");
+            ("Closing inline modal");
             setViewingIntern(null);
           }}
         />
@@ -607,7 +606,6 @@ export const VerifiedInternsTableSection = ({
                 ojt_id: computeNewOjtId(getOjtId(editingIntern), payload),
               },
             }));
-            console.log("Saved intern details:", payload);
             setEditingIntern(null);
           }}
         />

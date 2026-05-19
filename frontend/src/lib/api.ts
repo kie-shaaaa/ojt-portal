@@ -18,7 +18,7 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  // console.log("Token", token);
+  // ("Token", token);
 
   const { body, method, ...rest } = options;
 
@@ -47,11 +47,6 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   } catch {
     data = null;
   }
-
-  // DEBUG only 
-  console.log("Data", data);
-  console.log("Response", response);
-
   // Temporary, removed to avoid unauthorized status completely deleting sessions
   // if (response.status === 401) {
   //   localStorage.removeItem("access_token");
