@@ -29,7 +29,7 @@ export class ApplicationsService {
 
   async submitApplication(
     application: CreateApplicationDto,
-  ): Promise<SubmitApplicationResponse> {
+  ): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
     try {
       const exists = await client.query(
@@ -111,11 +111,7 @@ export class ApplicationsService {
           console.error('Failed to log application submission', err),
         );
 
-      return {
-        ok: true,
-        message: 'Application submitted successfully',
-        data: res.rows[0],
-      };
+      return SuccessHandler('Application submitted successfully', res.rows[0]);
     } catch (error) {
       console.error('[APPLICATION] Error submitting application', error);
       throwAppError('server_error', 'Server error, try again later');
@@ -125,7 +121,7 @@ export class ApplicationsService {
   async submitApplicationWithFiles(
     application: CreateApplicationDto,
     files: UploadedFile[] = [],
-  ): Promise<SubmitApplicationResponse> {
+  ): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
     const exists = await client.query(
       'SELECT id FROM applications WHERE email = $1',
@@ -203,11 +199,22 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      return {
-        ok: true,
-        message: 'Application submitted successfully',
-        data: createdApplication,
-      };
+      // Log application submission (system operation)
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'Application Submitted with Files',
+          details: `Application submitted with ${files.length} file(s) by ${data.email} (${data.application_type})`,
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log application submission', err),
+        );
+
+      return SuccessHandler(
+        'Application submitted successfully',
+        createdApplication,
+      );
     } catch (error) {
       await Promise.all(
         uploadedFileIds.map((fileId) =>
@@ -234,52 +241,65 @@ export class ApplicationsService {
     }
   }
 
-  async getApplications(count: number): Promise<GetApplicationsResponse> {
+  async getApplications(count: number): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
-    if (count < 1) {
-      return null;
-    }
+    try {
+      if (count < 1) throwAppError('bad_request', 'Count must be at least 1');
 
-    const res = await client.query<Application>(
-      `
+      const res = await client.query<Application>(
+        `
       SELECT * FROM applications LIMIT $1
       `,
-      [count],
-    );
+        [count],
+      );
 
-    return res.rows || [];
+      return SuccessHandler(
+        'Applications fetched successfully',
+        res.rows || [],
+      );
+    } catch (error) {
+      console.error('[APPLICATIONS] Error fetching applications:', error);
+      throwAppError('server_error', 'Failed to fetch applications');
+    }
   }
 
   async getApplicationByIdOrEmail(
     id?: number,
     email?: string,
-  ): Promise<GetApplicationResponse> {
+  ): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
-
-    // If both id and email are provided, perform a strict match (id AND email).
-    // This enforces proper verification when callers supply both fields.
-    if (id && email) {
-      const res = await client.query<Application>(
-        `
+    try {
+      // If both id and email are provided, perform a strict match (id AND email).
+      // This enforces proper verification when callers supply both fields.
+      if (id && email) {
+        const res = await client.query<Application>(
+          `
         SELECT * FROM applications
         WHERE id = $1 AND LOWER(email) = LOWER($2)
         `,
-        [id, email],
-      );
+          [id, email],
+        );
 
-      return res.rows || [];
-    }
+        return SuccessHandler(
+          'Application fetched successfully',
+          res.rows || [],
+        );
+      }
 
-    // Fallback: if one of the params is missing, preserve existing behavior (OR match)
-    const res = await client.query<Application>(
-      `
+      // Fallback: if one of the params is missing, preserve existing behavior (OR match)
+      const res = await client.query<Application>(
+        `
       SELECT * FROM applications
       WHERE email = $1 OR id = $2
       `,
-      [email || '', id || null],
-    );
+        [email || '', id || null],
+      );
 
-    return res.rows || [];
+      return SuccessHandler('Application fetched successfully', res.rows || []);
+    } catch (error) {
+      console.error('[APPLICATIONS] Error fetching application:', error);
+      throwAppError('server_error', 'Failed to fetch application');
+    }
   }
 
   async getApplicationByStatus(
@@ -347,11 +367,14 @@ export class ApplicationsService {
       `,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return settings.rows[0] || null;
+      if (!settings.rows[0]) {
+        throwAppError('not_found', 'No application settings found');
+      }
+
+      return SuccessHandler('Settings fetched successfully', settings.rows[0]);
     } catch (error) {
-      console.log(`[APPLICATION | SETTINGS] error fetching settings`, error);
-      throwAppError('server_error', 'Error fetching settings');
+      console.error('[APPLICATIONS] Error fetching settings:', error);
+      throwAppError('server_error', 'Failed to fetch settings');
     }
   }
 
@@ -365,7 +388,7 @@ export class ApplicationsService {
     interviewLocation?: string,
     adminNote?: string,
     userId?: number,
-  ): Promise<GetApplicationStatusResponse> {
+  ): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
 
     try {
@@ -378,7 +401,7 @@ export class ApplicationsService {
       );
 
       if (exists.rowCount === 0) {
-        throwAppError('not_found', 'User account does not exist');
+        throwAppError('not_found', 'Application not found');
       }
 
       const data = exists.rows[0];
@@ -516,12 +539,14 @@ export class ApplicationsService {
 
       await client.query('COMMIT');
 
-      return application;
+      return SuccessHandler(
+        'Application status updated successfully',
+        application,
+      );
     } catch (error) {
-      await client.query('ROLLBACK');
-
-      console.log(`[APPLICATION | SETTINGS] error updating status`, error);
-      throwAppError('server_error', 'Error updating status');
+      await client.query('ROLLBACK').catch(() => undefined);
+      console.error('[APPLICATIONS] Error updating status:', error);
+      throwAppError('server_error', 'Failed to update application status');
     }
   }
 
@@ -551,7 +576,7 @@ export class ApplicationsService {
       );
 
       if (exists.rowCount === 0) {
-        throwAppError('not_found', 'User account does not exist');
+        throwAppError('not_found', 'Application not found');
       }
 
       const data = exists.rows[0];
@@ -582,11 +607,11 @@ export class ApplicationsService {
 
       await client.query('COMMIT');
 
-      return SuccessHandler('Successfully deleted user', res.rows[0]);
+      return SuccessHandler('Application deleted successfully', res.rows[0]);
     } catch (error) {
-      await client.query('ROLLBACK');
-      console.log(`[APPLICATION] error deleting application`, error);
-      throwAppError('server_error', 'Error fetching settings');
+      await client.query('ROLLBACK').catch(() => undefined);
+      console.error('[APPLICATIONS] Error deleting application:', error);
+      throwAppError('server_error', 'Failed to delete application');
     }
   }
 }

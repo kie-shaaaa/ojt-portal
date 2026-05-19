@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { LogsService } from './logs.service';
 import type {
@@ -11,6 +6,7 @@ import type {
   DashboardData,
   DashboardSeriesPoint,
 } from '../data/types';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 type DashboardSummaryRow = {
   totalApplications: number;
@@ -124,11 +120,11 @@ export class DashboardService {
       };
     } catch (error) {
       console.error('[DASHBOARD] Error fetching dashboard data:', error);
-      throw new InternalServerErrorException('Failed to fetch dashboard data');
+      throwAppError('server_error', 'Failed to fetch dashboard data');
     }
   }
 
-  async updateApplicationSettings(@Body() settings: ApplicationSettings) {
+  async updateApplicationSettings(settings: ApplicationSettings) {
     const client = this.databaseService.getClient();
     try {
       const update = await client.query(
@@ -140,7 +136,7 @@ export class DashboardService {
       );
 
       if (update.rowCount === 0) {
-        throw new BadRequestException('Application settings not found');
+        throwAppError('not_found', 'Application settings not found');
       }
 
       // Log settings update (system operation)
@@ -154,22 +150,10 @@ export class DashboardService {
         })
         .catch((err) => console.error('Failed to log settings update', err));
 
-      return {
-        status: 200,
-        message: 'Settings updated successfully',
-        ok: true,
-        error: null,
-        data: [],
-      };
+      return SuccessHandler('Settings updated successfully', update.rows[0]);
     } catch (error) {
       console.error('[DASHBOARD] Error updating application settings:', error);
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-      throw new InternalServerErrorException('Failed to create user account');
+      throwAppError('server_error', 'Failed to update application settings');
     }
   }
 }
