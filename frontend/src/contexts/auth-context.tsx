@@ -22,7 +22,11 @@ export interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  login: (username: string, password: string, rememberMe: boolean) => Promise<void>;
+  login: (
+    username: string,
+    password: string,
+    rememberMe: boolean,
+  ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -67,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         const storage = rememberMe ? localStorage : sessionStorage;
-        console.log(data)
+        data;
 
         if (data.access_token) {
           storage.setItem("access_token", data.access_token);
