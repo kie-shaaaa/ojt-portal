@@ -48,7 +48,7 @@ export class ApplicationsController {
   @Get('fetch-all')
   async getApplications(
     @Query('count') count?: string,
-  ): Promise<GetApplicationsResponse> {
+  ): Promise<SuccessResponse> {
     try {
       return await this.applicationService.getApplications(Number(count) || 0);
     } catch (error) {
@@ -67,7 +67,7 @@ export class ApplicationsController {
   async getApplicationByIdOrEmail(
     @Query('id') id?: string,
     @Query('email') email?: string,
-  ): Promise<GetApplicationResponse> {
+  ): Promise<SuccessResponse> {
     try {
       return await this.applicationService.getApplicationByIdOrEmail(
         Number(id),
@@ -124,8 +124,14 @@ export class ApplicationsController {
    */
   @Get('settings')
   async getSettings() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return this.applicationService.getSettings();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return this.applicationService.getSettings();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch settings';
+      throw new BadRequestException(message);
+    }
   }
 
   /**
@@ -135,7 +141,13 @@ export class ApplicationsController {
   async updateApplicationSettings(
     @Body() updateSettings: UpdateApplicationSettingsDto,
   ) {
-    return this.applicationService.updateApplicationSettings(updateSettings);
+    try {
+      return this.applicationService.updateApplicationSettings(updateSettings);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update settings';
+      throw new BadRequestException(message);
+    }
   }
 
   /**
@@ -148,7 +160,7 @@ export class ApplicationsController {
   @Post('submit')
   async submitApplication(
     @Req() request: FastifyRequest,
-  ): Promise<SubmitApplicationResponse> {
+  ): Promise<SuccessResponse> {
     try {
       const contentType = String(request.headers['content-type'] ?? '');
 
@@ -349,18 +361,24 @@ export class ApplicationsController {
     @Body() body: UpdateApplicationDto,
     @Req() req: FastifyRequest & { user?: any },
   ) {
-    const userId = req.user?.id;
-    return this.applicationService.updateApplicationStatus(
-      body.id,
-      body.status,
-      body.interviewDate,
-      body.interviewTime,
-      body.acceptedDate,
-      body.acceptedTime,
-      body.interviewLocation,
-      body.adminNote,
-      userId,
-    );
+    try {
+      const userId = req.user?.id;
+      return this.applicationService.updateApplicationStatus(
+        body.id,
+        body.status,
+        body.interviewDate,
+        body.interviewTime,
+        body.acceptedDate,
+        body.acceptedTime,
+        body.interviewLocation,
+        body.adminNote,
+        userId,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update application';
+      throw new BadRequestException(message);
+    }
   }
 
   /**
@@ -383,7 +401,13 @@ export class ApplicationsController {
 
   @Delete('delete')
   async deleteApplication(@Body() id: number): Promise<SuccessResponse> {
-    return await this.applicationService.deleteApplication(id);
+    try {
+      return await this.applicationService.deleteApplication(id);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete application';
+      throw new BadRequestException(message);
+    }
   }
 
   /**

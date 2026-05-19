@@ -25,6 +25,8 @@ type AppointmentRow = {
   application_deployment_date?: string | null;
 };
 
+type CalendarAppointmentsResponse = AppointmentRow[] | { data?: unknown };
+
 const formatDateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
@@ -89,7 +91,13 @@ const mapAppointmentRowToCalendarAppointment = (
   };
 };
 
-const hydrateAppointments = async (rows: AppointmentRow[]) => {
+const hydrateAppointments = async (response: CalendarAppointmentsResponse) => {
+  const rows = Array.isArray(response)
+    ? response
+    : Array.isArray(response?.data)
+      ? (response.data as AppointmentRow[])
+      : [];
+
   const appointments = rows
     .map((row) => mapAppointmentRowToCalendarAppointment(row))
     .filter(
@@ -147,7 +155,7 @@ export default function Page() {
         {
           method: "GET",
         },
-      )) as AppointmentRow[];
+      )) as CalendarAppointmentsResponse;
 
       setAppointments(await hydrateAppointments(response));
     } catch (error) {
@@ -166,7 +174,7 @@ export default function Page() {
           {
             method: "GET",
           },
-        )) as AppointmentRow[];
+        )) as CalendarAppointmentsResponse;
 
         if (!isActive) {
           return;

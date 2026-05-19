@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { SchoolService } from '../services/schools.service';
 
 @Controller('schools')
@@ -7,12 +14,24 @@ export class SchoolsController {
 
   @Get('fetch-all')
   async getAllSchools(@Query('count') count: string) {
-    const limit = parseInt(count, 10) || 10;
-    return await this.schoolService.getAllSchools(limit);
+    try {
+      const limit = parseInt(count, 10) || 10;
+      return await this.schoolService.getAllSchools(limit);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch schools';
+      throw new BadRequestException(message);
+    }
   }
 
   @Post('insert-school')
   async insertSchool(@Body('school') school: string) {
-    return await this.schoolService.insertSchool(school);
+    try {
+      return await this.schoolService.insertSchool(school);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to insert school';
+      throw new BadRequestException(message);
+    }
   }
 }

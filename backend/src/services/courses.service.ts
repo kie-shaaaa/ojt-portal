@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { Courses } from '../data/types';
 import { LogsService } from './logs.service';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class CourseService {
@@ -12,7 +13,7 @@ export class CourseService {
   async getAllCourses(count: number) {
     const client = this.databaseService.getClient();
     try {
-      if (count < 1) return null;
+      if (count < 1) throwAppError('bad_request', 'Count must be at least 1');
 
       const res = await client.query<Courses>(
         `
@@ -21,33 +22,29 @@ export class CourseService {
         [count],
       );
 
-      return {
-        ok: true,
-        message: 'Courses data fetched successfully',
-        data: res.rows || [],
-      };
-    } catch (error: unknown) {
-      return {
-        error,
-        message: 'Failed to fetch Courses Data',
-        ok: false,
-      };
+      return SuccessHandler('Courses fetched successfully', res.rows || []);
+    } catch (error) {
+      console.error('[COURSES] Error fetching courses:', error);
+      throwAppError('server_error', 'Failed to fetch courses');
     }
   }
 
   async insertCourse(course: string) {
     const client = this.databaseService.getClient();
     try {
-      if (!course) return null;
+      if (!course) throwAppError('bad_request', 'Course name is required');
 
-      const inser = await client.query(
+      const res = await client.query(
         `
                 INSERT INTO courses (course_name)
                 VALUES ($1)
-                RETURN *
+                RETURNING *
             `,
         [course],
       );
+
+      if (res.rowCount === 0)
+        throwAppError('server_error', 'Failed to insert course');
 
       // Log course insertion (system operation)
       await this.logsService
@@ -59,16 +56,10 @@ export class CourseService {
         })
         .catch((err) => console.error('Failed to log course creation', err));
 
-      return {
-        ok: true,
-        message: 'Course has been inserted',
-      };
-    } catch (error: unknown) {
-      return {
-        error,
-        message: 'Failed to insert Course Data',
-        ok: false,
-      };
+      return SuccessHandler('Course inserted successfully', res.rows[0]);
+    } catch (error) {
+      console.error('[COURSES] Error inserting course:', error);
+      throwAppError('server_error', 'Failed to insert course');
     }
   }
 }

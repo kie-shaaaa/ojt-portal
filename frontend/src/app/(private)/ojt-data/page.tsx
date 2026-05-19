@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { apiCall } from "../../../lib/api";
 import { FilterInternsSection } from "../../../components/layout/private/OJT-Data/FilterInternSection";
 import { InternStatsOverviewSection } from "../../../components/layout/private/OJT-Data/InternStatsOverviewSection";
@@ -42,6 +43,8 @@ export default function OJTDataPage() {
   const [modalIntern, setModalIntern] = useState<ModalInternData | null>(null);
   const [interns, setInterns] = useState<CompletedInternRecord[]>([]);
   const [schoolOptions, setSchoolOptions] = useState<string[]>(["All Schools"]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [filters, setFilters] = useState<{
     school: string;
     sortByDate: "Newest First" | "Oldest First";
@@ -54,7 +57,9 @@ export default function OJTDataPage() {
   useEffect(() => {
     const fetchInterns = async () => {
       try {
-        const response = await apiCall("/ojt/fetch-all?count=1000");
+        const response = await apiCall(
+          `/ojt/fetch-all?count=${itemsPerPage}&page=${currentPage}`,
+        );
         // Handle wrapped response
         let interns: CompletedInternRecord[] = [];
         if (Array.isArray(response)) {
@@ -71,13 +76,13 @@ export default function OJTDataPage() {
     };
 
     fetchInterns();
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   // Fetch schools from API
   useEffect(() => {
     const fetchSchools = async () => {
       try {
-        const response = await apiCall("/schools/fetch-all?count=1000");
+        const response = await apiCall("/schools/fetch-all?count=1000&page=1");
         let schools: any[] = [];
         // Handle wrapped response
         if (Array.isArray(response)) {
@@ -208,6 +213,8 @@ export default function OJTDataPage() {
         : 0,
   };
 
+  const totalPages = Math.ceil((interns.length || 0) / itemsPerPage) || 1;
+
   return (
     <>
       <main
@@ -238,6 +245,37 @@ export default function OJTDataPage() {
               setShowModal(true);
             }}
           />
+        </section>
+        <section
+          className="flex w-full items-center justify-between gap-6"
+          aria-label="Pagination controls"
+        >
+          <div>
+            <p className="text-sm font-medium text-slate-500">
+              Page: {currentPage} of {totalPages || 1}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="px-3 py-2 text-sm font-semibold text-slate-600">
+              {currentPage} / {totalPages || 1}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+              aria-label="Next page"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </section>
       </main>
       {showModal && (

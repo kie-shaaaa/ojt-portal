@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { AllOjt } from '../data/types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
@@ -16,29 +12,31 @@ export class OjtService {
     private readonly logsService: LogsService,
   ) {}
 
-  async getOjt(count: number) {
+  async getOjt(count: number, page: number) {
     const client = this.databaseService.getClient();
     try {
-      if (count < 1) return null;
+      // Validate and convert parameters to ensure they're valid numbers
+      const validCount = Number(count);
+      const validPage = Number(page);
+
+      if (isNaN(validCount) || validCount < 1)
+        throwAppError('bad_request', 'Count must be a positive number');
+      if (isNaN(validPage) || validPage < 1)
+        throwAppError('bad_request', 'Page must be a positive number');
+
+      const offset = (validPage - 1) * validCount;
 
       const res = await client.query<AllOjt>(
         `
-                SELECT * FROM ojt_data LIMIT $1
-            `,
-        [count],
+          SELECT * FROM ojt_data LIMIT $1 OFFSET $2
+        `,
+        [validCount, offset],
       );
 
-      return {
-        ok: true,
-        message: 'OJT data fetched successfully',
-        data: res.rows || [],
-      };
-    } catch (error: unknown) {
-      return {
-        error,
-        message: 'Failed to fetch OJT data',
-        ok: false,
-      };
+      return SuccessHandler('OJT data fetched successfully', res.rows || []);
+    } catch (error) {
+      console.error('[OJT] Error fetching OJT data:', error);
+      throwAppError('server_error', 'Failed to fetch OJT data');
     }
   }
 
@@ -53,7 +51,7 @@ export class OjtService {
       );
 
       if (applicationData.rows.length === 0) {
-        throw new BadRequestException('Application not found');
+        throwAppError('not_found', 'Application not found');
       }
 
       const ojtData: any = await client.query(
@@ -89,9 +87,7 @@ export class OjtService {
       );
 
       if (ojtData.rows.length === 0) {
-        throw new InternalServerErrorException(
-          'Failed to transfer application to OJT',
-        );
+        throwAppError('server_error', 'Failed to transfer application to OJT');
       }
 
       // Log application transfer to OJT (system operation)
@@ -104,24 +100,13 @@ export class OjtService {
         })
         .catch((err) => console.error('Failed to log OJT transfer', err));
 
-      return {
-        success: true,
-        ok: true,
-        data: null,
-        message: 'Application transferred to OJT successfully',
-        error: null,
-      };
+      return SuccessHandler(
+        'Application transferred to OJT successfully',
+        ojtData.rows[0],
+      );
     } catch (error) {
-      console.error('[APPOINTMENT] Error fetching accounts:', error);
-
-      if (
-        error instanceof Error &&
-        error.message.includes('User already exists')
-      ) {
-        throw new BadRequestException('User with this email already exists');
-      }
-
-      throw new InternalServerErrorException('Failed to fetch user accounts');
+      console.error('[OJT] Error transferring application:', error);
+      throwAppError('server_error', 'Failed to transfer application to OJT');
     }
   }
 
@@ -133,9 +118,14 @@ export class OjtService {
         `
         DELETE FROM applications
         WHERE id = $1
+        RETURNING *
         `,
         [id],
       );
+
+      if (res.rowCount === 0) {
+        throwAppError('not_found', 'OJT record not found');
+      }
 
       // Log OJT deletion (system operation)
       await this.logsService
@@ -147,10 +137,10 @@ export class OjtService {
         })
         .catch((err) => console.error('Failed to log OJT deletion', err));
 
-      return SuccessHandler('Successfully deleted user', res.rows[0]);
+      return SuccessHandler('OJT record deleted successfully', res.rows[0]);
     } catch (error) {
-      console.log(`[APPLICATION] error deleting application`, error);
-      throwAppError('server_error', 'Error fetching settings');
+      console.error('[OJT] Error deleting OJT record:', error);
+      throwAppError('server_error', 'Failed to delete OJT record');
     }
   }
 }
