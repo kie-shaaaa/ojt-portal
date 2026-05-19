@@ -1,8 +1,10 @@
 "use client";
 
 import { X, Eye, FileText, Download, Maximize2 } from "lucide-react";
-import { JSX, memo, useEffect, useMemo, useState } from "react";
+import { JSX, memo, useEffect, useMemo, useState, useCallback } from "react";
 import { useApplicationFiles } from "@/hooks/useApplicationFiles";
+
+import { useEscapeKey } from "@/hooks/useDismissableEvents";
 
 type DetailRow = {
   label: string;
@@ -46,9 +48,12 @@ const formatFileSize = (bytes: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
+const rejectFile = async () => {};
+
 const FileCard = memo(
   ({
     file,
+    onPreview,
   }: {
     file: {
       id: number;
@@ -62,6 +67,7 @@ const FileCard = memo(
       uploaded_at: string;
       signedUrl: string;
     };
+    onPreview?: (url: string) => void;
   }): JSX.Element => {
     const { file_name, file_size, file_extension, signedUrl, document_key } =
       file;
@@ -77,7 +83,12 @@ const FileCard = memo(
     };
 
     const handlePreview = () => {
-      window.open(signedUrl, "_blank");
+      if (onPreview) return onPreview(signedUrl);
+      const w = window.open(signedUrl, "_blank");
+      if (w)
+        try {
+          w.opener = null;
+        } catch {}
     };
 
     return (
@@ -96,6 +107,15 @@ const FileCard = memo(
         </div>
 
         <div className="flex items-center gap-2 justify-self-end">
+          <button
+            type="button"
+            onClick={rejectFile}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
+            title="Reject File"
+          >
+            <X size={14} />
+            <span className="sr-only">Reject File</span>
+          </button>
           <button
             type="button"
             onClick={handlePreview}
@@ -145,21 +165,18 @@ const CompiledFilesModal = memo(
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-      requestAnimationFrame(() => setIsVisible(true));
-
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
-      };
-      window.addEventListener("keydown", onKey);
+      const animationFrameId = requestAnimationFrame(() => setIsVisible(true));
 
       return () => {
-        window.removeEventListener("keydown", onKey);
+        cancelAnimationFrame(animationFrameId);
       };
-    }, [onClose]);
+    }, []);
+
+    useEscapeKey(onClose);
 
     return (
       <div
-        className={`fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 p-4 transition-opacity duration-150 ease-out ${
+        className={`fixed inset-0 z-100000 flex items-center justify-center bg-black/60 p-4 transition-opacity duration-150 ease-out ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
         onClick={() => onClose()}
@@ -219,22 +236,32 @@ const CompiledFilesModal = memo(
                             {file.file_extension.toUpperCase()}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = file.signedUrl;
-                            link.download = file.file_name;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-50 px-3 text-xs font-medium text-green-700 ring-1 ring-green-200 transition hover:bg-green-100"
-                          title="Download file"
-                        >
-                          <Download size={14} />
-                          Download
-                        </button>
+                        <div className="flex flex-row gap-3">
+                          <button
+                            type="button"
+                            onClick={rejectFile}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
+                          >
+                            <X size={14} />
+                            Reject File
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const link = document.createElement("a");
+                              link.href = file.signedUrl;
+                              link.download = file.file_name;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-50 px-3 text-xs font-medium text-green-700 ring-1 ring-green-200 transition hover:bg-green-100"
+                            title="Download file"
+                          >
+                            <Download size={14} />
+                            Download
+                          </button>
+                        </div>
                       </div>
 
                       {/* File Preview */}
@@ -263,6 +290,9 @@ const CompiledFilesModal = memo(
                           <img
                             src={file.signedUrl}
                             alt={file.file_name}
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
                             className="max-h-96 max-w-full rounded"
                           />
                         ) : ["txt", "csv", "json", "xml", "html"].includes(
@@ -348,14 +378,14 @@ export const ApplicationDetails = ({
 }: ApplicationDetailsProps): JSX.Element => {
   const [isVisible, setIsVisible] = useState(false);
   const [showCompiledView, setShowCompiledView] = useState(false);
-  const applicationId = useMemo(() => {
+  const applicationId = (() => {
     if (!application?.id) return undefined;
     const match = application.id.match(/(\d+)$/);
     if (!match) return undefined;
 
     const parsed = Number(match[1]);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-  }, [application?.id]);
+  })();
 
   const { files, loading: filesLoading } = useApplicationFiles(applicationId);
 
@@ -363,7 +393,7 @@ export const ApplicationDetails = ({
     requestAnimationFrame(() => setIsVisible(true));
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose && onClose();
+      if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKey);
 
@@ -371,6 +401,35 @@ export const ApplicationDetails = ({
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
+
+  const handlePreviewOpen = useCallback((url: string) => {
+    const w = window.open(url, "_blank");
+    if (w)
+      try {
+        w.opener = null;
+      } catch {}
+    (window as any).__opened_preview_windows = [
+      ...(Array.isArray((window as any).__opened_preview_windows)
+        ? (window as any).__opened_preview_windows
+        : []),
+      w,
+    ];
+  }, []);
+
+  // Close any preview windows opened from this modal when unmounting
+  useEffect(() => {
+    return () => {
+      const arr = (window as any).__opened_preview_windows;
+      if (Array.isArray(arr)) {
+        arr.forEach((w: Window | null) => {
+          try {
+            w?.close();
+          } catch {}
+        });
+        (window as any).__opened_preview_windows = [];
+      }
+    };
+  }, []);
 
   const getStatusClasses = (status?: string) => {
     const s = status?.toLowerCase() ?? "";
@@ -467,7 +526,7 @@ export const ApplicationDetails = ({
       className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/60 p-4 transition-opacity duration-150 ease-out ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
-      onClick={() => onClose && onClose()}
+      onClick={() => onClose?.()}
     >
       <section
         role="dialog"
@@ -493,7 +552,7 @@ export const ApplicationDetails = ({
             type="button"
             aria-label="Close modal"
             className="text-gray-400 transition hover:text-gray-600"
-            onClick={() => onClose && onClose()}
+            onClick={() => onClose?.()}
           >
             <X size={20} />
           </button>
@@ -561,7 +620,11 @@ export const ApplicationDetails = ({
                 <div className="text-sm text-gray-500">Loading files...</div>
               ) : fileUploads.length > 0 ? (
                 fileUploads.map((file) => (
-                  <FileCard key={file.id} file={file} />
+                  <FileCard
+                    key={file.id}
+                    file={file}
+                    onPreview={handlePreviewOpen}
+                  />
                 ))
               ) : (
                 <div className="text-sm text-gray-500">No files uploaded</div>

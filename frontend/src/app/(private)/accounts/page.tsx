@@ -4,6 +4,7 @@ import { AccountsHeaderSection } from "../../../components/layout/private/Accoun
 import { AccountsStatsSection } from "../../../components/layout/private/Accounts/AccountsStatsSection";
 import { AccountsTableSection } from "../../../components/layout/private/Accounts/AccountsTableSection";
 import { JSX, useState, useMemo, useEffect } from "react";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { apiCall } from "@/lib/api";
 import { fetchToken } from "@/lib/token";
 
@@ -29,9 +30,10 @@ interface StoredUser {
   account_type: string;
 }
 
-
 export const MainContentArea = (): JSX.Element => {
-  const [currentUser, setCurrentUser] = useState<StoredUser | undefined>(undefined);
+  const [currentUser, setCurrentUser] = useState<StoredUser | undefined>(
+    undefined,
+  );
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,15 +61,18 @@ export const MainContentArea = (): JSX.Element => {
       setCurrentUser(undefined);
     }
   }, []);
-  
+
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
         setLoading(true);
 
-        const result: AccountsResponse = await apiCall(`/accounts/active?count=50`, {
-          method: "GET",
-        });
+        const result: AccountsResponse = await apiCall(
+          `/accounts/active?count=50`,
+          {
+            method: "GET",
+          },
+        );
 
         setAccounts(result.data);
       } catch (err) {
@@ -81,14 +86,18 @@ export const MainContentArea = (): JSX.Element => {
     fetchAccounts();
   }, []);
 
+  const debouncedSearch = useDebouncedValue(searchTerm, 300);
+
   const filteredAccounts = useMemo(() => {
     let result = [...accounts];
 
-    if (searchTerm.trim() !== "") {
+    if (debouncedSearch.trim() !== "") {
       result = result.filter(
         (account) =>
-          account.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          account.email.toLowerCase().includes(searchTerm.toLowerCase()),
+          account.username
+            .toLowerCase()
+            .includes(debouncedSearch.toLowerCase()) ||
+          account.email.toLowerCase().includes(debouncedSearch.toLowerCase()),
       );
     }
 
@@ -107,7 +116,7 @@ export const MainContentArea = (): JSX.Element => {
     });
 
     return result;
-  }, [accounts, filters, searchTerm]);
+  }, [accounts, filters, debouncedSearch]);
 
   // Lifted mutation handler — keeps accounts state as single source of truth
   const handleAccountsChange = (updated: AccountRow[]) => {

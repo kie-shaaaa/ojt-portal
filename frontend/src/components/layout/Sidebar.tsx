@@ -16,7 +16,6 @@ import { JSX } from "react/jsx-dev-runtime";
 import { useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { usePendingApplications } from "@/hooks/usePendingApplication";
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
@@ -39,9 +38,7 @@ export const AsideSidebar = ({email, account_type}:SidebarProps): JSX.Element =>
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { logout } = useAuth();
-  const { pendingCount } = usePendingApplications();
-
-
+  
   const handleLogout = () => {
     logout();
     router.push("/");
@@ -96,10 +93,6 @@ export const AsideSidebar = ({email, account_type}:SidebarProps): JSX.Element =>
             const Icon = item.icon;
             const displayBadge =
               item.label === "Applications"
-                ? pendingCount > 0
-                  ? String(pendingCount)
-                  : ""
-                : ((item as any).badge ?? "");
 
             return (
               <Link

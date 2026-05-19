@@ -2,9 +2,11 @@
 
 import { Eye, Search, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { JSX, useMemo, useState, useEffect } from "react";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 
 import { apiCall } from "@/lib/api";
 import type { LogFilters } from "./AdminLogsFilteringSection";
+import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 
 type LogRow = {
   id: string;
@@ -109,39 +111,54 @@ export const AdminLogsTable = ({
   const [totalLogs, setTotalLogs] = useState(0);
   const [selectedLog, setSelectedLog] = useState<LogRow | null>(null);
 
-  const fetchLogs = async (page: number) => {
-    try {
-      setIsLoading(true);
-
-      const response = await apiCall(
-        `/logs/fetch-all?limit=${ITEMS_PER_PAGE}&page=${page}`,
-        {
-          method: "GET",
-        },
-      );
-
-      const data = Array.isArray(response) ? response : [];
-      const mappedLogs = mapLogs(data);
-
-      setLogs(mappedLogs);
-      setTotalLogs(data.length);
-    } catch (error) {
-      console.error("Failed to fetch logs:", error);
-      setLogs([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchLogs(currentPage);
+    let cancelled = false;
+
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        try {
+          setIsLoading(true);
+
+          const response = await apiCall(
+            `/logs/fetch-all?limit=${ITEMS_PER_PAGE}&page=${currentPage}`,
+            {
+              method: "GET",
+            },
+          );
+
+          if (cancelled) return;
+
+          const data = Array.isArray(response) ? response : [];
+          const mappedLogs = mapLogs(data);
+
+          setLogs(mappedLogs);
+          setTotalLogs(data.length);
+        } catch (error) {
+          if (!cancelled) {
+            console.error("Failed to fetch logs:", error);
+            setLogs([]);
+          }
+        } finally {
+          if (!cancelled) {
+            setIsLoading(false);
+          }
+        }
+      })();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
   }, [currentPage]);
+
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       // Search query filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (debouncedSearch) {
+        const query = debouncedSearch.toLowerCase();
         const matchesSearch =
           log.id.toLowerCase().includes(query) ||
           log.userId.toLowerCase().includes(query) ||
@@ -182,6 +199,19 @@ export const AdminLogsTable = ({
       return true;
     });
   }, [logs, searchQuery, filters]);
+
+  const shouldVirtualize = filteredLogs.length >= 10;
+  const { scrollRef, windowedRange } = useVirtualizedRows({
+    itemCount: filteredLogs.length,
+    rowHeight: 88,
+    overscan: 5,
+    enabled: shouldVirtualize,
+    resetKey: `${currentPage}-${filteredLogs.map((log) => log.id).join("|")}`,
+  });
+
+  const visibleLogs = shouldVirtualize
+    ? filteredLogs.slice(windowedRange.startIndex, windowedRange.endIndex)
+    : filteredLogs;
 
   const totalPages = Math.ceil(totalLogs / ITEMS_PER_PAGE);
 
@@ -259,7 +289,12 @@ export const AdminLogsTable = ({
       </div>
 
       {/* Table */}
-      <div className="relative min-h-100 overflow-x-auto">
+      <div
+        ref={scrollRef}
+        className={`relative min-h-100 overflow-x-auto ${
+          shouldVirtualize ? "max-h-[calc(100vh-20rem)] overflow-auto" : ""
+        }`}
+      >
         {isLoading && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px]">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent shadow-lg" />
@@ -279,7 +314,7 @@ export const AdminLogsTable = ({
             <h3 className="text-lg font-bold text-slate-800">No logs found</h3>
 
             <p className="max-w-xs text-sm text-slate-500">
-              We couldn't find any logs matching your search criteria.
+              We couldn&apos;t find any logs matching your search criteria.
             </p>
 
             <button
@@ -294,7 +329,7 @@ export const AdminLogsTable = ({
         <table className="w-full min-w-300 border-collapse">
           <thead>
             <tr className="bg-slate-50/80">
-              {columns.map((column, index) => (
+              {columns.map((column) => (
                 <th
                   key={column}
                   className="px-6 py-4 text-left text-xs font-bold tracking-widest text-slate-500 uppercase"
@@ -306,9 +341,19 @@ export const AdminLogsTable = ({
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {filteredLogs.map((log, index) => (
+            {shouldVirtualize && windowedRange.topSpacerHeight > 0 && (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={columns.length}
+                  className="h-0 border-0 p-0"
+                  style={{ height: windowedRange.topSpacerHeight }}
+                />
+              </tr>
+            )}
+
+            {visibleLogs.map((log, index) => (
               <tr
-                key={`${log.id}-${index}`}
+                key={`${log.id}-${shouldVirtualize ? windowedRange.startIndex + index : index}`}
                 className="transition-all duration-200 hover:bg-slate-50/50"
               >
                 {/* ID */}
@@ -381,6 +426,16 @@ export const AdminLogsTable = ({
                 </td>
               </tr>
             ))}
+
+            {shouldVirtualize && windowedRange.bottomSpacerHeight > 0 && (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={columns.length}
+                  className="h-0 border-0 p-0"
+                  style={{ height: windowedRange.bottomSpacerHeight }}
+                />
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

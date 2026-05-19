@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { SupabaseStorage } from './supabase-storage.service';
 import { UploadedFile } from '../data/types/file-upload.types';
+import { createReadStream } from 'fs';
+import { unlink } from 'fs/promises';
 import { DatabaseService } from './database/database.service';
 import { LogsService } from './logs.service';
 
@@ -86,14 +88,26 @@ export class FileUploadsService {
         throw new BadRequestException('File validation failed');
       }
 
-      // Step 2: Upload to Supabase
+      // Step 2: Upload to Supabase (stream from disk if path present)
       this.logger.log(`Uploading file: ${filePath}`);
-      await this.supabaseService.uploadBuffer(
-        this.SUPABASE_BUCKET,
-        filePath,
-        file.buffer,
-        file.mimetype,
-      );
+      if (file.path) {
+        const readStream = createReadStream(file.path);
+        await this.supabaseService.uploadStream(
+          this.SUPABASE_BUCKET,
+          filePath,
+          readStream,
+          file.mimetype,
+        );
+      } else if (file.buffer) {
+        await this.supabaseService.uploadBuffer(
+          this.SUPABASE_BUCKET,
+          filePath,
+          file.buffer,
+          file.mimetype,
+        );
+      } else {
+        throw new BadRequestException('No file data found for upload');
+      }
 
       // Step 3: Save metadata to database
       const result = await this.saveFileMetadata({
@@ -118,12 +132,28 @@ export class FileUploadsService {
         })
         .catch((err) => console.error('Failed to log file upload', err));
 
+      // cleanup temp file if present
+      try {
+        if (file?.path) {
+          if (file.cleanup) file.cleanup();
+          else await unlink(file.path).catch(() => undefined);
+        }
+      } catch {}
+
       return result;
     } catch (error) {
       await this.supabaseService
         .remove(this.SUPABASE_BUCKET, filePath)
         .catch(() => undefined);
       this.logger.error(`File upload failed: ${error}`, error);
+      // attempt to cleanup temp file
+      try {
+        if (file?.path) {
+          if (file.cleanup) file.cleanup();
+          else await unlink(file.path).catch(() => undefined);
+        }
+      } catch {}
+
       throw error;
     }
   }

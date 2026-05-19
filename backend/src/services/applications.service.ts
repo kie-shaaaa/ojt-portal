@@ -177,6 +177,7 @@ export class ApplicationsService {
 
     try {
       for (const file of files) {
+        // support disk-backed files (path) or in-memory buffers
         const uploadedFile = await this.fileUploadsService.uploadAndSave(file, {
           application_id: createdApplication.id,
           file_type: 'other',
@@ -218,6 +219,18 @@ export class ApplicationsService {
         createdApplication.id,
       ]);
       throw error;
+    } finally {
+      // Always attempt to cleanup temp files produced by controller
+      try {
+        await Promise.allSettled(
+          files.map(async (f) => {
+            try {
+              if (f.cleanup) return f.cleanup();
+              return;
+            } catch {}
+          }),
+        );
+      } catch {}
     }
   }
 
