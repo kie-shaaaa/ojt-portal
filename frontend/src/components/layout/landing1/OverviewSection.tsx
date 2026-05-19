@@ -1,5 +1,6 @@
 "use client";
 import { JSX } from "react";
+import Image from "next/image";
 export const OverviewSection = (): JSX.Element => {
   const titleLines = ["What is National", "Telecommunications", "Commission?"];
   const description = "The National Telecommunications Commission (NTC) is the government agency in the Philippines responsible for supervising, regulating, and managing telecommunications services and communication facilities throughout the country. NTC plays an important role in ensuring reliable communication systems, internet services, broadcasting operations, and public connectivity.";
@@ -30,13 +31,15 @@ export const OverviewSection = (): JSX.Element => {
           <div className="relative">
             <div className="absolute -inset-4 bg-blue-100 rounded-full opacity-50 blur-2xl"></div>
             <div className="relative bg-gray-200 rounded-2xl shadow-xl overflow-hidden aspect-video flex items-center justify-center">
-              <div className="text-center p-8">
-                <svg className="w-20 h-20 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                </svg>
-                <p className="text-gray-600 font-medium">NTC Portal Preview</p>
-                <p className="text-gray-400 text-sm mt-1">System Interface</p>
-              </div>
+      
+                <Image
+                  src="/landing_2/WhatWeOffer.png"
+                  alt="NTC Logo"
+                  width={320}
+                  height={320}
+                  className="object-contain w-full h-full"
+                />
+           
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 import { BadgeInfo, ArrowRight } from "lucide-react";
 import {JSX} from "react";
-
+import Image from "next/image";
 const ctaButtons = [
   { label: "Submit Application", variant: "primary", type: "button" as const },
   { label: "Track Application", variant: "secondary", type: "button" as const, icon: ArrowRight },
@@ -9,11 +9,24 @@ const ctaButtons = [
 
 export const HeroSection = (): JSX.Element => {
   return (
-    <section
+    <section id = "hero-section"
       aria-labelledby="hero-call-to-action-heading"
       className="relative bg-white w-full pt-32 pb-16 px-4 md:px-8 lg:px-16"
     >
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+        <Image
+        src="/landing_1/hero-section-bg.jpg"
+        alt="Background"
+        fill
+        className="object-cover z-0"
+        priority
+      />
+      
+      <div className="absolute inset-0 bg-black/80 z-10"></div>
+      {/* Blue Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-100/70 to-blue-600/50 z-10"></div>
+
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-20">
+        {/* Rest of your content remains the same */}
         <div className="flex-1">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full">
             <BadgeInfo className="h-5 w-5" aria-hidden="true" />
@@ -21,6 +34,7 @@ export const HeroSection = (): JSX.Element => {
               Open for qualified student interns nationwide
             </p>
           </div>
+
           <h1
             id="hero-call-to-action-heading"
             className="mt-6 text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 leading-tight"
@@ -28,7 +42,7 @@ export const HeroSection = (): JSX.Element => {
             Start Your Internship Journey with
             <span className="text-blue-600"> National Telecommunications Commission</span>
           </h1>
-          <p className="mt-4 text-gray-600 text-lg leading-relaxed">
+          <p className="mt-4 text-gray-200 text-lg leading-relaxed">
             Gain valuable government-sector experience at the forefront of
             telecommunications regulation. We provide mentorship and
             professional growth for the next generation of tech leaders.
@@ -41,7 +55,7 @@ export const HeroSection = (): JSX.Element => {
                 className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
                   button.variant === "primary"
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                    : "border-2 border-white text-white hover:bg-blue-500 hover:border-blue-500"
                 }`}
               >
                 {button.label}
@@ -50,17 +64,17 @@ export const HeroSection = (): JSX.Element => {
             ))}
           </div>
         </div>
-        <div className="flex-1">
-          <div className="w-full h-96 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl shadow-lg flex items-center justify-center">
-            <div className="text-center p-8">
-              <svg className="w-24 h-24 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <p className="text-blue-600 font-semibold">NTC Internship Portal</p>
-              <p className="text-gray-500 text-sm mt-2">Application Management System</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex-1 flex justify-center items-center">
+  <div className="rounded-full overflow-hidden w-64 h-64 md:w-80 md:h-80 shadow-xl bg-white p-4">
+    <Image
+      src="/ntc-logo.png" 
+      alt="NTC Logo"
+      width={320}
+      height={320}
+      className="object-contain w-full h-full"
+    />
+  </div>
+</div>
       </div>
     </section>
   );
