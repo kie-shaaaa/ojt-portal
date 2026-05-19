@@ -78,7 +78,8 @@ export const FAQsSection = (): JSX.Element => {
   const [openItem, setOpenItem] = useState<string>(faqItems[0].id);
 
   return (
-    <section className="w-full min-h-screen py-20 px-4 md:px-8 lg:px-16 bg-blue-50">
+  
+    <section id="faqs-section" className="w-full min-h-screen py-20 px-4 md:px-8 lg:px-16 bg-blue-50">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-blue-900 mb-4">
@@ -113,7 +114,7 @@ export const FAQsSection = (): JSX.Element => {
                 </button>
                 {isOpen && (
                   <div className="px-6 pb-4">
-                    <p className="text-gray-600 leading-relaxed">{item.answer}</p>
+                    <p className="text-gray-600 leading-relaxed"><br/>{item.answer}</p>
                   </div>
                 )}
               </div>
