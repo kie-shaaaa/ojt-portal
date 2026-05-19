@@ -1,7 +1,9 @@
 "use client";
 
 import { Calendar, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
-import { JSX, useEffect, useRef, useState } from "react";
+import { JSX, useRef, useState } from "react";
+
+import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
 interface DatePickerProps {
   label?: string;
@@ -28,6 +30,7 @@ export default function DatePicker({
   minDate,
   placeholder = "yyyy/mm/dd",
 }: DatePickerProps): JSX.Element {
+  const pickerRootRef = useRef<HTMLDivElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -68,27 +71,11 @@ export default function DatePicker({
   };
 
   const isDisabledDate = (dateStr: string): boolean => {
-    if (minDate && dateStr <= minDate) return true; 
+    if (minDate && dateStr <= minDate) return true;
     return isPastDate(dateStr) || isWeekend(dateStr);
   };
-  // Close picker when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setShowPicker(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  // Close picker when clicking outside either the input wrapper or calendar popup.
+  useOutsidePointerDown(pickerRootRef, () => setShowPicker(false), showPicker);
 
   // Calendar generation
   const firstDay = new Date(activeYear, activeMonth, 1).getDay();
@@ -107,13 +94,13 @@ export default function DatePicker({
       {label ? (
         <label
           htmlFor={id}
-          className={`relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-sm tracking-[0] leading-5 ${labelClassName}`}
+          className={`relative flex items-center self-stretch -mt-px font-['Inter-Bold',Helvetica] font-bold text-sm tracking-normal leading-5 ${labelClassName}`}
         >
           {label} {required ? <span className="text-red-500">*</span> : null}
         </label>
       ) : null}
 
-      <div className="relative self-stretch w-full">
+      <div className="relative self-stretch w-full" ref={pickerRootRef}>
         <div
           className={`flex items-center justify-between gap-3 px-4 py-3 relative self-stretch w-full flex-[0_0_auto] rounded-lg overflow-visible border shadow-[0px_1px_2px_#0000000d] ${
             disabled
@@ -146,7 +133,7 @@ export default function DatePicker({
               }
               return "";
             })()}
-            className="relative flex min-w-0 flex-1 items-center border-0 bg-transparent [font-family:'Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-[0] leading-6 outline-none placeholder:text-gray-400"
+            className="relative flex min-w-0 flex-1 items-center border-0 bg-transparent font-['Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-normal leading-6 outline-none placeholder:text-gray-400"
           />
 
           <button

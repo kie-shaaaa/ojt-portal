@@ -1,9 +1,11 @@
-import { JSX, useId, useState, useRef, useEffect } from "react";
+import { JSX, useId, useState, useRef, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
+
+import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
 interface FilterOptions {
   school: string;
-  sortByDate: 'Newest First' | 'Oldest First';
+  sortByDate: "Newest First" | "Oldest First";
   status?: string;
 }
 
@@ -16,31 +18,28 @@ interface FilterInternsSectionProps {
 export const FilterInternsSection = ({
   filters,
   onFilterChange,
-  schoolOptions
+  schoolOptions,
 }: FilterInternsSectionProps): JSX.Element => {
   const sectionTitleId = useId();
   const schoolDropdownRef = useRef<HTMLDivElement>(null);
   const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
   const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        schoolDropdownRef.current &&
-        !schoolDropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsSchoolDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useOutsidePointerDown(
+    schoolDropdownRef,
+    () => setIsSchoolDropdownOpen(false),
+    isSchoolDropdownOpen,
+  );
 
-  const filteredSchoolOptions = schoolOptions
-    .filter((option) => option !== "All Schools")
-    .filter((option) =>
-      option.toLowerCase().includes(schoolSearchQuery.toLowerCase())
-    );
+  const filteredSchoolOptions = useMemo(
+    () =>
+      schoolOptions
+        .filter((option) => option !== "All Schools")
+        .filter((option) =>
+          option.toLowerCase().includes(schoolSearchQuery.toLowerCase()),
+        ),
+    [schoolOptions, schoolSearchQuery],
+  );
 
   return (
     <section
@@ -50,7 +49,7 @@ export const FilterInternsSection = ({
       <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
         <h2
           id={sectionTitleId}
-          className="relative mt-[-1.00px] flex items-center self-stretch font-inter-bold text-lg font-bold leading-7 tracking-[0] text-slate-700"
+          className="relative -mt-px flex items-center self-stretch font-inter-bold text-lg font-bold leading-7 tracking-normal text-slate-700"
         >
           Filter Interns
         </h2>
@@ -61,12 +60,12 @@ export const FilterInternsSection = ({
           <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
             <label
               htmlFor="school"
-              className="relative mt-[-1.00px] flex items-center self-stretch font-inter-bold text-sm font-bold leading-5 tracking-[0] text-slate-600"
+              className="relative -mt-px flex items-center self-stretch font-inter-bold text-sm font-bold leading-5 tracking-normal text-slate-600"
             >
               School
             </label>
           </div>
-          <div 
+          <div
             className="relative flex w-full items-center self-stretch"
             ref={schoolDropdownRef}
           >
@@ -100,7 +99,7 @@ export const FilterInternsSection = ({
                 }
               }}
               autoComplete="off"
-              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
             />
             {isSchoolDropdownOpen && (
               <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
@@ -132,7 +131,7 @@ export const FilterInternsSection = ({
                 )}
               </div>
             )}
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-[42px] items-center justify-center">
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-10.5 items-center justify-center">
               <ChevronDown
                 size={18}
                 className="text-slate-500"
@@ -147,7 +146,7 @@ export const FilterInternsSection = ({
           <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
             <label
               htmlFor="sortByDate"
-              className="relative mt-[-1.00px] flex items-center self-stretch font-inter-bold text-sm font-bold leading-5 tracking-[0] text-slate-600"
+              className="relative -mt-px flex items-center self-stretch font-inter-bold text-sm font-bold leading-5 tracking-normal text-slate-600"
             >
               Sort by Date
             </label>
@@ -161,15 +160,17 @@ export const FilterInternsSection = ({
               onChange={(event) =>
                 onFilterChange({
                   ...filters,
-                  sortByDate: event.target.value as 'Newest First' | 'Oldest First',
+                  sortByDate: event.target.value as
+                    | "Newest First"
+                    | "Oldest First",
                 })
               }
-              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
             >
               <option value="Newest First">Newest First</option>
               <option value="Oldest First">Oldest First</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-[42px] items-center justify-center">
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-10.5 items-center justify-center">
               <ChevronDown
                 size={18}
                 className="text-slate-500"

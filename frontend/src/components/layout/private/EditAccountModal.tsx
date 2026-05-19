@@ -2,8 +2,10 @@
 
 import type { AccountRow } from "../../../app/(private)/accounts/page";
 import type { FormEvent, JSX } from "react";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { ChevronDown, Shield, X } from "lucide-react";
+
+import { useEscapeKey } from "@/hooks/useDismissableEvents";
 
 type AccountType = AccountRow["account_type"];
 
@@ -32,19 +34,7 @@ export const EditAccountModal = ({
     account.account_type,
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -72,7 +62,7 @@ export const EditAccountModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-account-title"
-        className="fixed top-1/2 left-1/2 z-50 w-[448px] max-w-md -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-xl bg-white shadow-[0px_25px_50px_-12px_#00000040]"
+        className="fixed top-1/2 left-1/2 z-50 w-md max-w-md -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-xl bg-white shadow-[0px_25px_50px_-12px_#00000040]"
       >
         {/* Header */}
         <div className="relative flex w-full items-center justify-between border-b border-gray-100 px-6 py-5">

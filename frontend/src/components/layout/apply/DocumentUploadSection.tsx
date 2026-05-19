@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useId, useRef, useState } from "react";
+import { JSX, useId, useRef, useState, useMemo } from "react";
 import {
   FileText,
   Mail,
@@ -180,7 +180,7 @@ const UploadCardItem = ({
             {card.required ? <span className="text-red-500">*</span> : null}
           </p>
         </div>
-        
+
         <input
           id={inputId}
           ref={inputRef}
@@ -195,17 +195,13 @@ const UploadCardItem = ({
             onSelectFile(card.id, file);
           }}
         />
-        <div
-          className="box-border gap-1 pt-3 pb-0 px-0 inline-flex items-center relative flex-[0_0_auto]"
-        >
+        <div className="box-border gap-1 pt-3 pb-0 px-0 inline-flex items-center relative flex-[0_0_auto]">
           <Upload size={16} className="text-blue-700" />
           <div className="relative flex items-center justify-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-xs text-center tracking-[0] leading-4 whitespace-nowrap">
             {fileName || "No file chosen"}
           </div>
         </div>
-        <div className="mt-3 text-xs text-gray-500">
-          {card.description}
-        </div>
+        <div className="mt-3 text-xs text-gray-500">{card.description}</div>
         {hasError ? (
           <div className="flex flex-col items-start pt-1 pb-0 px-0 self-stretch w-full relative flex-[0_0_auto]">
             <div
@@ -233,103 +229,109 @@ export const DocumentUploadSection = ({
   errors,
 }: DocumentUploadSectionProps): JSX.Element => {
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
-  const uploadCards: UploadCard[] = [
-    {
-      id: "proof-of-enrollment",
-      number: "2",
-      title: "Proof of Enrollment",
-      required: true,
-      description: "PDF only • Max 5 MB",
-      areaClassName: "relative w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "document",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "draft-endorsement",
-      number: "3",
-      title: "Draft Endorsement Letter",
-      required: true,
-      description: "Addressed to CHIEF, FLORA R. RALAR • PDF • Max 5 MB",
-      areaClassName: "relative w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "mail",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "vaccine-card",
-      number: "4",
-      title: "Vaccine Card / Medical Cert.",
-      required: true,
-      description: "Xerox copy • PDF • Max 5 MB",
-      areaClassName: "relative w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "medical",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "draft-moa",
-      number: "5",
-      title: "Draft Memorandum of Agreement",
-      required: true,
-      description: "PDF only • Max 5 MB",
-      areaClassName: "relative w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "agreement",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "resume-cv",
-      number: "1",
-      title: "Resume / CV",
-      required: true,
-      description: "PDF only • Max 5 MB",
-      error: errors["resume-cv"],
-      areaClassName: "relative w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "resume",
-      accept: ".pdf,application/pdf",
-    },
-    {
-      id: "picture-1x1",
-      number: "6",
-      title: "1×1 Picture",
-      required: true,
-      description: "JPG / PNG only • Square (1:1) • Max 2 MB",
-      error: errors["picture-1x1"],
-      areaClassName: "relative w-full h-fit",
-      contentClassName:
-        "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
-      iconWrapperClassName:
-        "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-      icon: "image",
-      accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
-    },
-  ];
+  const uploadCards: UploadCard[] = useMemo(
+    () => [
+      {
+        id: "proof-of-enrollment",
+        number: "2",
+        title: "Proof of Enrollment",
+        required: true,
+        description: "PDF only • Max 5 MB",
+        areaClassName: "relative w-full h-fit",
+        contentClassName:
+          "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
+        iconWrapperClassName:
+          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
+        icon: "document",
+        accept: ".pdf,application/pdf",
+      },
+      {
+        id: "draft-endorsement",
+        number: "3",
+        title: "Draft Endorsement Letter",
+        required: true,
+        description: "Addressed to CHIEF, FLORA R. RALAR • PDF • Max 5 MB",
+        areaClassName: "relative w-full h-fit",
+        contentClassName:
+          "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
+        iconWrapperClassName:
+          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
+        icon: "mail",
+        accept: ".pdf,application/pdf",
+      },
+      {
+        id: "vaccine-card",
+        number: "4",
+        title: "Vaccine Card / Medical Cert.",
+        required: true,
+        description: "Xerox copy • PDF • Max 5 MB",
+        areaClassName: "relative w-full h-fit",
+        contentClassName:
+          "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
+        iconWrapperClassName:
+          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
+        icon: "medical",
+        accept: ".pdf,application/pdf",
+      },
+      {
+        id: "draft-moa",
+        number: "5",
+        title: "Draft Memorandum of Agreement",
+        required: true,
+        description: "PDF only • Max 5 MB",
+        areaClassName: "relative w-full h-fit",
+        contentClassName:
+          "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
+        iconWrapperClassName:
+          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
+        icon: "agreement",
+        accept: ".pdf,application/pdf",
+      },
+      {
+        id: "resume-cv",
+        number: "1",
+        title: "Resume / CV",
+        required: true,
+        description: "PDF only • Max 5 MB",
+        error: errors["resume-cv"],
+        areaClassName: "relative w-full h-fit",
+        contentClassName:
+          "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
+        iconWrapperClassName:
+          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
+        icon: "resume",
+        accept: ".pdf,application/pdf",
+      },
+      {
+        id: "picture-1x1",
+        number: "6",
+        title: "1×1 Picture",
+        required: true,
+        description: "JPG / PNG only • Square (1:1) • Max 2 MB",
+        error: errors["picture-1x1"],
+        areaClassName: "relative w-full h-fit",
+        contentClassName:
+          "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
+        iconWrapperClassName:
+          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
+        icon: "image",
+        accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
+      },
+    ],
+    [errors],
+  );
 
-  const orderedCards = [
-    uploadCards[4],
-    uploadCards[0],
-    uploadCards[1],
-    uploadCards[2],
-    uploadCards[3],
-    uploadCards[5],
-  ];
+  const orderedCards = useMemo(
+    () => [
+      uploadCards[4],
+      uploadCards[0],
+      uploadCards[1],
+      uploadCards[2],
+      uploadCards[3],
+      uploadCards[5],
+    ],
+    [uploadCards],
+  );
 
   const handleSelectFile = async (cardId: string, file: File | null) => {
     const card = uploadCards.find((c) => c.id === cardId);
@@ -351,48 +353,66 @@ export const DocumentUploadSection = ({
 
     // Validate file type and size
     const isPdf = card.accept.includes("pdf");
-    const maxSize = card.id === "picture-1x1" ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
+    const maxSize =
+      card.id === "picture-1x1" ? 2 * 1024 * 1024 : 5 * 1024 * 1024;
 
     if (isPdf) {
-      if (!file.type.includes("pdf") && !file.name.toLowerCase().endsWith(".pdf")) {
-        setLocalErrors((s) => ({ ...s, [cardId]: "Only PDF files are allowed" }));
+      if (
+        !file.type.includes("pdf") &&
+        !file.name.toLowerCase().endsWith(".pdf")
+      ) {
+        setLocalErrors((s) => ({
+          ...s,
+          [cardId]: "Only PDF files are allowed",
+        }));
         onDocumentsChange({ ...documents, [cardId]: null });
         return;
       }
     } else if (card.id === "picture-1x1") {
       if (!file.type.startsWith("image/")) {
-        setLocalErrors((s) => ({ ...s, [cardId]: "Only JPG/PNG images are allowed" }));
+        setLocalErrors((s) => ({
+          ...s,
+          [cardId]: "Only JPG/PNG images are allowed",
+        }));
         onDocumentsChange({ ...documents, [cardId]: null });
         return;
       }
     }
 
     if (file.size > maxSize) {
-      setLocalErrors((s) => ({ ...s, [cardId]: `File must be under ${maxSize / (1024 * 1024)} MB` }));
+      setLocalErrors((s) => ({
+        ...s,
+        [cardId]: `File must be under ${maxSize / (1024 * 1024)} MB`,
+      }));
       onDocumentsChange({ ...documents, [cardId]: null });
       return;
     }
 
     // If picture, validate 1:1 ratio
     if (card.id === "picture-1x1") {
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(String(fr.result ?? ""));
-        fr.onerror = rej;
-        fr.readAsDataURL(file);
-      });
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const dims = await new Promise<{ w: number; h: number }>((res, rej) => {
+          const img = new Image();
+          img.onload = () => {
+            res({ w: img.width, h: img.height });
+          };
+          img.onerror = (e) => rej(e);
+          img.src = objectUrl;
+        });
 
-      const dims = await new Promise<{ w: number; h: number }>((res, rej) => {
-        const img = new Image();
-        img.onload = () => res({ w: img.width, h: img.height });
-        img.onerror = rej;
-        img.src = dataUrl;
-      });
-
-      if (dims.w !== dims.h) {
-        setLocalErrors((s) => ({ ...s, [cardId]: "Image must be square (1:1)" }));
-        onDocumentsChange({ ...documents, [cardId]: null });
-        return;
+        if (dims.w !== dims.h) {
+          setLocalErrors((s) => ({
+            ...s,
+            [cardId]: "Image must be square (1:1)",
+          }));
+          onDocumentsChange({ ...documents, [cardId]: null });
+          return;
+        }
+      } finally {
+        try {
+          URL.revokeObjectURL(objectUrl);
+        } catch {}
       }
     }
 
@@ -425,7 +445,8 @@ export const DocumentUploadSection = ({
             <div className="flex flex-col items-start self-stretch w-full relative flex-[0_0_auto]">
               <p className="relative w-full mt-[-1.00px] [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5 break-words">
                 <span className="[font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5">
-                  Upload all required documents below. Each PDF must be under{" "}
+                  Upload all required documents below. Each PDF must be
+                  under{" "}
                 </span>
                 <span className="[font-family:'Nimbus_Sans-Bold',Helvetica] font-bold">
                   5 MB
@@ -448,11 +469,16 @@ export const DocumentUploadSection = ({
               type="button"
               className="all-[unset] box-border flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto] cursor-pointer mt-1"
             >
-              <a href= "/NTC-OJT-Requirements.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto]">
-              <Download size={16} />
-              <div className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-sm tracking-[0] leading-5 underline whitespace-nowrap">
-                Download Requirements Guide
-              </div>
+              <a
+                href="/NTC-OJT-Requirements.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 relative self-stretch w-full flex-[0_0_auto]"
+              >
+                <Download size={16} />
+                <div className="relative flex items-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-sm tracking-[0] leading-5 underline whitespace-nowrap">
+                  Download Requirements Guide
+                </div>
               </a>
             </button>
           </div>

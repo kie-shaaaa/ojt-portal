@@ -24,12 +24,14 @@ import type {
   ApplicationStatus,
   GetApplicationsResponse,
   GetApplicationResponse,
-  GetApplicationStatusResponse,
   SubmitApplicationResponse,
   UpdateApplicationSettingsDto,
   SuccessResponse,
 } from '../data/types';
 import type { UpdateApplicationDto } from '../data/interfaces';
+import * as tmp from 'tmp';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
 
 @Controller('applications')
 export class ApplicationsController {
@@ -182,28 +184,52 @@ export class ApplicationsController {
         encoding: string;
         mimetype: string;
         value?: string;
-        toBuffer?: () => Promise<Buffer>;
+        file: import('stream').Readable;
       }>;
     };
 
     for await (const part of multipartRequest.parts()) {
       if (part.type === 'file') {
-        const buffer = await part.toBuffer?.();
-
-        if (!buffer) {
+        if (!part.file) {
           throw new BadRequestException(
             `Unable to read uploaded file ${part.fieldname}`,
           );
         }
 
-        files.push({
-          fieldname: part.fieldname,
-          originalname: part.filename,
-          encoding: part.encoding,
-          mimetype: part.mimetype,
-          buffer,
-          size: buffer.length,
+        const tempFile = tmp.fileSync({
+          postfix: `-${part.filename}`,
+          keep: true,
         });
+        const writeStream = createWriteStream(tempFile.name);
+
+        let fileSize = 0;
+
+        part.file.on('data', (chunk: Buffer) => {
+          fileSize += chunk.length;
+        });
+
+        try {
+          // 2. Stream directly from network to temp file path
+          await pipeline(part.file, writeStream);
+
+          files.push({
+            fieldname: part.fieldname,
+            originalname: part.filename,
+            encoding: part.encoding,
+            mimetype: part.mimetype,
+            path: tempFile.name, // Local disk path
+            size: fileSize,
+            cleanup: () => {
+              try {
+                tempFile.removeCallback();
+              } catch {}
+            },
+          });
+        } catch (streamError: any) {
+          throw new BadRequestException(
+            `File upload failed mid-stream: ${streamError.message}`,
+          );
+        }
       } else {
         fields[part.fieldname] = String(part.value ?? '');
       }

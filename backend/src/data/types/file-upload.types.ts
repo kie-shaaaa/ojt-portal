@@ -7,8 +7,13 @@ export interface UploadedFile {
   originalname: string;
   encoding: string;
   mimetype: string;
-  buffer: Buffer;
+  // Disk-backed path (when files are streamed to temp files)
+  path?: string;
+  // In-memory buffer (if used)
+  buffer?: Buffer;
   size: number;
+  // Optional cleanup callback to remove a temp file when finished
+  cleanup?: () => void;
 }
 
 export type MultipartFile = UploadedFile;
