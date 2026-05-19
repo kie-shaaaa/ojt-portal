@@ -1,4 +1,10 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  BadRequestException,
+} from '@nestjs/common';
 import type { ApplicationSettings } from '../data/types';
 import { DashboardService } from '../services/dashboard.service';
 
@@ -8,13 +14,27 @@ export class DashboardController {
 
   @Get('')
   async getDashboardData() {
-    return await this.dashboardService.getDashboardData();
+    try {
+      return await this.dashboardService.getDashboardData();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch dashboard data';
+      throw new BadRequestException(message);
+    }
   }
 
   @Patch('settings')
   async updateApplicationSettings(
     @Body('settings') settings: ApplicationSettings,
   ) {
-    return await this.dashboardService.updateApplicationSettings(settings);
+    try {
+      return await this.dashboardService.updateApplicationSettings(settings);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update settings';
+      throw new BadRequestException(message);
+    }
   }
 }

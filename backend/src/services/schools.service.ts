@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { Schools } from '../data/types';
 import { LogsService } from './logs.service';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class SchoolService {
@@ -12,7 +13,7 @@ export class SchoolService {
   async getAllSchools(count: number) {
     const client = this.databaseService.getClient();
     try {
-      if (count < 1) return null;
+      if (count < 1) throwAppError('bad_request', 'Count must be at least 1');
 
       const res = await client.query<Schools>(
         `
@@ -21,33 +22,29 @@ export class SchoolService {
         [count],
       );
 
-      return {
-        ok: true,
-        message: 'School data fetched successfully',
-        data: res.rows || [],
-      };
-    } catch (error: unknown) {
-      return {
-        error,
-        message: 'Failed to fetch School Data',
-        ok: false,
-      };
+      return SuccessHandler('Schools fetched successfully', res.rows || []);
+    } catch (error) {
+      console.error('[SCHOOLS] Error fetching schools:', error);
+      throwAppError('server_error', 'Failed to fetch schools');
     }
   }
 
   async insertSchool(school: string) {
     const client = this.databaseService.getClient();
     try {
-      if (!school) return null;
+      if (!school) throwAppError('bad_request', 'School name is required');
 
-      const inser = await client.query(
+      const res = await client.query(
         `
                 INSERT INTO schools (school_name)
                 VALUES ($1)
-                RETURN *
+                RETURNING *
             `,
         [school],
       );
+
+      if (res.rowCount === 0)
+        throwAppError('server_error', 'Failed to insert school');
 
       // Log school insertion (system operation)
       await this.logsService
@@ -59,16 +56,10 @@ export class SchoolService {
         })
         .catch((err) => console.error('Failed to log school creation', err));
 
-      return {
-        ok: true,
-        message: 'School has been inserted',
-      };
-    } catch (error: unknown) {
-      return {
-        error,
-        message: 'Failed to insert School Data',
-        ok: false,
-      };
+      return SuccessHandler('School inserted successfully', res.rows[0]);
+    } catch (error) {
+      console.error('[SCHOOLS] Error inserting school:', error);
+      throwAppError('server_error', 'Failed to insert school');
     }
   }
 }

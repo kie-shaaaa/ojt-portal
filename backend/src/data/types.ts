@@ -263,7 +263,6 @@ export type LogFileUploaded = BaseLog & {
 export type LogFileDeleted = BaseLog & { filename?: string; path?: string };
 export type LogOther = BaseLog & { action?: string };
 
-
 export type Logs = {
   id: number;
   user_id: number;
@@ -271,6 +270,19 @@ export type Logs = {
   details: string;
   ip_address: string;
   created_at: Date;
-}
+};
 
 export type FetchAllLogs = Logs[] | null;
+
+// Promise/Response types for controllers
+export type ApiPromise<T> = Promise<T>;
+export type ControllerResponse<T> = ApiPromise<T>;
+export type VoidResponse = ApiPromise<void>;
+export type SuccessApiResponse<T = any> = ApiPromise<{
+  status: string;
+  ok: boolean;
+  message: string;
+  data: T;
+}>;
+export type DataResponse<T> = ApiPromise<T | null>;
+export type ListResponse<T> = ApiPromise<T[] | null>;

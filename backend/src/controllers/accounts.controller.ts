@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AccountsService } from '../services/accounts.service';
@@ -45,11 +46,19 @@ export class AccountsController {
     @Param('type') type?: string,
     @Param('createdDate') createdDate?: Date,
   ) {
-    return await this.accountsService.fetchActiveAccounts(
-      Number(count),
-      type,
-      createdDate ? new Date(createdDate) : undefined,
-    );
+    try {
+      return await this.accountsService.fetchActiveAccounts(
+        Number(count),
+        type,
+        createdDate ? new Date(createdDate) : undefined,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch active accounts';
+      throw new BadRequestException(message);
+    }
   }
 
   /**
@@ -66,11 +75,17 @@ export class AccountsController {
     @Param('type') type?: string,
     @Param('createdDate') createdDate?: Date,
   ) {
-    return await this.accountsService.fetchAllAccounts(
-      count,
-      type,
-      createdDate,
-    );
+    try {
+      return await this.accountsService.fetchAllAccounts(
+        count,
+        type,
+        createdDate,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch all accounts';
+      throw new BadRequestException(message);
+    }
   }
 
   /**

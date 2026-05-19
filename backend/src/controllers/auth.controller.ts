@@ -24,34 +24,40 @@ export class AuthController {
       account_type: string;
     };
   }> {
-    if (!body?.email || !body?.password) {
-      throw new BadRequestException('Email and password are required');
-    }
+    try {
+      if (!body?.email || !body?.password) {
+        throw new BadRequestException('Email and password are required');
+      }
 
-    let clientIp = ipAddress;
-    if (clientIp === '::1' || clientIp === '127.0.0.1' || !clientIp) {
-      clientIp = '203.0.113.195';
-    }
-    body.ipAddress = clientIp;
-    
-    const result = await this.authService.signInAccount(
-      body.email,
-      body.password,
-      body.ipAddress,
-    );
+      let clientIp = ipAddress;
+      if (clientIp === '::1' || clientIp === '127.0.0.1' || !clientIp) {
+        clientIp = '203.0.113.195';
+      }
+      body.ipAddress = clientIp;
 
-    if (result.user.id === undefined) {
-      throw new BadRequestException('Invalid user id');
-    }
+      const result = await this.authService.signInAccount(
+        body.email,
+        body.password,
+        body.ipAddress,
+      );
 
-    return {
-      access_token: result.access_token,
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        account_type: result.user.account_type,
-      },
-    };
+      if (result.user.id === undefined) {
+        throw new BadRequestException('Invalid user id');
+      }
+
+      return {
+        access_token: result.access_token,
+        user: {
+          id: result.user.id,
+          email: result.user.email,
+          account_type: result.user.account_type,
+        },
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to sign in';
+      throw new BadRequestException(message);
+    }
   }
 
   @Post('change-password')

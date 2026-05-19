@@ -8,7 +8,7 @@ import {
   Users,
   UserRoundCheck,
   LogOut,
-  ScrollText
+  ScrollText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -23,22 +23,23 @@ const navigationItems = [
   { label: "Calendar", icon: Calendar, href: "/calendar" },
   { label: "OJT Data", icon: GraduationCap, href: "/ojt-data" },
   { label: "Accounts", icon: Users, href: "/accounts" },
-  { label: "Logs", icon: ScrollText, href: "/admin-logs"}
+  { label: "Logs", icon: ScrollText, href: "/admin-logs" },
 ];
-
 
 interface SidebarProps {
   email?: string;
   account_type?: string;
 }
 
-export const AsideSidebar = ({email, account_type}:SidebarProps): JSX.Element => {
-  
+export const AsideSidebar = ({
+  email,
+  account_type,
+}: SidebarProps): JSX.Element => {
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { logout } = useAuth();
-  
+
   const handleLogout = () => {
     logout();
     router.push("/");
@@ -91,8 +92,6 @@ export const AsideSidebar = ({email, account_type}:SidebarProps): JSX.Element =>
               ? pathname?.startsWith(item.href)
               : false;
             const Icon = item.icon;
-            const displayBadge =
-              item.label === "Applications"
 
             return (
               <Link
@@ -107,12 +106,6 @@ export const AsideSidebar = ({email, account_type}:SidebarProps): JSX.Element =>
                     {item.label}
                   </span>
                 </div>
-
-                {displayBadge ? (
-                  <div className="ml-auto hidden md:flex items-center justify-center bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {displayBadge}
-                  </div>
-                ) : null}
               </Link>
             );
           })}

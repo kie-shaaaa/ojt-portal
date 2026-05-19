@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { AppointmentType } from '../data/types';
 import { LogsService } from './logs.service';
+import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class AppointmentsService {
@@ -35,7 +32,7 @@ export class AppointmentsService {
     );
 
     if (result.rowCount === 0) {
-      throw new BadRequestException(notFoundMessage);
+      throwAppError('not_found', notFoundMessage);
     }
 
     return result.rows[0];
@@ -59,7 +56,7 @@ export class AppointmentsService {
       );
 
       if ((duplicate.rowCount ?? 0) > 0) {
-        throw new InternalServerErrorException('Appointment already exists');
+        throwAppError('conflict', 'Appointment already exists');
       }
 
       const result = await client.query(
@@ -72,7 +69,7 @@ export class AppointmentsService {
       );
 
       if (result.rows.length === 0) {
-        throw new InternalServerErrorException('Failed to create appointment');
+        throwAppError('server_error', 'Failed to create appointment');
       }
 
       // Log appointment creation (system operation)
@@ -87,15 +84,10 @@ export class AppointmentsService {
           console.error('Failed to log appointment creation', err),
         );
 
-      return {
-        success: true,
-        message: 'Appointment created successfully',
-        data: result.rows[0],
-      };
+      return SuccessHandler('Appointment created successfully', result.rows[0]);
     } catch (error) {
       console.error('[APPOINTMENT] Error:', error);
-
-      throw new InternalServerErrorException('Failed to create appointment');
+      throwAppError('server_error', 'Failed to create appointment');
     }
   }
 
@@ -118,21 +110,10 @@ export class AppointmentsService {
           console.error('Failed to log appointment cancellation', err),
         );
 
-      return {
-        status: 200,
-        message: 'Appointment cancelled successfully',
-        ok: true,
-        error: null,
-        data: null,
-      };
+      return SuccessHandler('Appointment cancelled successfully', appointment);
     } catch (error) {
       console.error('[APPOINTMENT] Error cancelling appointment:', error);
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to cancel appointment');
+      throwAppError('server_error', 'Failed to cancel appointment');
     }
   }
 
@@ -151,9 +132,7 @@ export class AppointmentsService {
       );
 
       if (result.rowCount === 0) {
-        throw new BadRequestException(
-          'No appointment found for this application',
-        );
+        throwAppError('not_found', 'No appointment found for this application');
       }
 
       // Log appointment update
@@ -165,21 +144,13 @@ export class AppointmentsService {
         })
         .catch((err) => console.error('Failed to log appointment update', err));
 
-      return {
-        status: 200,
-        message: 'Appointment date updated successfully',
-        ok: true,
-        error: null,
-        data: result.rows[0],
-      };
+      return SuccessHandler(
+        'Appointment date updated successfully',
+        result.rows[0],
+      );
     } catch (error) {
       console.error('[APPOINTMENT] Error updating appointment:', error);
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to update appointment');
+      throwAppError('server_error', 'Failed to update appointment');
     }
   }
 
@@ -201,7 +172,7 @@ export class AppointmentsService {
       );
 
       if (appointmentResult.rowCount === 0) {
-        throw new BadRequestException('Appointment not found');
+        throwAppError('not_found', 'Appointment not found');
       }
 
       const appointment = appointmentResult.rows[0];
@@ -278,24 +249,13 @@ export class AppointmentsService {
           console.error('Failed to log appointment completion', err),
         );
 
-      return {
-        status: 200,
-        message: 'Appointment updated successfully',
-        ok: true,
-        error: null,
-        data: null,
-      };
+      return SuccessHandler('Appointment completed successfully');
     } catch (error) {
       if (isOrientationAppointment) {
         await client.query('ROLLBACK').catch(() => undefined);
       }
       console.error('[APPOINTMENT] Error completing appointment:', error);
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to complete appointment');
+      throwAppError('server_error', 'Failed to complete appointment');
     }
   }
 
@@ -312,7 +272,7 @@ export class AppointmentsService {
         monthNumber < 1 ||
         monthNumber > 12
       ) {
-        throw new BadRequestException('Invalid month or year');
+        throwAppError('bad_request', 'Invalid month or year');
       }
 
       // Start of month (e.g. 2026-05-01 00:00:00)
@@ -348,11 +308,10 @@ export class AppointmentsService {
 
       const result = await client.query(query, values);
 
-      return result.rows;
+      return SuccessHandler('Appointments fetched successfully', result.rows);
     } catch (error) {
       console.error('[APPOINTMENT] Error fetching appointments:', error);
-
-      throw new InternalServerErrorException('Failed to fetch appointments');
+      throwAppError('server_error', 'Failed to fetch appointments');
     }
   }
 }
