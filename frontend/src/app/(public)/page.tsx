@@ -1,8 +1,9 @@
-import { LandingPage } from "../../components/layout/landing/LandingPage";
+//import { LandingPage } from "../../components/layout/landing/LandingPage";
+import { Landing } from "../../components/layout/landing1/Landing";
 import { JSX } from "react";
 
 export const NtcOjtApplication = (): JSX.Element => {
-  return <LandingPage />;
+  return <Landing />;
 };
 
 export default NtcOjtApplication;
