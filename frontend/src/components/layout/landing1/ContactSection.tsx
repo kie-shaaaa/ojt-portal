@@ -12,9 +12,9 @@ type FormData = {
 
 const contactDetails = [
   { title: "Address", content: "NTC Building, BIR Road, East Triangle, Diliman, Quezon City", icon: MapPin },
-  { title: "Email", content: "ojt.hr@ntc.gov.ph", icon: Mail },
-  { title: "Phone", content: "+63 2 8924 4008", icon: Phone },
-  { title: "Office Hours", content: "Mon-Fri: 8:00 AM - 5:00 PM", icon: Clock },
+  { title: "Email", content: "human.resource@ntc.gov.ph", icon: Mail },
+  { title: "Phone", content: "8-924-3775", icon: Phone },
+  { title: "Office Hours", content: "Mon-Thurs: 8:00 AM - 5:00 PM", icon: Clock },
 ];
 
 const subjectOptions = [
@@ -41,7 +41,7 @@ export const ContactFormSection = (): JSX.Element => {
   };
 
   return (
-    <section className="w-full py-20 px-4 md:px-8 lg:px-16 bg-white">
+    <section id="contact-section" className="w-full py-20 px-4 md:px-8 lg:px-16 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-2 gap-12">
           {/* Contact Information */}

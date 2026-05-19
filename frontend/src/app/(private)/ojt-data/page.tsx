@@ -64,7 +64,6 @@ export default function OJTDataPage() {
         }
         const validInterns = Array.isArray(interns) ? interns : [];
         setInterns(validInterns);
-        console.log("Fetched interns:", validInterns.length, validInterns);
       } catch (error) {
         console.error("Error fetching interns:", error);
         setInterns([]);
@@ -88,12 +87,12 @@ export default function OJTDataPage() {
         }
         const schoolNames = Array.isArray(schools)
           ? schools
-            .map((school: any) => {
-              // Handle different school object formats
-              if (typeof school === "string") return school;
-              return school.name || school.school_name || "";
-            })
-            .filter((name: string) => name.trim())
+              .map((school: any) => {
+                // Handle different school object formats
+                if (typeof school === "string") return school;
+                return school.name || school.school_name || "";
+              })
+              .filter((name: string) => name.trim())
           : [];
 
         const seen = new Set<string>();
@@ -130,9 +129,8 @@ export default function OJTDataPage() {
 
     // If no records with "verified" status, try other possible status values
     if (verified.length === 0 && allInterns.length > 0) {
-      console.log("No 'verified' status found. Checking available statuses...");
+      ("No 'verified' status found. Checking available statuses...");
       const statuses = new Set(allInterns.map((i) => i.original_status));
-      console.log("Available statuses:", Array.from(statuses));
       // Return all records if no verified records found (fallback)
       return allInterns;
     }
