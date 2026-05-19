@@ -1,7 +1,9 @@
 "use client";
 
-import { JSX, useEffect, useRef, useState } from "react";
+import { JSX, useRef, useState } from "react";
 import { Clock3 } from "lucide-react";
+
+import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
 interface TimePickerProps {
   value: string;
@@ -23,22 +25,7 @@ export default function TimePicker({
   const hours24 = Number.isFinite(rawHours) ? rawHours : 9;
   const minutes = Number.isFinite(rawMinutes) ? rawMinutes : 0;
 
-  useEffect(() => {
-    const onPointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        pickerRef.current &&
-        !pickerRef.current.contains(target) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(target)
-      ) {
-        setShowPicker(false);
-      }
-    };
-
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, []);
+  useOutsidePointerDown(triggerRef, () => setShowPicker(false), showPicker);
 
   // Convert 24-hour to 12-hour format
   const isPM = hours24 >= 12;
@@ -168,7 +155,9 @@ export default function TimePicker({
                 </label>
                 <select
                   value={period}
-                  onChange={(e) => handlePeriodChange(e.target.value as "AM" | "PM")}
+                  onChange={(e) =>
+                    handlePeriodChange(e.target.value as "AM" | "PM")
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="AM">AM</option>

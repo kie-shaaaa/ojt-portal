@@ -12,6 +12,7 @@ import {
 } from "react";
 import DatePicker from "@/components/layout/DatePicker";
 import { apiCall } from "@/lib/api";
+import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
 interface OjtInformationData {
   school: string;
@@ -70,22 +71,7 @@ const SearchableField = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-    };
-  }, []);
+  useOutsidePointerDown(wrapperRef, () => setIsOpen(false), isOpen);
 
   const mergedOptions = useMemo(() => Array.from(new Set(options)), [options]);
   const query = value;

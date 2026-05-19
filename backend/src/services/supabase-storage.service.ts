@@ -55,6 +55,46 @@ export class SupabaseStorage {
     return data;
   }
 
+  // Upload a Readable stream (Node) to a bucket
+  async uploadStream(
+    bucket: string,
+    path: string,
+    stream: NodeJS.ReadableStream,
+    contentType = 'application/octet-stream',
+  ) {
+    if (!bucket || !path) throw new Error('bucket and path are required');
+
+    // Supabase JS may accept streams in Node environments; cast to any
+    const { data, error } = await (this.client.storage as any)
+      .from(bucket)
+      .upload(path, stream as any, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      this.logger.error(`Upload error: ${error.message}`, error);
+
+      if (/bucket not found/i.test(error.message)) {
+        this.logger.log(`Creating bucket: ${bucket}`);
+        await this.ensureBucketExists(bucket, true);
+        const { data: retryData, error: retryError } = await (
+          this.client.storage as any
+        )
+          .from(bucket)
+          .upload(path, stream as any, { contentType, upsert: true });
+
+        if (retryError) throw retryError;
+        this.logger.log(`File uploaded successfully: ${path}`);
+        return retryData;
+      }
+      throw error;
+    }
+
+    this.logger.log(`File uploaded successfully: ${path}`);
+    return data;
+  }
+
   // Ensure bucket exists
   async ensureBucketExists(bucket: string, isPublic = true) {
     const { data, error } = await this.client.storage.createBucket(bucket, {

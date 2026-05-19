@@ -1,7 +1,8 @@
 "use client";
 
 import { Download, Eye, Pencil, Trash2, Search } from "lucide-react";
-import { JSX, useMemo, useState, useEffect } from "react";
+import { JSX, useMemo, useState } from "react";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useSearchParams } from "next/navigation";
 
 import { apiCall } from "@/lib/api";
@@ -9,6 +10,7 @@ import { apiCall } from "@/lib/api";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import ApplicationDetails from "../ApplicationDetailsModal";
 import ChangeStatusModal from "../ChangeStatusModal";
+import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 
 type ApplicationRow = {
   applicationId: string;
@@ -179,6 +181,8 @@ export const ApplicationsTableSection = ({
     [applications],
   );
 
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+
   const filteredApplications = useMemo(() => {
     return applicationsState.filter((application) => {
       const matchesStatus = normalizedStatusParam
@@ -187,7 +191,7 @@ export const ApplicationsTableSection = ({
           )
         : true;
 
-      const matchesSearch = searchQuery
+      const matchesSearch = debouncedSearch
         ? [
             application.id,
             application.applicantName,
@@ -196,16 +200,41 @@ export const ApplicationsTableSection = ({
           ]
             .join(" ")
             .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+            .includes(debouncedSearch.toLowerCase())
         : true;
 
       return matchesStatus && matchesSearch;
     });
   }, [applicationsState, normalizedStatusParam, searchQuery]);
 
+  const visibleSelectedRows = useMemo(() => {
+    const filteredIds = new Set(
+      filteredApplications.map((application) => application.id),
+    );
+    return new Set([...selectedRows].filter((id) => filteredIds.has(id)));
+  }, [filteredApplications, selectedRows]);
+
+  const shouldVirtualize = filteredApplications.length >= 10;
+  const { scrollRef, windowedRange } = useVirtualizedRows({
+    itemCount: filteredApplications.length,
+    rowHeight: 152,
+    overscan: 4,
+    enabled: shouldVirtualize,
+    resetKey: filteredApplications
+      .map((application) => application.id)
+      .join("|"),
+  });
+
+  const visibleApplications = shouldVirtualize
+    ? filteredApplications.slice(
+        windowedRange.startIndex,
+        windowedRange.endIndex,
+      )
+    : filteredApplications;
+
   const allSelected =
     filteredApplications.length > 0 &&
-    filteredApplications.every((a) => selectedRows.has(a.id));
+    filteredApplications.every((a) => visibleSelectedRows.has(a.id));
 
   const handleSelectAll = () => {
     if (allSelected) {
@@ -227,10 +256,6 @@ export const ApplicationsTableSection = ({
 
     setSelectedRows(updated);
   };
-
-  useEffect(() => {
-    setSelectedRows(new Set());
-  }, [searchQuery, normalizedStatusParam]);
 
   const handleDeleteApplication = async () => {
     if (!applicationToDelete || isDeleting) return;
@@ -311,7 +336,12 @@ export const ApplicationsTableSection = ({
       </div>
 
       {/* Table */}
-      <div className="relative min-h-[400px] overflow-x-auto">
+      <div
+        ref={scrollRef}
+        className={`relative min-h-[400px] overflow-x-auto ${
+          shouldVirtualize ? "max-h-[calc(100vh-20rem)] overflow-auto" : ""
+        }`}
+      >
         {isLoading && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px]">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent shadow-lg" />
@@ -333,8 +363,8 @@ export const ApplicationsTableSection = ({
             </h3>
 
             <p className="max-w-xs text-sm text-slate-500">
-              We couldn't find any applications matching your current search or
-              filter criteria.
+              We couldn&apos;t find any applications matching your current
+              search or filter criteria.
             </p>
 
             <button
@@ -374,11 +404,23 @@ export const ApplicationsTableSection = ({
           </thead>
 
           <tbody className="divide-y divide-slate-100">
-            {filteredApplications.map((application, index) => (
+            {shouldVirtualize && windowedRange.topSpacerHeight > 0 && (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={columns.length}
+                  className="h-0 border-0 p-0"
+                  style={{ height: windowedRange.topSpacerHeight }}
+                />
+              </tr>
+            )}
+
+            {visibleApplications.map((application, index) => (
               <tr
-                key={`${application.id}-${index}`}
+                key={`${application.id}-${
+                  shouldVirtualize ? windowedRange.startIndex + index : index
+                }`}
                 className={`group transition-all duration-200 hover:bg-blue-50/30 ${
-                  selectedRows.has(application.id) ? "bg-blue-50/50" : ""
+                  visibleSelectedRows.has(application.id) ? "bg-blue-50/50" : ""
                 }`}
               >
                 {/* Checkbox */}
@@ -386,7 +428,7 @@ export const ApplicationsTableSection = ({
                   <div className="flex items-center justify-center">
                     <input
                       type="checkbox"
-                      checked={selectedRows.has(application.id)}
+                      checked={visibleSelectedRows.has(application.id)}
                       onChange={() => handleRowSelect(application.id)}
                       className="h-5 w-5 cursor-pointer rounded-lg border-slate-300 text-blue-600 transition focus:ring-blue-500"
                     />
@@ -513,6 +555,16 @@ export const ApplicationsTableSection = ({
                 </td>
               </tr>
             ))}
+
+            {shouldVirtualize && windowedRange.bottomSpacerHeight > 0 && (
+              <tr aria-hidden="true">
+                <td
+                  colSpan={columns.length}
+                  className="h-0 border-0 p-0"
+                  style={{ height: windowedRange.bottomSpacerHeight }}
+                />
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

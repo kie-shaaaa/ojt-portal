@@ -1,7 +1,9 @@
 "use client";
 
-import { JSX, useId, useState, useRef, useEffect } from "react";
+import { JSX, useId, useState, useRef } from "react";
 import { ChevronDown, Filter, RotateCcw } from "lucide-react";
+
+import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
 type FilterOption = {
   value: string;
@@ -41,23 +43,16 @@ export const ApplicationsFilterSection = ({
   const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
   const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        schoolDropdownRef.current &&
-        !schoolDropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsSchoolDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useOutsidePointerDown(
+    schoolDropdownRef,
+    () => setIsSchoolDropdownOpen(false),
+    isSchoolDropdownOpen,
+  );
 
   const filteredSchoolOptions = schoolOptions
     .filter((option) => option.value !== "all-schools")
     .filter((option) =>
-      option.label.toLowerCase().includes(schoolSearchQuery.toLowerCase())
+      option.label.toLowerCase().includes(schoolSearchQuery.toLowerCase()),
     );
 
   const filterFields: FilterField[] = [
@@ -168,7 +163,7 @@ export const ApplicationsFilterSection = ({
                   )}
                 </label>
 
-                <div 
+                <div
                   className="relative w-full"
                   ref={field.key === "school" ? schoolDropdownRef : undefined}
                 >
@@ -183,8 +178,9 @@ export const ApplicationsFilterSection = ({
                             ? schoolSearchQuery
                             : filters.school === "all-schools"
                               ? ""
-                              : field.options.find((o) => o.value === filters.school)
-                                  ?.label || ""
+                              : field.options.find(
+                                  (o) => o.value === filters.school,
+                                )?.label || ""
                         }
                         placeholder="All Schools"
                         onChange={(e) => {
@@ -199,8 +195,9 @@ export const ApplicationsFilterSection = ({
                           setIsSchoolDropdownOpen(true);
                           if (filters.school !== "all-schools") {
                             setSchoolSearchQuery(
-                              field.options.find((o) => o.value === filters.school)
-                                ?.label || ""
+                              field.options.find(
+                                (o) => o.value === filters.school,
+                              )?.label || "",
                             );
                           } else {
                             setSchoolSearchQuery("");
@@ -213,7 +210,8 @@ export const ApplicationsFilterSection = ({
                         <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-slate-200 bg-white py-1 shadow-lg outline-none">
                           {filteredSchoolOptions.length > 0 ? (
                             filteredSchoolOptions.map((option) => {
-                              const isSelected = filters.school === option.value;
+                              const isSelected =
+                                filters.school === option.value;
                               return (
                                 <div
                                   key={option.value}

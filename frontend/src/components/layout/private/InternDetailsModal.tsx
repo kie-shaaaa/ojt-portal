@@ -4,6 +4,8 @@ import { X, Eye, Download, FileText } from "lucide-react";
 import { JSX, useEffect, useState } from "react";
 import { useApplicationFiles } from "@/hooks/useApplicationFiles";
 
+import { useEscapeKey } from "@/hooks/useDismissableEvents";
+
 export type ModalInternData = {
   applicationId?: number | string;
   ojtId: string;
@@ -132,17 +134,14 @@ export default function InternDetailsModal({
   });
 
   useEffect(() => {
-    requestAnimationFrame(() => setIsVisible(true));
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose && onClose();
-    };
-    window.addEventListener("keydown", onKey);
+    const animationFrameId = requestAnimationFrame(() => setIsVisible(true));
 
     return () => {
-      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(animationFrameId);
     };
-  }, [onClose]);
+  }, []);
+
+  useEscapeKey(() => onClose?.());
   const detailRows: DetailRow[] = [
     { label: "Portal ID:", value: intern?.portalId ?? "OJT-000001" },
     { label: "OJT ID:", value: intern?.ojtId ?? "2026-001", bold: true },
@@ -166,7 +165,7 @@ export default function InternDetailsModal({
       className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
         isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
       }`}
-      onClick={() => onClose && onClose()}
+      onClick={() => onClose?.()}
     >
       <section
         role="dialog"
@@ -192,7 +191,7 @@ export default function InternDetailsModal({
             type="button"
             aria-label="Close modal"
             className="text-gray-400 transition hover:text-gray-600"
-            onClick={() => onClose && onClose()}
+            onClick={() => onClose?.()}
           >
             <X size={20} />
           </button>

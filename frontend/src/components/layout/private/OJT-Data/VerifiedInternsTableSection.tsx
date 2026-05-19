@@ -2,9 +2,11 @@
 import InternDetailsModal, { ModalInternData } from "../InternDetailsModal";
 import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
-import { JSX, useState, useEffect } from "react";
+import { JSX, useMemo, useState } from "react";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
+
+import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 
 interface Intern {
   id: number;
@@ -42,28 +44,43 @@ export const VerifiedInternsTableSection = ({
   onViewDetails,
 }: VerifiedInternsTableSectionProps): JSX.Element => {
   const [selectedInterns, setSelectedInterns] = useState<number[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
   const [viewingIntern, setViewingIntern] = useState<ModalInternData | null>(
     null,
   );
   const [editingIntern, setEditingIntern] = useState<Intern | null>(null);
   const [internToDelete, setInternToDelete] = useState<Intern | null>(null);
-  const [rows, setRows] = useState<Intern[]>(interns);
+  const [deletedInternIds, setDeletedInternIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [editedInterns, setEditedInterns] = useState<
+    Record<number, Partial<Intern>>
+  >({});
 
-  // Keep local rows in sync with parent-provided filtered data.
-  useEffect(() => {
-    setRows(interns);
-  }, [interns]);
+  const rows = useMemo(
+    () =>
+      interns
+        .filter((intern) => !deletedInternIds.has(intern.id))
+        .map((intern) => ({
+          ...intern,
+          ...(editedInterns[intern.id] ?? {}),
+        })),
+    [deletedInternIds, editedInterns, interns],
+  );
 
-  useEffect(() => {
-    setSelectedInterns((prev) =>
-      prev.filter((id) => rows.some((r) => r.id === id)),
-    );
-  }, [rows]);
+  const selectAll = rows.length > 0 && selectedInterns.length === rows.length;
 
-  useEffect(() => {
-    setSelectAll(rows.length > 0 && selectedInterns.length === rows.length);
-  }, [rows, selectedInterns]);
+  const shouldVirtualize = rows.length >= 10;
+  const { scrollRef, windowedRange } = useVirtualizedRows({
+    itemCount: rows.length,
+    rowHeight: 72,
+    overscan: 5,
+    enabled: shouldVirtualize,
+    resetKey: rows.map((intern) => intern.id).join("|"),
+  });
+
+  const visibleRows = shouldVirtualize
+    ? rows.slice(windowedRange.startIndex, windowedRange.endIndex)
+    : rows;
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Not set";
@@ -87,23 +104,14 @@ export const VerifiedInternsTableSection = ({
   };
 
   const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedInterns([]);
-    } else {
-      setSelectedInterns(rows.map((intern) => intern.id));
-    }
-    setSelectAll(!selectAll);
+    setSelectedInterns(selectAll ? [] : rows.map((intern) => intern.id));
   };
 
   const handleSelectIntern = (id: number) => {
     if (selectedInterns.includes(id)) {
       setSelectedInterns(selectedInterns.filter((internId) => internId !== id));
-      setSelectAll(false);
     } else {
       setSelectedInterns([...selectedInterns, id]);
-      if (selectedInterns.length + 1 === rows.length) {
-        setSelectAll(true);
-      }
     }
   };
 
@@ -191,6 +199,92 @@ export const VerifiedInternsTableSection = ({
     setInternToDelete(intern);
   };
 
+  const renderedRows = useMemo(
+    () =>
+      visibleRows.map((intern, idx) => {
+        const isSelected = selectedInterns.includes(intern.id);
+        const key = `intern-${
+          shouldVirtualize ? windowedRange.startIndex + idx : intern.id
+        }`;
+
+        return (
+          <tr
+            key={key}
+            className={`border-b border-slate-100 transition-all ${
+              isSelected
+                ? "bg-blue-50"
+                : idx % 2 === 0
+                  ? "bg-white hover:bg-slate-50"
+                  : "bg-slate-50 hover:bg-slate-100"
+            }`}
+          >
+            <td className="px-6 py-4">
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => handleSelectIntern(intern.id)}
+                  className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
+                  aria-label={`Select intern ${getInternName(intern)}`}
+                />
+              </label>
+            </td>
+            <td className="px-6 py-4 font-mono font-semibold text-blue-600">
+              {getOjtId(intern)}
+            </td>
+            <td className="px-6 py-4 font-semibold text-slate-900">
+              {getInternName(intern)}
+            </td>
+            <td className="px-6 py-4 text-slate-700">
+              <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
+                {intern.gender || "Not set"}
+              </span>
+            </td>
+            <td className="px-6 py-4 text-slate-700 text-sm">
+              {intern.school_name}
+            </td>
+            <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
+              {intern.course || (
+                <span className="text-slate-400 italic">—</span>
+              )}
+            </td>
+            <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
+              {formatDate(intern.deployment_date)}
+            </td>
+            <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
+              {formatDate(intern.end_date)}
+            </td>
+            <td className="px-6 py-4">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleViewDetails(intern)}
+                  title="View details"
+                  className="rounded-lg bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100 hover:scale-105 active:scale-95"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  onClick={() => handleEdit(intern)}
+                  title="Edit intern"
+                  className="rounded-lg bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95"
+                >
+                  <SquarePen size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(intern)}
+                  title="Delete intern"
+                  className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      }),
+    [visibleRows, selectedInterns, shouldVirtualize, windowedRange.startIndex],
+  );
+
   return (
     <>
       <section className="flex relative self-stretch w-full flex-col items-start rounded-xl border border-solid border-slate-200 bg-white shadow-lg overflow-hidden">
@@ -221,7 +315,12 @@ export const VerifiedInternsTableSection = ({
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto w-full flex-1">
+        <div
+          ref={scrollRef}
+          className={`w-full flex-1 overflow-x-auto ${
+            shouldVirtualize ? "max-h-[calc(100vh-20rem)] overflow-auto" : ""
+          }`}
+        >
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-100 border-b border-slate-200 sticky top-0">
               <tr>
@@ -287,6 +386,16 @@ export const VerifiedInternsTableSection = ({
               </tr>
             </thead>
             <tbody>
+              {shouldVirtualize && windowedRange.topSpacerHeight > 0 && (
+                <tr aria-hidden="true">
+                  <td
+                    colSpan={9}
+                    className="h-0 border-0 p-0"
+                    style={{ height: windowedRange.topSpacerHeight }}
+                  />
+                </tr>
+              )}
+
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center">
@@ -304,9 +413,13 @@ export const VerifiedInternsTableSection = ({
                   </td>
                 </tr>
               )}
-              {rows.map((intern, idx) => (
+              {visibleRows.map((intern, idx) => (
                 <tr
-                  key={`intern-${intern.id}`}
+                  key={`intern-${
+                    shouldVirtualize
+                      ? windowedRange.startIndex + idx
+                      : intern.id
+                  }`}
                   className={`border-b border-slate-100 transition-all ${
                     selectedInterns.includes(intern.id)
                       ? "bg-blue-50"
@@ -378,6 +491,16 @@ export const VerifiedInternsTableSection = ({
                   </td>
                 </tr>
               ))}
+
+              {shouldVirtualize && windowedRange.bottomSpacerHeight > 0 && (
+                <tr aria-hidden="true">
+                  <td
+                    colSpan={9}
+                    className="h-0 border-0 p-0"
+                    style={{ height: windowedRange.bottomSpacerHeight }}
+                  />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -417,7 +540,11 @@ export const VerifiedInternsTableSection = ({
           message={`Are you sure you want to delete ${getInternName(internToDelete)}? This action cannot be undone.`}
           onCancel={() => setInternToDelete(null)}
           onConfirm={() => {
-            setRows((prev) => prev.filter((r) => r.id !== internToDelete.id));
+            setDeletedInternIds((prev) => {
+              const next = new Set(prev);
+              next.add(internToDelete.id);
+              return next;
+            });
             setSelectedInterns((prev) =>
               prev.filter((id) => id !== internToDelete.id),
             );
@@ -451,7 +578,13 @@ export const VerifiedInternsTableSection = ({
           onClose={() => setEditingIntern(null)}
           onSave={(payload) => {
             // Apply changes to the local rows state so the table reflects edits
-            const computeNewOjtId = (oldId: string, p: any) => {
+            const computeNewOjtId = (
+              oldId: string,
+              p: {
+                ojtYear?: string;
+                ojtNumber?: string;
+              },
+            ) => {
               const parts = (oldId || "").split("-").filter(Boolean);
               if (parts.length >= 2) {
                 // replace last with number
@@ -464,20 +597,16 @@ export const VerifiedInternsTableSection = ({
               return `${p.ojtYear ?? "2026"}-${p.ojtNumber ?? "001"}`;
             };
 
-            setRows((prev) =>
-              prev.map((r) =>
-                r.id === payload.id
-                  ? {
-                      ...r,
-                      gender: payload.gender ?? r.gender,
-                      deployment_date:
-                        payload.deploymentDate ?? r.deployment_date,
-                      end_date: payload.endDate ?? r.end_date,
-                      ojt_id: computeNewOjtId(getOjtId(r), payload),
-                    }
-                  : r,
-              ),
-            );
+            setEditedInterns((prev) => ({
+              ...prev,
+              [Number(payload.id)]: {
+                gender: payload.gender ?? editingIntern.gender,
+                deployment_date:
+                  payload.deploymentDate ?? editingIntern.deployment_date,
+                end_date: payload.endDate ?? editingIntern.end_date,
+                ojt_id: computeNewOjtId(getOjtId(editingIntern), payload),
+              },
+            }));
             console.log("Saved intern details:", payload);
             setEditingIntern(null);
           }}

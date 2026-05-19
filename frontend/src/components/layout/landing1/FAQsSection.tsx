@@ -6,32 +6,70 @@ import { ChevronDown, Users, FileText, ClipboardCheck, Clock, Mail } from "lucid
 const faqItems = [
   {
     id: "who-can-apply",
-    question: "Who can apply for the OJT program?",
-    answer: "The program is open to undergraduate students from recognized universities currently enrolled in relevant degrees such as Engineering, Information Technology, Computer Science, and Public Administration.",
+    question: "How do I submit an application on this website?",
+    answer: "Click the \"Submit Application\" button on our homepage to access the online application form. Fill out all required information, upload necessary documents (resume, proof of enrollment, endorsement, MOA, and other documents), and submit your application. You'll receive a confirmation email with your application reference number.",
     icon: Users,
   },
   {
     id: "requirements",
-    question: "What requirements are needed?",
-    answer: "Applicants typically need to submit the required internship forms, an updated resume, endorsement or recommendation from their school, and any additional documents requested during screening.",
+    question: "What documents are required for OJT/Internship applications?",
+    answer:  <>
+      Prepare the following documents:
+      <br />
+      <br />
+      1. Updated Resume/CV
+      <br />
+      2. Proof of Enrollment
+      <br />
+      3. (Draft) Endorsement Letter - Address to Chief Flora R. Ralar
+      <br />
+      4. Vaccine Card or Medical Certificate
+      <br />
+      5. (Draft) Memorandum of Agreement
+      <br />
+      <br />
+      "Draft" means that the document does not require a signature. Incomplete requirements will not be entertained.
+    </>,
     icon: FileText,
   },
   {
     id: "track-application",
-    question: "How can I track my application?",
-    answer: "You can track your application through the updates provided during the application process and by monitoring communications sent to your registered email address.",
+    question: "What courses/programs are qualified for OJT?",
+    answer: <> We accept OJT applicants from any course or program, as long as your skills and interests align with the needs of our agency. Whether you're from IT, Business, Engineering, Communications, or other fields, we encourage you to apply! 
+    "Please note that internship slots are limited, so we encourage early applications.
+    </>,
     icon: ClipboardCheck,
   },
   {
     id: "application-process-time",
     question: "How long does the application process take?",
-    answer: "The application timeline may vary depending on screening volume and department requirements, but applicants are usually informed once their application progresses to the next stage.",
+    answer: <> The application process typically follows this timeline:
+<br/>
+<br/>
+• Initial Review: 1-3 working days
+<br/>
+• Assessment: 1-3 working days
+<br/>
+• Final Decision: up to 2 weeks from application
+<br/>
+<br/>
+You can track your application status on this website. We'll also send email notifications at each stage of the process.</>,
     icon: Clock,
   },
   {
     id: "email-updates",
-    question: "Will I receive email updates?",
-    answer: "Yes, email updates may be sent regarding the status of your application, interview schedules, document requests, and final decisions.",
+    question: "How can I check my application status?",
+    answer: <>You can check your application status by:
+<br/>
+<br/>
+1. Check your application status by visiting the 'Track Application' page
+<br/>
+2. Checking email notifications from no-reply@ntcapplication.com
+<br/>
+3. Calling our HR hotline at 8-924-3775 during office hours
+<br/>
+<br/>
+Status updates are typically provided after each stage of the application process through your email.</>,
     icon: Mail,
   },
 ];
