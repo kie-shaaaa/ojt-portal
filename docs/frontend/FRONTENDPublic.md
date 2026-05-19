@@ -5,7 +5,7 @@
 ---
 
 ## Introduction
-The NTC Application Portal is a web-based platform developed for the National Telecommunications Commission (NTC) to streamline the application and recruitment process for applicants, interns, and administrators. The system provides an accessible and user-friendly interface for submitting applications, tracking application status, and managing applicant-related information online.
+The NTC Application Portal is a web-based platform developed for the National Telecommunications Commission (NTC) to streamline the application and recruitment process for applicants. The system provides an accessible and user-friendly interface for submitting applications, tracking application status, and managing applicant-related information online.
 
 ---
 
@@ -24,6 +24,7 @@ The NTC Application Portal is a web-based platform developed for the National Te
 The Home page serves as the first point of contact for users. It introduces NTC Application Portal, and guides users towards submitting an application or tracking existing application.
 
 ## UI Elements
+
 * **Hero Section:** Display portal introduction, NTC Logo, and primary call-to-action buttons
 * **Feature Highlights:** Showcases the key features and services of the portal
 * **Call-to-Action Buttons:** Submit Application, Track Application, Login
@@ -77,6 +78,7 @@ The Home page serves as the first point of contact for users. It introduces NTC 
 Enables users to submit application easily and efficiently through an online submission process. 
 
 ## UI Elements
+
 * Personal Information Fields
 * Education Information Fields
 * File Upload Section/Required Document checklist
@@ -88,6 +90,7 @@ Enables users to submit application easily and efficiently through an online sub
 * Validation Messages
 
 ## Process Overview
+
 1. User access the application form
 2. User fills out the required information
 3. User uploads the necessary documents
@@ -98,6 +101,7 @@ Enables users to submit application easily and efficiently through an online sub
 8. System stores the application and displays a confirmation message
 
 ## Step-by-Step
+
 1. Enter personal information
 2. Enter OJT details
 3. Upload required documents
@@ -106,6 +110,7 @@ Enables users to submit application easily and efficiently through an online sub
 6. Receive confirmation via email and Application ID
 
 ## Validation Rules
+
 * Required fields must not be empty
 * Email must follow a valid email format
 * Contact numbers must contain valid digits only
@@ -113,25 +118,28 @@ Enables users to submit application easily and efficiently through an online sub
 * Duplicate submission may be restricted
 
 ## Error Handling
+
 * Display inline validation messages for incorrect inputs
 * Show upload errors for unsupported file types or oversized files
 * Prevent submission when required fields are incomplete
 * Display a message when the application submission period is closed
 * Display server or network messages when submission fails
 
-## Security considerations
+## Security Considerations
+
 * Validate and sanitize all user inputs
 * Restrict malicious file uploads
 * Protect applicant data through secure storage and transmission
 
 ## Design Notes
+
 * Maintain a clean and user-friendly interface
 * Use responsive design for mobile, tablet, and desktop devices
 * Keep the form layout organized and easy to follow
 * Highlight required fields clearly
 
 
-## Track Application
+# Track Application
 
 ## Purpose
 
@@ -162,40 +170,82 @@ Allow users to monitor the status and progress of their submitted application us
 4. View the application status and updates
 
 ## Validation Rules
+
 * Application ID field must not be empty
 * Email Address field must not be empty or must follow a valid email format
 * Application ID and Email Address must match the existing record
 
 ## Error Handling
+
 * Display an error message for invalid Application ID and Email Address
 * Notify users when no matching application record is found
 * Prevents submission when fields are incomplete
 * Display server or network messages when retrieval fails
 
 ## Security Considerations
+
 * Protect applicant information from unauthorized access
 * Validate and sanitize users inputs
 
 ## Design Notes
+
 * Keep the interface simple and easy to use
 * Clearly display the application and status and progress
 * Ensure responsive layout accross devices
 
-## Login
+# Login
 
 ## Purpose
 
+Allows authorized administrators and employees to securely access the NTC Application Portal management system.
+
 ## UI Elements
 
-## Admin flow
+* Username or Email Input Field
+* Password Input Field
+* Login Button
+* Error Message Display
+
+## Process Overview
+
+* Authorized user accesses the Login page
+* User enters login credentials
+* System validates the credentials
+* System authenticates the account
+* User is redirected to the dashboard
+
+## Step-by-Step
+
+1. Enter registered username or email address
+2. Enter password
+3. Click the Login button
+4. System verifies credentials
+5. User gains access to the dashboard
 
 ## Validation Rules
 
+* Username or Email field must not be empty
+* Password field must not be empty
+* Credentials must match an existing authorized account
+
 ## Error Handling
+
+* Display an error message for incorrect credentials
+* Prevent login when required fields are incomplete
+* Notify users when the account is unauthorized
+* Display server or network error messages when login fails
 
 ## Accessibility 
 
-## Security
+* Support keyboard navigation for form inputs
+* Provide clearly labeled input fields
+* Ensure readable error messages and sufficient color contrast
+
+## Security Considerations
+
+* Passwords should be securely encrypted
+* Implement secure authentication and session management
+* Protect against unauthorized access and brute-force attacks
 
 
 
