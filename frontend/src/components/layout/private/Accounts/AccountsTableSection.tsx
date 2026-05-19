@@ -118,7 +118,6 @@ export const AccountsTableSection = ({
         }
       }
 
-      console.log("Successfully updated account");
     } catch (error) {
       console.error("Error updating account information", error);
       throw new Error("Error updating account information");
@@ -140,7 +139,7 @@ export const AccountsTableSection = ({
       });
 
       if (!result.ok) {
-        setIsDeleteModalOpen(false)
+        setIsDeleteModalOpen(false);
         throw new Error("Updating account data failed");
       }
 
@@ -149,8 +148,7 @@ export const AccountsTableSection = ({
         router.push("/");
       }
 
-      setIsDeleteModalOpen(false)
-      console.log("Successfully deleted account");
+      setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Error deleting account", error);
       throw new Error("Error deleting account");
@@ -178,7 +176,7 @@ export const AccountsTableSection = ({
         throw new Error("Updating account data failed");
       }
 
-      console.log("Successfully reset password");
+      ("Successfully reset password");
     } catch (error) {
       console.error("Error resetting password", error);
       throw new Error("Error resetting password");
@@ -204,7 +202,7 @@ export const AccountsTableSection = ({
         throw new Error("Creating account failed");
       }
 
-      console.log("Successfully created account");
+      ("Successfully created account");
     } catch (error) {
       console.error("Error creating account", error);
       throw new Error("Error creating account");
