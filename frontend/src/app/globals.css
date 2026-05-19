@@ -16,8 +16,20 @@
   --color-ntc-800: #1e40af;
   --color-ntc-900: #1e3a8a;
   --color-ntc-950: #172554;
+  --color-navy-800: #0f172a;
+  --color-navy-900: #020617;
   --color-ph-red: #ce1126;
   --color-ph-yellow: #fcd116;
+}
+
+@layer utilities {
+  .bg-hero-pattern {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.08),
+      transparent 55%
+    );
+  }
 }
 
 @layer base {
@@ -34,7 +46,7 @@
     -webkit-appearance: auto;
     appearance: auto;
     background-color: #ffffff;
-    accent-color: #2563EB; /* Tailwind blue-600 */
+    accent-color: #2563eb; /* Tailwind blue-600 */
   }
 }
 
