@@ -9,6 +9,7 @@ const navItems = [
   { label: "How to Apply", href: "/how-to-apply", active: false },
   { label: "FAQs", href: "/faqs", active: false },
   { label: "Contact", href: "/contact", active: false },
+  { label: "Login", href: "/login", active: false },
 ];
 
 export const NavBar = (): JSX.Element => {
