@@ -237,6 +237,88 @@ export class ApplicationsService {
     }
   }
 
+  async resubmitApplicationFiles(
+    applicationId: number,
+    fields: Record<string, string>,
+    files: UploadedFile[] = [],
+  ): Promise<SuccessResponse> {
+    const client = this.databaseService.getClient();
+
+    try {
+      // Step 1: Verify the application exists
+      const appResult = await client.query<Application>(
+        'SELECT * FROM applications WHERE id = $1',
+        [applicationId],
+      );
+
+      if (appResult.rows.length === 0) {
+        throw new Error('Application not found');
+      }
+
+      const application = appResult.rows[0];
+      const uploadedFileIds: number[] = [];
+
+      try {
+        // Step 2: Upload new files, each with its fieldname as the document_key
+        for (const file of files) {
+          const uploadedFile = await this.fileUploadsService.uploadAndSave(
+            file,
+            {
+              application_id: applicationId,
+              file_type: 'other',
+              document_key: file.fieldname,
+              file_name: file.originalname,
+              file_size: file.size,
+            },
+          );
+
+          uploadedFileIds.push(uploadedFile.id);
+        }
+
+        // Log resubmission (system operation)
+        await this.logsService
+          .logOther({
+            userId: 0,
+            action: 'Application Resubmitted with Files',
+            details: `Application resubmitted with ${files.length} file(s) by ${application.email}`,
+            ipAddress: undefined,
+          })
+          .catch((err) =>
+            console.error('Failed to log application resubmission', err),
+          );
+
+        return SuccessHandler(
+          'Application files resubmitted successfully',
+          application,
+        );
+      } catch (error) {
+        // Cleanup uploaded files on error
+        await Promise.all(
+          uploadedFileIds.map((fileId) =>
+            this.fileUploadsService.deleteApplicationFile(fileId),
+          ),
+        ).catch(() => undefined);
+
+        throw error;
+      } finally {
+        // Always attempt to cleanup temp files
+        try {
+          await Promise.allSettled(
+            files.map(async (f) => {
+              try {
+                if (f.cleanup) return f.cleanup();
+                return;
+              } catch {}
+            }),
+          );
+        } catch {}
+      }
+    } catch (error) {
+      console.error('[APPLICATIONS] Error resubmitting files:', error);
+      throw error;
+    }
+  }
+
   async getApplications(count: number): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
     try {

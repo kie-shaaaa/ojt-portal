@@ -471,4 +471,109 @@ export class ApplicationsController {
       throw new BadRequestException(message);
     }
   }
+
+  /**
+   * Resubmit application files after rejection
+   * @param id application ID from URL param
+   * @param request FastifyRequest for multipart parsing
+   * @returns success response with updated application
+   */
+  @Post(':id/resubmit-files')
+  async resubmitApplicationFiles(
+    @Param('id') id: string,
+    @Req() request: FastifyRequest,
+  ): Promise<SuccessResponse> {
+    try {
+      const applicationId = Number(id);
+      if (!Number.isFinite(applicationId) || applicationId <= 0) {
+        throw new BadRequestException('Invalid application ID');
+      }
+
+      const contentType = String(request.headers['content-type'] ?? '');
+      if (!contentType.includes('multipart/form-data')) {
+        throw new BadRequestException('Expected multipart/form-data');
+      }
+
+      const { fields, files } = await this.parseResubmissionMultipart(request);
+      return await this.applicationService.resubmitApplicationFiles(
+        applicationId,
+        fields,
+        files,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to resubmit application files';
+      throw new BadRequestException(message);
+    }
+  }
+
+  private async parseResubmissionMultipart(request: FastifyRequest): Promise<{
+    fields: Record<string, string>;
+    files: UploadedFile[];
+  }> {
+    const fields: Record<string, string> = {};
+    const files: UploadedFile[] = [];
+
+    const multipartRequest = request as FastifyRequest & {
+      parts: () => AsyncIterable<{
+        type: 'file' | 'field';
+        fieldname: string;
+        filename: string;
+        encoding: string;
+        mimetype: string;
+        value?: string;
+        file: import('stream').Readable;
+      }>;
+    };
+
+    for await (const part of multipartRequest.parts()) {
+      if (part.type === 'file') {
+        if (!part.file) {
+          throw new BadRequestException(
+            `Unable to read uploaded file ${part.fieldname}`,
+          );
+        }
+
+        const tempFile = tmp.fileSync({
+          postfix: `-${part.filename}`,
+          keep: true,
+        });
+        const writeStream = createWriteStream(tempFile.name);
+
+        let fileSize = 0;
+
+        part.file.on('data', (chunk: Buffer) => {
+          fileSize += chunk.length;
+        });
+
+        try {
+          await pipeline(part.file, writeStream);
+
+          files.push({
+            fieldname: part.fieldname,
+            originalname: part.filename,
+            encoding: part.encoding,
+            mimetype: part.mimetype,
+            path: tempFile.name,
+            size: fileSize,
+            cleanup: () => {
+              try {
+                tempFile.removeCallback();
+              } catch {}
+            },
+          });
+        } catch (streamError: any) {
+          throw new BadRequestException(
+            `File upload failed mid-stream: ${streamError.message}`,
+          );
+        }
+      } else {
+        fields[part.fieldname] = String(part.value ?? '');
+      }
+    }
+
+    return { fields, files };
+  }
 }
