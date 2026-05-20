@@ -15,6 +15,8 @@ import { DatabaseModule } from './modules/database.module';
 import { MailerService } from './services/mailer.service';
 import { MailerController } from './controllers/mailer.controller';
 import { LogsModule } from './modules/logs.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CronjobService } from './services/cronjob.service';
 
 @Module({
   imports: [
@@ -27,8 +29,9 @@ import { LogsModule } from './modules/logs.module';
     SchoolsModule,
     CoursesModule,
     LogsModule,
+    ScheduleModule.forRoot()
   ],
   controllers: [AppController, DashboardController, MailerController],
-  providers: [AppService, DashboardService, JwtService, MailerService],
+  providers: [AppService, DashboardService, JwtService, MailerService, CronjobService],
 })
 export class AppModule {}
