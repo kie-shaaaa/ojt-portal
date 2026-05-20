@@ -1,6 +1,7 @@
 "use client";
 
 import { JSX, ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 import {
@@ -105,7 +106,12 @@ export const ApplicationStatsSection = (): JSX.Element => {
           acceptedApplications: Number(stats?.acceptedApplications ?? 0),
         });
       } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch dashboard stats";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setDashboardStats({
           totalApplications: 0,
           pendingApplications: 0,

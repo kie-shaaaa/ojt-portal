@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ApplicationsService } from '../services/applications.service';
 import { ApplicationsController } from '../controllers/applications.controller';
 import { DatabaseModule } from './database.module';
@@ -7,7 +7,12 @@ import { MailerModule } from './mailer.module';
 import { LogsModule } from './logs.module';
 
 @Module({
-  imports: [DatabaseModule, StorageModule, MailerModule, LogsModule],
+  imports: [
+    DatabaseModule,
+    forwardRef(() => StorageModule),
+    MailerModule,
+    LogsModule,
+  ],
   exports: [ApplicationsService],
   providers: [ApplicationsService],
   controllers: [ApplicationsController],

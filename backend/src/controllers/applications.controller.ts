@@ -22,9 +22,6 @@ import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
 import type {
   ApplicationStatus,
-  GetApplicationsResponse,
-  GetApplicationResponse,
-  SubmitApplicationResponse,
   UpdateApplicationSettingsDto,
   SuccessResponse,
 } from '../data/types';
@@ -454,6 +451,23 @@ export class ApplicationsController {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to fetch files';
+      throw new BadRequestException(message);
+    }
+  }
+
+  @Post('reject-file')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async rejectFile(
+    @Body() body: { fileId: number },
+    @Req() req: FastifyRequest & { user?: any },
+  ) {
+    const userId = req.user?.id;
+    if (!body.fileId) throw new BadRequestException('FileId is missing');
+    try {
+      return this.fileUploadsService.deleteFile(body.fileId, userId);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to reject the file';
       throw new BadRequestException(message);
     }
   }
