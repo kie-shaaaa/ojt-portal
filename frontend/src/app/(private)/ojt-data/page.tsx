@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { apiCall } from "../../../lib/api";
 import { FilterInternsSection } from "../../../components/layout/private/OJT-Data/FilterInternSection";
@@ -70,7 +71,10 @@ export default function OJTDataPage() {
         const validInterns = Array.isArray(interns) ? interns : [];
         setInterns(validInterns);
       } catch (error) {
-        console.error("Error fetching interns:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Error fetching interns";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setInterns([]);
       }
     };
@@ -110,7 +114,10 @@ export default function OJTDataPage() {
 
         setSchoolOptions(["All Schools", ...uniqueSchoolNames]);
       } catch (error) {
-        console.error("Error fetching schools:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Error fetching schools";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setSchoolOptions(["All Schools"]);
       }
     };

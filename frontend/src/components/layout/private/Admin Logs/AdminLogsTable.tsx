@@ -2,6 +2,7 @@
 
 import { Eye, Search, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { JSX, useMemo, useState, useEffect } from "react";
+import { toast } from "sonner";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 
 import { apiCall } from "@/lib/api";
@@ -135,7 +136,10 @@ export const AdminLogsTable = ({
           setTotalLogs(data.length);
         } catch (error) {
           if (!cancelled) {
-            console.error("Failed to fetch logs:", error);
+            const errorMessage =
+              error instanceof Error ? error.message : "Failed to fetch logs";
+            console.error(errorMessage, error);
+            toast.error(errorMessage);
             setLogs([]);
           }
         } finally {

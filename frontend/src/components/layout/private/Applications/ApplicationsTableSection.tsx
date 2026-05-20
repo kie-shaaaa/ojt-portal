@@ -2,6 +2,7 @@
 
 import { Download, Eye, Pencil, Trash2, Search } from "lucide-react";
 import { JSX, useMemo, useState } from "react";
+import { toast } from "sonner";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useSearchParams } from "next/navigation";
 
@@ -57,7 +58,6 @@ const columns = [
   "ID",
   "APPLICANT",
   "APPLICATION TYPE",
-  "DETAILS",
   "SUBMISSION DATE",
   "STATUS",
   "ACTIONS",
@@ -286,8 +286,10 @@ export const ApplicationsTableSection = ({
 
       setApplicationToDelete(null);
     } catch (error) {
-      console.error("Failed to delete application:", error);
-      alert("Failed to delete application. Please try again.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete application";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -473,32 +475,6 @@ export const ApplicationsTableSection = ({
                     </span>
                   </div>
                 </td>
-
-                {/* Details */}
-                <td className="px-6 py-6 align-top">
-                  <div className="space-y-2">
-                    <p className="line-clamp-1 text-sm font-bold leading-tight text-slate-700">
-                      {application.details[0]}
-                    </p>
-
-                    <div className="flex flex-col gap-1">
-                      <p className="text-xs font-medium text-slate-500">
-                        {application.details[1]}
-                      </p>
-
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-tighter text-slate-600 uppercase">
-                          {application.details[2]}
-                        </span>
-
-                        <span className="rounded border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold tracking-tighter text-blue-600 uppercase">
-                          {application.details[3].replace("Deploy: ", "🚀 ")}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-
                 {/* Submission Date */}
                 <td className="px-6 py-6 align-top">
                   <div className="flex flex-col">

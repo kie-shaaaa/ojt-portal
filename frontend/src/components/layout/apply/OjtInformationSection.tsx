@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { toast } from "sonner";
 import DatePicker from "@/components/layout/DatePicker";
 import { apiCall } from "@/lib/api";
 import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
@@ -330,7 +331,10 @@ export const OjtInformationSection = ({
             : defaultSchoolOptions,
         );
       } catch (error) {
-        console.error("Error fetching schools:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Error fetching schools";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setSchoolOptions(defaultSchoolOptions);
       }
     };
@@ -395,7 +399,10 @@ export const OjtInformationSection = ({
             : defaultCourseOptions,
         );
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Error fetching courses";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setCourseOptions(defaultCourseOptions);
       }
     };

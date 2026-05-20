@@ -4,10 +4,6 @@ import { FileUploadsService } from './file-uploads.service';
 import {
   Application,
   ApplicationStatus,
-  SubmitApplicationResponse,
-  GetApplicationsResponse,
-  GetApplicationResponse,
-  GetApplicationStatusResponse,
   UpdateApplicationSettingsDto,
   SuccessResponse,
   AllOjt,
@@ -218,7 +214,7 @@ export class ApplicationsService {
     } catch (error) {
       await Promise.all(
         uploadedFileIds.map((fileId) =>
-          this.fileUploadsService.deleteFile(fileId),
+          this.fileUploadsService.deleteApplicationFile(fileId),
         ),
       ).catch(() => undefined);
 

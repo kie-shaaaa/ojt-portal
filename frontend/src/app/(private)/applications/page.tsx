@@ -1,7 +1,7 @@
 "use client";
 
 import { JSX, useEffect, useMemo, useState } from "react";
-
+import { toast } from "sonner";
 import { apiCall } from "@/lib/api";
 
 import { ApplicationStatsSection } from "@/components/layout/private/Dashboard/ApplicationStatsSection";
@@ -104,9 +104,13 @@ export default function ApplicationPage(): JSX.Element {
         }
 
         setApplications(data);
-
       } catch (error) {
-        console.error("Failed to fetch applications:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch applications";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -154,7 +158,10 @@ export default function ApplicationPage(): JSX.Element {
           ...uniqueSchoolOptions,
         ]);
       } catch (error) {
-        console.error("Error fetching schools:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Error fetching schools";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setSchoolOptions([{ value: "all-schools", label: "All Schools" }]);
       }
     };

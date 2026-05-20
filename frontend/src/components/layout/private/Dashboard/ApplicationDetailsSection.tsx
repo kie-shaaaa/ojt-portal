@@ -1,7 +1,7 @@
 "use client";
 
 import { JSX, useState, useEffect, useRef } from "react";
-
+import { toast } from "sonner";
 import {
   Activity,
   CheckCircle,
@@ -71,7 +71,12 @@ export const ApplicationDetailsSection = (): JSX.Element => {
         lastSavedClosingDate.current = fetchedClosingDate;
         lastSavedDate.current = fetchedDate;
       } catch (error) {
-        console.error("Raw fetch error:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch application settings";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
       }
     };
 
@@ -115,7 +120,12 @@ export const ApplicationDetailsSection = (): JSX.Element => {
         }),
       );
     } catch (error) {
-      console.error("Failed to save portal settings:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to save portal settings";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -145,12 +155,19 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
             <div
               className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 ${
-                isLoading ? "bg-slate-100" : isOpen ? "bg-green-100" : "bg-red-100"
+                isLoading
+                  ? "bg-slate-100"
+                  : isOpen
+                    ? "bg-green-100"
+                    : "bg-red-100"
               }`}
               aria-label={`Portal status ${isLoading ? "Loading" : isOpen ? "OPEN" : "CLOSED"}`}
             >
               {isLoading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" aria-hidden="true" />
+                <div
+                  className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"
+                  aria-hidden="true"
+                />
               ) : isOpen ? (
                 <LockOpen
                   className="h-5 w-5 animate-pulse text-green-600"
@@ -165,7 +182,11 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
               <span
                 className={`text-xs font-bold ${
-                  isLoading ? "text-slate-600" : isOpen ? "text-green-600" : "text-red-600"
+                  isLoading
+                    ? "text-slate-600"
+                    : isOpen
+                      ? "text-green-600"
+                      : "text-red-600"
                 }`}
               >
                 {isLoading ? "Loading" : isOpen ? "OPEN" : "CLOSED"}
@@ -176,7 +197,9 @@ export const ApplicationDetailsSection = (): JSX.Element => {
           <div className="mt-6 space-y-6">
             {isLoading ? (
               <div className="flex items-center">
-                <label className="w-16 text-sm font-semibold text-slate-600">Status:</label>
+                <label className="w-16 text-sm font-semibold text-slate-600">
+                  Status:
+                </label>
                 <div className="flex items-center gap-3 pl-6">
                   <div className="h-6 w-12 animate-pulse rounded-full bg-slate-200" />
                   <div className="h-5 w-16 animate-pulse rounded bg-slate-200" />
@@ -254,8 +277,8 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                     minDate={scheduledDate || undefined}
                   />
                   <p className="text-[10px] italic text-slate-400">
-                    Leave empty for manual control only. Portal will auto-close on
-                    this date.
+                    Leave empty for manual control only. Portal will auto-close
+                    on this date.
                   </p>
                 </div>
 
