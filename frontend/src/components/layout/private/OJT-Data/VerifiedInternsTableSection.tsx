@@ -3,6 +3,7 @@ import InternDetailsModal, { ModalInternData } from "../InternDetailsModal";
 import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -45,6 +46,8 @@ export const VerifiedInternsTableSection = ({
   onViewDetails,
 }: VerifiedInternsTableSectionProps): JSX.Element => {
   const [selectedInterns, setSelectedInterns] = useState<number[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [viewingIntern, setViewingIntern] = useState<ModalInternData | null>(
     null,
   );
@@ -392,6 +395,37 @@ export const VerifiedInternsTableSection = ({
     setInternToDelete(intern);
   };
 
+  const handleDeleteSelectedInterns = async () => {
+    if (selectedInterns.length === 0 || isBulkDeleting) return;
+
+    try {
+      setIsBulkDeleting(true);
+
+      setDeletedInternIds((prev) => {
+        const next = new Set(prev);
+
+        selectedInterns.forEach((internId) => {
+          next.add(internId);
+        });
+
+        return next;
+      });
+
+      setSelectedInterns([]);
+      setShowBulkDeleteConfirm(false);
+      toast.success("Selected interns deleted successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete selected interns";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const renderedRows = useMemo(
     () =>
       visibleRows.map((intern, idx) => {
@@ -504,6 +538,19 @@ export const VerifiedInternsTableSection = ({
               <Download size={16} />
               Export
             </button>
+
+            {selectedInterns.length > 0 && (
+              <button
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={isBulkDeleting}
+                className="flex items-center gap-2 rounded-lg bg-linear-to-r from-red-600 to-red-700 px-4 py-2 text-sm font-semibold text-white transition-all shadow-sm hover:from-red-700 hover:to-red-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                title={`Delete ${selectedInterns.length} selected interns`}
+                type="button"
+              >
+                <Trash2 size={16} />
+                Delete Selected ({selectedInterns.length})
+              </button>
+            )}
           </div>
         </div>
 
@@ -705,12 +752,23 @@ export const VerifiedInternsTableSection = ({
               ✓ {selectedInterns.length} intern
               {selectedInterns.length !== 1 ? "s" : ""} selected
             </p>
-            <button
-              onClick={handleExportExcel}
-              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
-            >
-              Export Selected
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportExcel}
+                className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
+                type="button"
+              >
+                Export Selected
+              </button>
+              <button
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={isBulkDeleting}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 border border-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+              >
+                Delete Selected
+              </button>
+            </div>
           </div>
         )}
       </section>
@@ -743,6 +801,16 @@ export const VerifiedInternsTableSection = ({
             );
             setInternToDelete(null);
           }}
+        />
+      )}
+
+      {showBulkDeleteConfirm && (
+        <ConfirmDeleteModal
+          open={showBulkDeleteConfirm}
+          title={`Delete ${selectedInterns.length} interns`}
+          message={`Are you sure you want to delete ${selectedInterns.length} selected intern${selectedInterns.length === 1 ? "" : "s"}? This action cannot be undone.`}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
+          onConfirm={handleDeleteSelectedInterns}
         />
       )}
 
