@@ -3,6 +3,8 @@
 import { Download, Eye, Pencil, Trash2, Search } from "lucide-react";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useSearchParams } from "next/navigation";
 
@@ -105,6 +107,20 @@ const getStatusStyles = (status: string) => {
 const normalizeFilterText = (value: string) =>
   value.toLowerCase().replace(/[\_\s-]+/g, "");
 
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return "Not set";
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) return "Not set";
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 const mapApplications = (applications: Application[]): ApplicationRow[] => {
   return applications.map((app) => ({
     applicationId: String(app.id),
@@ -168,6 +184,10 @@ export const ApplicationsTableSection = ({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] =
+    useState(false);
+  const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -176,10 +196,12 @@ export const ApplicationsTableSection = ({
     ? normalizeFilterText(statusParam)
     : null;
 
-  const applicationsState = useMemo(
-    () => mapApplications(applications),
-    [applications],
-  );
+  // Sort applications by `id` descending on the client so the newest (highest id)
+  // appear first in the table without changing backend behavior.
+  const applicationsState = useMemo(() => {
+    const sorted = [...applications].sort((a, b) => Number(b.id) - Number(a.id));
+    return mapApplications(sorted);
+  }, [applications]);
 
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
@@ -231,6 +253,13 @@ export const ApplicationsTableSection = ({
         windowedRange.endIndex,
       )
     : filteredApplications;
+
+  const selectedApplicationIds = useMemo(() => {
+    // Map selected rows (UI ids like 'NTC-000123') to numeric application IDs
+    return filteredApplications
+      .filter((app) => selectedRows.has(app.id))
+      .map((app) => Number(app.applicationId));
+  }, [filteredApplications, selectedRows]);
 
   const allSelected =
     filteredApplications.length > 0 &&
@@ -295,11 +324,345 @@ export const ApplicationsTableSection = ({
     }
   };
 
+  const handleDeleteSelectedApplications = async () => {
+    if (selectedApplicationIds.length === 0 || isBulkDeleting) return;
+
+    try {
+      setIsBulkDeleting(true);
+
+      for (const applicationId of selectedApplicationIds) {
+        await apiCall("/applications/delete", {
+          method: "DELETE",
+          body: JSON.stringify(applicationId),
+        });
+
+        onDeleteApplication(applicationId);
+      }
+
+      setSelectedRows(new Set());
+      setShowBulkDeleteConfirm(false);
+      toast.success("Selected applications deleted successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete selected applications";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const handleExportApplications = async () => {
+    try {
+      const applicationLookup = new Map(
+        applications.map((application) => [String(application.id), application]),
+      );
+
+      const exportRows =
+        selectedRows.size > 0
+          ? filteredApplications.filter((application) =>
+              selectedRows.has(application.id),
+            )
+          : filteredApplications;
+
+      const applicationsToExport = exportRows
+        .map((row) => applicationLookup.get(row.applicationId))
+        .filter((application): application is Application => Boolean(application));
+
+      if (applicationsToExport.length === 0) {
+        toast.info("No applications to export");
+        return;
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Applications");
+
+      const statusCounts = applicationsToExport.reduce<Record<string, number>>(
+        (counts, application) => {
+          const status = formatStatus(application.status);
+          counts[status] = (counts[status] ?? 0) + 1;
+          return counts;
+        },
+        {},
+      );
+
+      worksheet.columns = [
+        { header: "ID", key: "id", width: 16 },
+        { header: "Applicant Name", key: "name", width: 28 },
+        { header: "Email", key: "email", width: 34 },
+        { header: "Phone", key: "phone", width: 18 },
+        { header: "Application Type", key: "type", width: 22 },
+        { header: "School", key: "school", width: 30 },
+        { header: "Course", key: "course", width: 24 },
+        { header: "Deployment Date", key: "deployment", width: 18 },
+        { header: "Submission Date", key: "submission", width: 18 },
+        { header: "Status", key: "status", width: 16 },
+      ];
+
+      worksheet.mergeCells("A1:J1");
+
+      const titleCell = worksheet.getCell("A1");
+
+      titleCell.value = "APPLICATIONS";
+      titleCell.font = {
+        bold: true,
+        size: 18,
+        color: { argb: "FFFFFFFF" },
+      };
+      titleCell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+      };
+      titleCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "1F4E78" },
+      };
+
+      worksheet.getRow(1).height = 30;
+
+      const headerRow = worksheet.getRow(3);
+
+      worksheet.columns.forEach((col, index) => {
+        headerRow.getCell(index + 1).value = String(col.header);
+      });
+
+      headerRow.height = 25;
+
+      headerRow.eachCell((cell) => {
+        cell.font = {
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+          size: 11,
+        };
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+          wrapText: true,
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "1F4E78" },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "D9E2F3" } },
+          left: { style: "thin", color: { argb: "D9E2F3" } },
+          bottom: { style: "thin", color: { argb: "D9E2F3" } },
+          right: { style: "thin", color: { argb: "D9E2F3" } },
+        };
+      });
+
+      applicationsToExport.forEach((application, index) => {
+        const row = worksheet.addRow({
+          id: `NTC-${String(application.id).padStart(6, "0")}`,
+          name: `${application.first_name} ${application.last_name}`.trim(),
+          email: application.email,
+          phone: application.phone,
+          type: application.application_type,
+          school: application.school_name || "Not set",
+          course: application.course || "Not set",
+          deployment: formatDate(application.deployment_date),
+          submission: formatDate(application.submission_date),
+          status: formatStatus(application.status),
+        });
+
+        row.height = 22;
+
+        row.eachCell((cell) => {
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: "center",
+            wrapText: true,
+          };
+
+          cell.border = {
+            top: { style: "thin", color: { argb: "D9D9D9" } },
+            left: { style: "thin", color: { argb: "D9D9D9" } },
+            bottom: { style: "thin", color: { argb: "D9D9D9" } },
+            right: { style: "thin", color: { argb: "D9D9D9" } },
+          };
+
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: {
+              argb: index % 2 === 0 ? "F8FAFC" : "EAF2F8",
+            },
+          };
+
+          cell.font = {
+            size: 10,
+            color: { argb: "1F2937" },
+          };
+        });
+      });
+
+      const totalRow = worksheet.addRow([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "TOTAL",
+        applicationsToExport.length,
+      ]);
+
+      totalRow.height = 24;
+
+      totalRow.eachCell((cell) => {
+        cell.font = {
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+        };
+
+        cell.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "1F4E78" },
+        };
+
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFFFFF" } },
+          left: { style: "thin", color: { argb: "FFFFFF" } },
+          bottom: { style: "thin", color: { argb: "FFFFFF" } },
+          right: { style: "thin", color: { argb: "FFFFFF" } },
+        };
+      });
+
+      const summaryStartRow = worksheet.rowCount + 2;
+
+      worksheet.mergeCells(`A${summaryStartRow}:B${summaryStartRow}`);
+
+      const summaryTitleCell = worksheet.getCell(`A${summaryStartRow}`);
+
+      summaryTitleCell.value = "STATUS SUMMARY";
+      summaryTitleCell.font = {
+        bold: true,
+        size: 12,
+        color: { argb: "FFFFFFFF" },
+      };
+      summaryTitleCell.alignment = {
+        horizontal: "left",
+        vertical: "middle",
+      };
+      summaryTitleCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "1F4E78" },
+      };
+
+      const summaryOrder = [
+        "Pending",
+        "Under Review",
+        "For Interview",
+        "Accepted",
+        "Rejected",
+      ];
+
+      summaryOrder.forEach((status, index) => {
+        const row = worksheet.addRow([status, statusCounts[status] ?? 0]);
+        const statusTheme = (() => {
+          switch (status) {
+            case "Pending":
+              return { fill: "FFF7ED", text: "C2410C" };
+            case "Under Review":
+              return { fill: "EFF6FF", text: "1D4ED8" };
+            case "For Interview":
+              return { fill: "F5F3FF", text: "7C3AED" };
+            case "Accepted":
+              return { fill: "ECFDF5", text: "047857" };
+            case "Rejected":
+              return { fill: "FEF2F2", text: "B91C1C" };
+            default:
+              return { fill: "FFFFFF", text: "1F2937" };
+          }
+        })();
+
+        row.height = 20;
+
+        row.eachCell((cell) => {
+          cell.font = {
+            size: 10,
+            color: { argb: "1F2937" },
+          };
+
+          cell.border = {
+            top: { style: "thin", color: { argb: "D9D9D9" } },
+            left: { style: "thin", color: { argb: "D9D9D9" } },
+            bottom: { style: "thin", color: { argb: "D9D9D9" } },
+            right: { style: "thin", color: { argb: "D9D9D9" } },
+          };
+        });
+
+        row.getCell(1).font = {
+          bold: true,
+          size: 10,
+          color: { argb: statusTheme.text },
+        };
+
+        row.getCell(1).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: statusTheme.fill },
+        };
+
+        row.getCell(2).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFFFF" },
+        };
+
+        row.getCell(1).alignment = {
+          horizontal: "left",
+          vertical: "middle",
+        };
+
+        row.getCell(2).alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+      });
+
+      worksheet.views = [
+        {
+          state: "frozen",
+          ySplit: 3,
+        },
+      ];
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const fileName = `applications_${new Date().toISOString().split("T")[0]}.xlsx`;
+      saveAs(blob, fileName);
+
+      toast.success("Applications exported successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to export applications";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    }
+  };
+
   return (
     <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
       <div className="flex flex-col border-b border-slate-100">
-        <div className="flex items-center justify-between px-6 py-5">
+          <div className="flex items-center justify-between px-6 py-5">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Applications
@@ -312,10 +675,37 @@ export const ApplicationsTableSection = ({
             </p>
           </div>
 
-          <button className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95">
-            <Download size={18} className="text-slate-500" />
-            Export
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+              onClick={handleExportApplications}
+              type="button"
+            >
+              <Download size={18} className="text-slate-500" />
+              Export
+            </button>
+
+            {selectedRows.size > 0 && (
+              <>
+                <button
+                  className="flex items-center gap-2 rounded-xl border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 active:scale-95"
+                  onClick={() => setShowBulkStatusModal(true)}
+                  title={`Change status for ${selectedRows.size} selected applications`}
+                >
+                  Change Status ({selectedRows.size})
+                </button>
+
+              <button
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={isBulkDeleting}
+                title={`Delete ${selectedRows.size} selected applications`}
+              >
+                Delete Selected ({selectedRows.size})
+              </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Toolbar */}
@@ -575,6 +965,36 @@ export const ApplicationsTableSection = ({
             );
             setChangeStatusApplication(null);
           }}
+        />
+      )}
+
+      {showBulkStatusModal && (
+        <ChangeStatusModal
+          open={showBulkStatusModal}
+          bulkMode
+          bulkCount={selectedApplicationIds.length}
+          application={
+            filteredApplications.find((app) => selectedRows.has(app.id)) ?? null
+          }
+          onClose={() => setShowBulkStatusModal(false)}
+          onConfirm={(newStatus) => {
+            selectedApplicationIds.forEach((applicationId) => {
+              onStatusChange(applicationId, newStatus);
+            });
+            setSelectedRows(new Set());
+            setShowBulkStatusModal(false);
+            toast.success("Selected applications updated successfully");
+          }}
+        />
+      )}
+
+      {showBulkDeleteConfirm && (
+        <ConfirmDeleteModal
+          open={showBulkDeleteConfirm}
+          title={`Delete ${selectedApplicationIds.length} applications`}
+          message={`Are you sure you want to delete ${selectedApplicationIds.length} selected application${selectedApplicationIds.length === 1 ? "" : "s"}? This action cannot be undone.`}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
+          onConfirm={handleDeleteSelectedApplications}
         />
       )}
     </section>

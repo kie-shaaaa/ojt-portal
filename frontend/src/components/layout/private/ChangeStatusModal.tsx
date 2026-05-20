@@ -25,6 +25,8 @@ type StatusOption = {
 interface ChangeStatusModalProps {
   open: boolean;
   mode?: "status" | "appointment-date";
+  bulkMode?: boolean;
+  bulkCount?: number;
   application?: {
     id?: string;
     applicationId?: string;
@@ -128,6 +130,8 @@ const idToBackendStatus = (id: string): string => {
 const ChangeStatusModal = ({
   open,
   mode = "status",
+  bulkMode = false,
+  bulkCount = 0,
   application,
   onClose,
   onConfirm,
@@ -255,6 +259,13 @@ const ChangeStatusModal = ({
   };
 
   const handleConfirmStatusMode = async () => {
+    if (bulkMode) {
+      const mappedStatus = idToStatus(selectedStatus);
+      onConfirm(mappedStatus, application?.id ?? "");
+      onClose();
+      return;
+    }
+
     // Validate required schedule fields when setting interview or accepted
     if (selectedStatus === "for-interview") {
       if (!interviewDate || !interviewTime) {
@@ -356,7 +367,9 @@ const ChangeStatusModal = ({
         {/* Header */}
         <header className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
           <h2 id={headingId} className="text-lg font-bold text-blue-800">
-            {mode === "appointment-date"
+            {bulkMode
+              ? `Change Status for ${bulkCount} Applications`
+              : mode === "appointment-date"
               ? "Change Appointment Date"
               : "Change Application Status"}
           </h2>
@@ -406,7 +419,9 @@ const ChangeStatusModal = ({
             // Status Mode (existing code)
             <>
               <p id={descriptionId} className="text-sm text-gray-600 mb-4">
-                Select new status for {application?.applicantName ?? "application"}:
+                {bulkMode
+                  ? `Select a new status for ${bulkCount} selected applications:`
+                  : `Select new status for ${application?.applicantName ?? "application"}:`}
               </p>
 
               <fieldset className="flex flex-col gap-3 mb-6">
@@ -465,7 +480,7 @@ const ChangeStatusModal = ({
               </fieldset>
 
               {/* Schedule Sections at Bottom */}
-              {selectedStatus === "for-interview" && (
+              {!bulkMode && selectedStatus === "for-interview" && (
                 <div
                   ref={interviewSectionRef}
                   className="p-4 bg-purple-50 rounded-lg border border-purple-100 space-y-4"
@@ -491,7 +506,7 @@ const ChangeStatusModal = ({
                 </div>
               )}
 
-              {selectedStatus === "accepted" && (
+              {!bulkMode && selectedStatus === "accepted" && (
                 <div
                   ref={acceptedSectionRef}
                   className="p-4 bg-green-50 rounded-lg border border-green-100 space-y-4"
