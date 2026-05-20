@@ -236,13 +236,19 @@ export default function Page() {
     setShowAppointmentModal(true);
   };
 
-  const handleClearAppointment = async (appointment: CalendarAppointment) => {
+  const handleClearAppointment = async (
+    appointment: CalendarAppointment,
+    reason?: string,
+  ) => {
     try {
       const appointmentId = parseAppointmentId(appointment.id);
 
+      const body: Record<string, unknown> = { appointmentId };
+      if (reason) body.cancellationReason = reason;
+
       await apiCall("/appointments/cancel-appointment", {
         method: "PATCH",
-        body: JSON.stringify({ appointmentId }),
+        body: JSON.stringify(body),
       });
 
       await refreshAppointments();

@@ -11,12 +11,13 @@ type Props = {
   selectedAppointmentId?: string | null;
   onClose: () => void;
   onChangeStatus: (appointment: CalendarAppointment) => void;
-  onClearAppointment: (appointment: CalendarAppointment) => void;
+  onClearAppointment: (appointment: CalendarAppointment, reason?: string) => void;
   onComplete: (appointment: CalendarAppointment) => void;
 };
 
 const formatDate = (dateKey: string) => {
   const date = new Date(`${dateKey}T00:00:00`);
+
   return date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -94,6 +95,8 @@ export default function CalendarAppointmentModal({
     null,
   );
   const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -319,7 +322,10 @@ export default function CalendarAppointmentModal({
           <button
             type="button"
             className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
-            onClick={() => onClearAppointment(activeAppointment)}
+            onClick={() => {
+              setCancellationReason("");
+              setIsClearModalOpen(true);
+            }}
           >
             Clear appointment
           </button>
@@ -351,6 +357,64 @@ export default function CalendarAppointmentModal({
           setIsChangeStatusModalOpen(false);
         }}
       />
+      {/* Clear appointment modal with optional cancellation reason */}
+      {isClearModalOpen && (
+        <div
+          className={`fixed inset-0 z-999999 flex items-center justify-center bg-black/40 p-4`}
+          onClick={() => setIsClearModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-xl rounded-lg bg-white shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-800">
+                Clear appointment
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Optionally add a message to the applicant explaining why the
+                appointment was cleared.
+              </p>
+            </div>
+
+            <div className="p-6">
+              <label className="block text-sm font-medium text-slate-700">
+                Message to applicant (optional)
+              </label>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={5}
+                className="mt-2 w-full rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                placeholder="Enter a brief reason (e.g. applicant unavailable, duplicate booking, admin cancelled)"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+              <button
+                type="button"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                onClick={() => setIsClearModalOpen(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                onClick={() => {
+                  setIsClearModalOpen(false);
+                  onClearAppointment(activeAppointment, cancellationReason || undefined);
+                }}
+              >
+                Confirm clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
