@@ -44,7 +44,7 @@ export const ApplicationSection = (): JSX.Element => {
             return (
               <div
                 key={step.id}
-                className="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-8 text-white shadow-lg hover:shadow-xl transition-shadow"
+                className="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-8 text-white shadow-lg hover:shadow-2xl hover:scale-105 transition-transform duration-300"
               >
                 <div className="absolute -top-4 left-6 w-10 h-10 bg-blue-300 rounded-full flex items-center justify-center text-blue-900 font-bold text-lg">
                   {step.id}

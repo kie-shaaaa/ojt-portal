@@ -2,10 +2,31 @@
 import { BadgeInfo, ArrowRight } from "lucide-react";
 import {JSX} from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
+
+const MotionDiv = motion.div as any;
+const MotionH1 = motion.h1 as any;
+const MotionP = motion.p as any;
+
 const ctaButtons = [
   { label: "Submit Application", variant: "primary", type: "button" as const },
   { label: "Track Application", variant: "secondary", type: "button" as const, icon: ArrowRight },
 ];
+
+const fadeUp = {
+  hidden: {
+    opacity: 0,
+    y: 40,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: "easeOut",
+    },
+  },
+};
 
 export const HeroSection = (): JSX.Element => {
   return (
@@ -27,27 +48,46 @@ export const HeroSection = (): JSX.Element => {
 
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-20">
         {/* Rest of your content remains the same */}
-        <div className="flex-1">
-          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full">
+        <MotionDiv
+          className="flex-1"
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+        <MotionDiv
+        variants={fadeUp}
+        transition={{ delay: 0.1 }}
+        className="inline-flex items-center gap-2 bg-blue-100 text-blue-600 px-4 py-2 rounded-full">
             <BadgeInfo className="h-5 w-5" aria-hidden="true" />
             <p className="text-sm font-semibold">
               Open for qualified student interns nationwide
             </p>
-          </div>
+          </MotionDiv>
 
-          <h1
+          <MotionH1
+           variants={fadeUp}
+           transition={{ delay: 0.2 }}
             id="hero-call-to-action-heading"
             className="mt-6 text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 leading-tight"
           >
             Start Your Internship Journey with
             <span className="text-blue-600"> National Telecommunications Commission</span>
-          </h1>
-          <p className="mt-4 text-gray-200 text-lg leading-relaxed">
+          </MotionH1>
+
+          <MotionP 
+          variants={fadeUp}
+          transition={{ delay: 0.3 }}
+          className="mt-4 text-gray-200 text-lg leading-relaxed">
             Gain valuable government-sector experience at the forefront of
             telecommunications regulation. We provide mentorship and
             professional growth for the next generation of tech leaders.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4">
+          </MotionP>
+
+          <MotionDiv
+            variants={fadeUp}
+            transition={{ delay: 0.4 }}
+            className="mt-8 flex flex-col sm:flex-row gap-4"
+          >
             {ctaButtons.map((button) => (
               <button
                 key={button.label}
@@ -62,19 +102,26 @@ export const HeroSection = (): JSX.Element => {
                 {button.icon && <button.icon className="h-5 w-5" />}
               </button>
             ))}
-          </div>
+          </MotionDiv>
+        </MotionDiv>
+      
+      <MotionDiv
+        variants={fadeUp}
+        transition={{ delay: 0.5 }}
+        className="flex-1 flex justify-center items-center"
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="rounded-full overflow-hidden w-64 h-64 md:w-80 md:h-80 shadow-xl bg-white p-4">
+          <Image
+            src="/ntc-logo.png" 
+            alt="NTC Logo"
+            width={320}
+            height={320}
+            className="object-contain w-full h-full"
+          />
         </div>
-      <div className="flex-1 flex justify-center items-center">
-  <div className="rounded-full overflow-hidden w-64 h-64 md:w-80 md:h-80 shadow-xl bg-white p-4">
-    <Image
-      src="/ntc-logo.png" 
-      alt="NTC Logo"
-      width={320}
-      height={320}
-      className="object-contain w-full h-full"
-    />
-  </div>
-</div>
+      </MotionDiv>
       </div>
     </section>
   );
