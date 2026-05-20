@@ -1,10 +1,19 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { SupabaseStorage } from './supabase-storage.service';
 import { UploadedFile } from '../data/types/file-upload.types';
 import { createReadStream } from 'fs';
 import { unlink } from 'fs/promises';
 import { DatabaseService } from './database/database.service';
 import { LogsService } from './logs.service';
+import { SuccessHandler } from '../../utils/handlers';
+import { MailerService } from './mailer.service';
+import { ApplicationsService } from './applications.service';
 
 export interface FileUploadData {
   application_id: number;
@@ -43,6 +52,9 @@ export class FileUploadsService {
     private readonly supabaseService: SupabaseStorage,
     private readonly dbService: DatabaseService,
     private readonly logsService: LogsService,
+    private readonly mailerService: MailerService,
+    @Inject(forwardRef(() => ApplicationsService))
+    private readonly applicationsService: ApplicationsService,
   ) {}
 
   /**
@@ -233,10 +245,7 @@ export class FileUploadsService {
     );
   }
 
-  /**
-   * Delete file from Supabase and database
-   */
-  async deleteFile(fileId: number): Promise<void> {
+  async deleteApplicationFile(fileId: number): Promise<void> {
     try {
       const dbClient = this.dbService.getClient();
       // Step 1: Get file path from database
@@ -258,15 +267,54 @@ export class FileUploadsService {
       await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [fileId]);
 
       this.logger.log(`File deleted: ${filePath}`);
+    } catch (error) {
+      this.logger.error(`File deletion failed: ${error}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete file from Supabase and database
+   */
+  async deleteFile(fileId: number, userId: number) {
+    try {
+      const dbClient = this.dbService.getClient();
+      // Step 1: Get file path from database
+      const result = await dbClient.query(
+        'SELECT file_path FROM file_uploads WHERE id = $1',
+        [fileId],
+      );
+
+      if (result.rows.length === 0) {
+        throw new BadRequestException('File not found');
+      }
+
+      const filePath = result.rows[0].file_path;
+      const applicationId = result.rows[0].application_id;
+
+      // Step 2: Delete from Supabase
+      await this.supabaseService.remove(this.SUPABASE_BUCKET, filePath);
+
+      // Step 3: Delete from database
+      await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [fileId]);
+
+      this.logger.log(`File deleted: ${filePath}`);
+
+      const applicant =
+        await this.applicationsService.getApplicationByIdOrEmail(applicationId);
+
+      await this.mailerService.resubmissionEmail;
 
       // Log file deletion (system operation)
       await this.logsService
         .logFileDeleted({
-          userId: 0,
+          userId: userId,
           filename: filePath,
           ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log file deletion', err));
+
+      return SuccessHandler('Application File Deleted');
     } catch (error) {
       this.logger.error(`File deletion failed: ${error}`, error);
       throw error;

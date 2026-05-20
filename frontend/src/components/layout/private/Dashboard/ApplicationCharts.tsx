@@ -1,7 +1,7 @@
 "use client";
 
 import { JSX, useEffect, useMemo, useState } from "react";
-
+import { toast } from "sonner";
 import { apiCall } from "@/lib/api";
 
 type ChartPoint = {
@@ -79,7 +79,12 @@ export const ApplicationChartsSection = (): JSX.Element => {
             : [],
         });
       } catch (error) {
-        console.error("Failed to fetch dashboard charts:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch dashboard charts";
+        console.error(errorMessage, error);
+        toast.error(errorMessage);
         setCharts(defaultCharts);
       } finally {
         setIsLoading(false);

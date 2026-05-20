@@ -1,6 +1,7 @@
 "use client";
 
 import { apiCall } from "@/lib/api";
+import { toast } from "sonner";
 import React, {
   createContext,
   useState,
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const errorMessage =
           err instanceof Error ? err.message : "An error occurred during login";
         setError(errorMessage);
+        toast.error(errorMessage);
         throw err;
       } finally {
         setIsLoading(false);

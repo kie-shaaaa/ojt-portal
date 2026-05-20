@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { CalendarHeaderSection } from "@/components/layout/private/Calendar/CalendarHeaderSection";
 import CalendarAppointmentModal from "@/components/layout/private/Calendar/CalendarAppointmentModal";
 import { CalendarDatesGridSection } from "@/components/layout/private/Calendar/CalendarDatesGridSection";
@@ -247,8 +248,10 @@ export default function Page() {
       await refreshAppointments();
       setShowAppointmentModal(false);
     } catch (error) {
-      console.error("Failed to cancel appointment", error);
-      alert("Failed to cancel appointment. Please try again.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to cancel appointment";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     }
   };
 
@@ -266,8 +269,12 @@ export default function Page() {
       await refreshAppointments();
       setShowAppointmentModal(false);
     } catch (error) {
-      console.error("Failed to complete appointment", error);
-      alert("Failed to complete appointment. Please try again.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to complete appointment";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     }
   };
 
