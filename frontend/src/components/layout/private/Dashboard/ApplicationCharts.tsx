@@ -113,11 +113,43 @@ export const ApplicationChartsSection = (): JSX.Element => {
       return [] as Array<{ color: string; percent: number; label: string }>;
     }
 
-    return charts.statusDistribution.map((point) => ({
-      label: point.label,
-      color: statusColors[point.label]?.ring ?? "#94a3b8",
-      percent: (point.value / statusTotal) * 100,
-    }));
+      // normalize status labels to match the keys in `statusColors`
+      const normalize = (label: string) =>
+        label
+          .toString()
+          .toLowerCase()
+          .replace(/[_-]/g, " ")
+          .trim();
+
+      const canonical = (label: string) => {
+        const n = normalize(label);
+        switch (n) {
+          case "pending":
+            return "Pending";
+          case "under review":
+            return "Under Review";
+          case "for interview":
+            return "For Interview";
+          case "accepted":
+            return "Accepted";
+          case "rejected":
+            return "Rejected";
+          case "pending accept":
+            return "Pending Accept";
+          default:
+            // fallback to original label (preserve casing)
+            return label;
+        }
+      };
+
+      return charts.statusDistribution.map((point) => {
+        const key = canonical(point.label);
+        return {
+          label: point.label,
+          color: statusColors[key]?.ring ?? "#94a3b8",
+          percent: (point.value / statusTotal) * 100,
+        };
+      });
   }, [charts.statusDistribution, statusTotal]);
 
   const donutBackground =
@@ -301,7 +333,35 @@ export const ApplicationChartsSection = (): JSX.Element => {
                 </div>
               ) : (
                 charts.statusDistribution.map((point) => {
-                  const color = statusColors[point.label] ?? {
+                  const normalize = (label: string) =>
+                    label
+                      .toString()
+                      .toLowerCase()
+                      .replace(/[_-]/g, " ")
+                      .trim();
+
+                  const canonical = (label: string) => {
+                    const n = normalize(label);
+                    switch (n) {
+                      case "pending":
+                        return "Pending";
+                      case "under review":
+                        return "Under Review";
+                      case "for interview":
+                        return "For Interview";
+                      case "accepted":
+                        return "Accepted";
+                      case "rejected":
+                        return "Rejected";
+                      case "pending accept":
+                        return "Pending Accept";
+                      default:
+                        return label;
+                    }
+                  };
+
+                  const key = canonical(point.label);
+                  const color = statusColors[key] ?? {
                     fill: "bg-slate-400",
                     ring: "#94a3b8",
                   };
