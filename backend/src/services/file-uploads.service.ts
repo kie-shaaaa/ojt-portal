@@ -39,7 +39,7 @@ export interface FileUploadResult {
 @Injectable()
 export class FileUploadsService {
   private readonly logger = new Logger(FileUploadsService.name);
-  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024;
   private readonly ALLOWED_TYPES = [
     'application/pdf',
     'image/jpeg',
@@ -279,9 +279,14 @@ export class FileUploadsService {
   async deleteFile(fileId: number, userId: number) {
     try {
       const dbClient = this.dbService.getClient();
-      // Step 1: Get file path from database
-      const result = await dbClient.query(
-        'SELECT file_path FROM file_uploads WHERE id = $1',
+      // Step 1: Get file metadata from database before deleting anything.
+      const result = await dbClient.query<{
+        file_path: string;
+        application_id: number;
+        document_key: string | null;
+        file_name: string;
+      }>(
+        'SELECT file_path, application_id, document_key, file_name FROM file_uploads WHERE id = $1',
         [fileId],
       );
 
@@ -289,8 +294,20 @@ export class FileUploadsService {
         throw new BadRequestException('File not found');
       }
 
-      const filePath = result.rows[0].file_path;
-      const applicationId = result.rows[0].application_id;
+      const fileRow = result.rows[0];
+      const filePath = fileRow.file_path;
+      const applicationId = fileRow.application_id;
+      const rejectedFileLabel =
+        fileRow.document_key || fileRow.file_name || 'Uploaded file';
+
+      // Fetch the applicant before removing the file so the email can still be sent
+      // even if the file metadata is later removed.
+      const applicantRes =
+        await this.applicationsService.getApplicationByIdOrEmail(applicationId);
+
+      const applicantData = Array.isArray(applicantRes.data)
+        ? applicantRes.data[0]
+        : applicantRes.data;
 
       // Step 2: Delete from Supabase
       await this.supabaseService.remove(this.SUPABASE_BUCKET, filePath);
@@ -300,10 +317,28 @@ export class FileUploadsService {
 
       this.logger.log(`File deleted: ${filePath}`);
 
-      const applicant =
-        await this.applicationsService.getApplicationByIdOrEmail(applicationId);
+      const resubmissionDtoBase = {
+        to: applicantData?.email || '',
+        firstName: applicantData?.first_name || '',
+        lastName: applicantData?.last_name || '',
+        applicationId: applicantData?.id || applicationId,
+      };
+      const resubmissionDto = {
+        ...resubmissionDtoBase,
+        requiredFiles: [rejectedFileLabel],
+      };
 
-      await this.mailerService.resubmissionEmail;
+      // Always notify the applicant when an admin rejects a file.
+      if (resubmissionDtoBase.to) {
+        const mailSent =
+          await this.mailerService.resubmissionEmail(resubmissionDto);
+
+        if (!mailSent) {
+          this.logger.warn(
+            `Resubmission email was not sent for application ${applicationId} (${resubmissionDtoBase.to})`,
+          );
+        }
+      }
 
       // Log file deletion (system operation)
       await this.logsService
