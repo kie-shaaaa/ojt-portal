@@ -2,9 +2,11 @@
 
 import { X, Eye, FileText, Download, Maximize2 } from "lucide-react";
 import { JSX, memo, useEffect, useMemo, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useApplicationFiles } from "@/hooks/useApplicationFiles";
 
 import { useEscapeKey } from "@/hooks/useDismissableEvents";
+import { apiCall } from "@/lib/api";
 
 type DetailRow = {
   label: string;
@@ -48,7 +50,27 @@ const formatFileSize = (bytes: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-const rejectFile = async () => {};
+const rejectFile = async (id: number) => {
+  try {
+    const result = await apiCall("/applications/reject-file", {
+      method: "POST",
+      body: JSON.stringify({
+        fileId: id,
+      }),
+    });
+
+    if (!result.ok) {
+      throw new Error("Rejecting file has failed");
+    }
+
+    window.location.reload();
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to reject file";
+    console.error(errorMessage, error);
+    toast.error(errorMessage);
+  }
+};
 
 const FileCard = memo(
   ({
@@ -109,7 +131,7 @@ const FileCard = memo(
         <div className="flex items-center gap-2 justify-self-end">
           <button
             type="button"
-            onClick={rejectFile}
+            onClick={() => rejectFile(file.id)}
             className="inline-flex h-8 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
             title="Reject File"
           >
@@ -239,7 +261,7 @@ const CompiledFilesModal = memo(
                         <div className="flex flex-row gap-3">
                           <button
                             type="button"
-                            onClick={rejectFile}
+                            onClick={() => rejectFile(file.id)}
                             className="inline-flex h-8 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
                           >
                             <X size={14} />
@@ -387,7 +409,17 @@ export const ApplicationDetails = ({
     return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
   })();
 
-  const { files, loading: filesLoading } = useApplicationFiles(applicationId);
+  const {
+    files,
+    loading: filesLoading,
+    error: filesError,
+  } = useApplicationFiles(applicationId);
+
+  useEffect(() => {
+    if (filesError) {
+      toast.error(filesError);
+    }
+  }, [filesError]);
 
   useEffect(() => {
     requestAnimationFrame(() => setIsVisible(true));

@@ -3,6 +3,7 @@
 import { AccountRow } from "../../../../app/(private)/accounts/page";
 import { JSX, useState } from "react";
 import { UserPlus, KeyRound, SquarePen, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { EditAccountModal } from "../EditAccountModal";
 import { ResetPasswordModal } from "../ResetPasswordModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
@@ -117,10 +118,13 @@ export const AccountsTableSection = ({
           // Ignore malformed data
         }
       }
-
     } catch (error) {
-      console.error("Error updating account information", error);
-      throw new Error("Error updating account information");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error updating account information";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     }
 
     onAccountsChange(
@@ -150,8 +154,10 @@ export const AccountsTableSection = ({
 
       setIsDeleteModalOpen(false);
     } catch (error) {
-      console.error("Error deleting account", error);
-      throw new Error("Error deleting account");
+      const errorMessage =
+        error instanceof Error ? error.message : "Error deleting account";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     }
 
     onAccountsChange(
@@ -178,8 +184,10 @@ export const AccountsTableSection = ({
 
       ("Successfully reset password");
     } catch (error) {
-      console.error("Error resetting password", error);
-      throw new Error("Error resetting password");
+      const errorMessage =
+        error instanceof Error ? error.message : "Error resetting password";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     }
 
     setIsResetModalOpen(false);
@@ -204,8 +212,10 @@ export const AccountsTableSection = ({
 
       ("Successfully created account");
     } catch (error) {
-      console.error("Error creating account", error);
-      throw new Error("Error creating account");
+      const errorMessage =
+        error instanceof Error ? error.message : "Error creating account";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
     }
 
     onAccountsChange([newAccount, ...accounts].sort((a, b) => a.id - b.id));

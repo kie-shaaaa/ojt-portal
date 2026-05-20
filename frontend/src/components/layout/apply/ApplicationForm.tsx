@@ -1,6 +1,7 @@
 "use client";
 
 import { JSX, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { HeaderSection } from "./HeaderSection";
 import { FormStepper } from "./FormStepper";
 import { PersonalDetailsSection } from "./PersonalDetailsSection";
@@ -267,6 +268,7 @@ export const ApplicationForm = (): JSX.Element => {
             ? error.message
             : "Failed to submit application";
         setSubmitError(message);
+        toast.error(message);
       } finally {
         setIsSubmitting(false);
       }

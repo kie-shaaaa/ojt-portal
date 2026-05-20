@@ -5,6 +5,7 @@ import { ApplicationStatus } from '../data/types';
 import {
   ConfirmationEmailDto,
   DeletionEmailDto,
+  ResubmissionEmailDto,
   ResponseEmailDto,
   StatusUpdateEmailDto,
 } from '../data/interfaces';
@@ -66,20 +67,29 @@ const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
 
 @Injectable()
 export class MailerService {
-  private readonly transporter: Transporter;
+  private transporter: Transporter | undefined;
   private readonly logger = new Logger(MailerService.name);
-  private readonly fromAddress: string;
+  private fromAddress = '"NTC Portal" <no-reply@ntc.gov.ph>';
+
+  private disabled = false;
+  private ready: Promise<void>;
 
   constructor() {
+    this.ready = this.init();
+  }
+
+  private async init(): Promise<void> {
     const host = process.env.MAIL_HOST;
     const port = Number(process.env.MAIL_PORT);
     const user = process.env.MAIL_USER;
     const pass = process.env.MAIL_PASS;
-    console.log({ host, port, user, pass: !!pass });
+
     if (!host || !port || !user || !pass) {
-      throw new Error(
+      this.disabled = true;
+      this.logger.error(
         'Missing required mail env vars: MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS',
       );
+      return;
     }
 
     this.fromAddress = `"NTC Portal" <${user}>`;
@@ -92,12 +102,15 @@ export class MailerService {
       tls: { rejectUnauthorized: false },
     });
 
-    this.transporter.verify((err) => {
-      if (err) {
-        this.logger.error(`SMTP connection failed: ${err.message}`);
-      } else {
-        this.logger.log('SMTP connection verified ✅');
-      }
+    await new Promise<void>((resolve) => {
+      this.transporter!.verify((err) => {
+        if (err) {
+          this.logger.error(`SMTP connection failed: ${err.message}`);
+        } else {
+          this.logger.log('SMTP connection verified ✅');
+        }
+        resolve();
+      });
     });
   }
 
@@ -109,6 +122,12 @@ export class MailerService {
     html: string;
     text: string;
   }): Promise<boolean> {
+    await this.ready;
+    if (this.disabled || !this.transporter) {
+      this.logger.warn(`Mail disabled — skipping send to ${options.to}`);
+      return false;
+    }
+
     try {
       await this.transporter.sendMail({
         from: this.fromAddress,
@@ -122,6 +141,20 @@ export class MailerService {
         `Mail failed → ${options.to} | ${(err as Error).message}`,
       );
       return false;
+    }
+  }
+
+  async onModuleDestroy() {
+    if (
+      this.transporter &&
+      typeof (this.transporter as any).close === 'function'
+    ) {
+      try {
+        (this.transporter as any).close();
+        this.logger.log('SMTP transporter closed');
+      } catch (e) {
+        this.logger.warn('Failed closing transporter');
+      }
     }
   }
 
@@ -427,7 +460,95 @@ export class MailerService {
           ].join('\n');
 
     return this.send({ to, subject: subjectLine, html, text });
-  } 
+  }
+
+  // ─── 5. Resubmission email ────────────────────────────────────────────────
+
+  async resubmissionEmail(dto: ResubmissionEmailDto): Promise<boolean> {
+    const { to, firstName, lastName, applicationId, requiredFiles } =
+      dto;
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const portalUrl = process.env.FRONTEND_URL || 'https://ojt.ntc.gov.ph';
+    const resubmitLink = `${portalUrl}/apply/resubmit?id=${applicationId}&email=${encodeURIComponent(to)}`;
+
+    const filesList = requiredFiles
+      .map((file) => `<li>${file}</li>`)
+      .join('\n');
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${fullName}</strong>,</p>
+      <p>Good day!</p>
+      <p>Thank you for your application to the <strong>National Telecommunications Commission OJT Application Portal</strong>.</p>
+
+      ${alertBox(
+        `<strong>Action Required:</strong> We need you to <strong>resubmit the following documents</strong> to proceed with your application review.`,
+        '#d97706',
+      )}
+
+      <p><strong>Required Files to Resubmit:</strong></p>
+      <ul style="padding-left:20px;">
+        ${filesList}
+      </ul>
+
+      <p style="margin-top:24px;"><strong>How to Resubmit:</strong></p>
+      <ol style="padding-left:20px;">
+        <li>Click the button below to access the resubmission form</li>
+        <li>Your previous information will be pre-filled</li>
+        <li>Upload the required documents</li>
+        <li>Submit your resubmission</li>
+      </ol>
+
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${resubmitLink}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;">Resubmit Documents</a>
+      </div>
+
+      <p style="margin:24px 0;padding:16px;background:#f0f8ff;border-left:4px solid #0038A8;border-radius:0 4px 4px 0;">
+        <strong>Reference No.:</strong> ${ref}<br/>
+        <strong>Status:</strong> Pending Resubmission<br/>
+        <strong>Deadline:</strong> 7 days from receipt of this email
+      </p>
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>David M. Zaldua</strong><br/>
+        Administrative Officer IV<br/>
+        Human Resource Division
+      </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      'DOCUMENT RESUBMISSION REQUIRED',
+      '='.repeat(60),
+      '',
+      `Dear ${fullName},`,
+      '',
+      `Reference No.: ${ref}`,
+      `Status       : Pending Resubmission`,
+      '',
+      'Required Files:',
+      requiredFiles.map((f) => `  - ${f}`).join('\n'),
+      '',
+      `Resubmit here: ${resubmitLink}`,
+      '',
+      'Deadline: 7 days from receipt of this email',
+      '',
+      'David M. Zaldua',
+      'Administrative Officer IV | Human Resource Division',
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Document Resubmission Required [${ref}]`,
+      html,
+      text,
+    });
+  }
 
   async statusUpdateEmail(dto: StatusUpdateEmailDto): Promise<boolean> {
     const { to, firstName, lastName, applicationId, status, adminNote } = dto;

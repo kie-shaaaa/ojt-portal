@@ -17,7 +17,7 @@ export const NavBar = (): JSX.Element => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [activeSection, setActiveSection] = useState("hero-section");
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  // Removed hoveredItem state
 
   // Track which section is currently in view
   useEffect(() => {
@@ -75,12 +75,13 @@ export const NavBar = (): JSX.Element => {
             <Link
               key={item.label}
               href={item.href}
-              aria-current={item.active ? "page" : undefined}
+              aria-current={isItemActive(item) ? "page" : undefined}
               className={`text-base font-bold transition-colors ${
-                item.active
+                isItemActive(item)
                   ? "text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-700 hover:text-blue-600"
               }`}
+              onClick={(e) => handleNavClick(e, item.href)}
             >
               {item.label}
               
@@ -105,9 +106,9 @@ export const NavBar = (): JSX.Element => {
             <Link
               key={item.label}
               href={item.href}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, item.href)}
               className={`block py-2 text-base font-medium transition-colors ${
-                item.active
+                isItemActive(item)
                   ? "text-blue-600"
                   : "text-gray-700 hover:text-blue-600"
               }`}

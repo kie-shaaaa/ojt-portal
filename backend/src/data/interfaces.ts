@@ -40,6 +40,14 @@ export interface StatusUpdateEmailDto {
   adminNote?: string;
 }
 
+export interface ResubmissionEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  requiredFiles: string[];
+}
+
 export interface UpdateApplicationDto {
   id: number;
   status: ApplicationStatus;
