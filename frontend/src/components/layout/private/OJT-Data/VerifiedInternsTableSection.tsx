@@ -117,44 +117,230 @@ export const VerifiedInternsTableSection = ({
   };
 
   const exportToExcel = async (dataToExport: Intern[]) => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Verified Interns");
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Verified Interns");
 
-    worksheet.columns = [
-      { header: "OJT ID", key: "ojtId", width: 15 },
-      { header: "Intern Name", key: "name", width: 25 },
-      { header: "Gender", key: "gender", width: 10 },
-      { header: "School", key: "school", width: 35 },
-      { header: "OJT Details", key: "details", width: 30 },
-      { header: "Deployment Date", key: "start", width: 18 },
-      { header: "End Date", key: "end", width: 15 },
-      { header: "Email", key: "email", width: 30 },
-      { header: "Status", key: "status", width: 12 },
-      { header: "Verified Date", key: "verified", width: 18 },
-    ];
+  // =========================
+  // COLUMN SETUP
+  // =========================
+  worksheet.columns = [
+    { header: "OJT ID", key: "ojtId", width: 15 },
+    { header: "Intern Name", key: "name", width: 28 },
+    { header: "Gender", key: "gender", width: 12 },
+    { header: "School", key: "school", width: 35 },
+    { header: "Course", key: "details", width: 25 },
+    { header: "Deployment Date", key: "start", width: 18 },
+    { header: "End Date", key: "end", width: 18 },
+    { header: "Email", key: "email", width: 35 },
+    { header: "Status", key: "status", width: 15 },
+    { header: "Verified Date", key: "verified", width: 18 },
+  ];
 
-    dataToExport.forEach((intern) => {
-      worksheet.addRow({
-        ojtId: getOjtId(intern),
-        name: getInternName(intern),
-        gender: intern.gender || "Not set",
-        school: intern.school_name || "Not set",
-        details: intern.course || "—",
-        start: formatDate(intern.deployment_date),
-        end: formatDate(intern.end_date),
-        email: intern.email,
-        status: intern.original_status || "Not set",
-        verified: formatDate(intern.confirmed_at),
-      });
-    });
+  // =========================
+  // TITLE ROW
+  // =========================
+  worksheet.mergeCells("A1:J1");
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const fileName = `verified_interns_${new Date().toISOString().split("T")[0]}.xlsx`;
-    saveAs(blob, fileName);
+  const titleCell = worksheet.getCell("A1");
+
+  titleCell.value = "VERIFIED INTERNS";
+
+  titleCell.font = {
+    bold: true,
+    size: 18,
+    color: { argb: "FFFFFFFF" },
   };
+
+  titleCell.alignment = {
+    horizontal: "center",
+    vertical: "middle",
+  };
+
+  titleCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1F4E78" },
+  };
+
+  worksheet.getRow(1).height = 30;
+
+  // =========================
+  // HEADER ROW
+  // =========================
+  const headerRow = worksheet.getRow(3);
+
+  worksheet.columns.forEach((col, index) => {
+    headerRow.getCell(index + 1).value = String(col.header);
+  });
+
+  headerRow.height = 25;
+
+  headerRow.eachCell((cell) => {
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+      size: 11,
+    };
+
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+      wrapText: true,
+    };
+
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "1F4E78" },
+    };
+
+    cell.border = {
+      top: { style: "thin", color: { argb: "D9E2F3" } },
+      left: { style: "thin", color: { argb: "D9E2F3" } },
+      bottom: { style: "thin", color: { argb: "D9E2F3" } },
+      right: { style: "thin", color: { argb: "D9E2F3" } },
+    };
+  });
+
+  // =========================
+  // DATA ROWS
+  // =========================
+  dataToExport.forEach((intern, index) => {
+    const row = worksheet.addRow({
+      ojtId: getOjtId(intern),
+      name: getInternName(intern),
+      gender: intern.gender || "Not set",
+      school: intern.school_name || "Not set",
+      details: intern.course || "—",
+      start: formatDate(intern.deployment_date),
+      end: formatDate(intern.end_date),
+      email: intern.email,
+      status: intern.original_status || "Not set",
+      verified: formatDate(intern.confirmed_at),
+    });
+
+    row.height = 22;
+
+    row.eachCell((cell) => {
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+        wrapText: true,
+      };
+
+      cell.border = {
+        top: { style: "thin", color: { argb: "D9D9D9" } },
+        left: { style: "thin", color: { argb: "D9D9D9" } },
+        bottom: { style: "thin", color: { argb: "D9D9D9" } },
+        right: { style: "thin", color: { argb: "D9D9D9" } },
+      };
+
+      // Alternating row colors
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: {
+          argb: index % 2 === 0 ? "F8FAFC" : "EAF2F8",
+        },
+      };
+
+      cell.font = {
+        size: 10,
+        color: { argb: "1F2937" },
+      };
+    });
+
+    // Status color styling
+    const statusCell = row.getCell(9);
+
+    if (
+      String(intern.original_status).toLowerCase() === "verified"
+    ) {
+      statusCell.font = {
+        bold: true,
+        color: { argb: "008000" },
+      };
+    }
+
+    if (
+      String(intern.original_status).toLowerCase() === "completed"
+    ) {
+      statusCell.font = {
+        bold: true,
+        color: { argb: "1D4ED8" },
+      };
+    }
+  });
+
+  // =========================
+  // TOTAL ROW
+  // =========================
+  const totalRow = worksheet.addRow([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "TOTAL",
+    dataToExport.length,
+  ]);
+
+  totalRow.height = 24;
+
+  totalRow.eachCell((cell) => {
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "1F4E78" },
+    };
+
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFFFFF" } },
+      left: { style: "thin", color: { argb: "FFFFFF" } },
+      bottom: { style: "thin", color: { argb: "FFFFFF" } },
+      right: { style: "thin", color: { argb: "FFFFFF" } },
+    };
+  });
+
+  // =========================
+  // FREEZE HEADER
+  // =========================
+  worksheet.views = [
+    {
+      state: "frozen",
+      ySplit: 3,
+    },
+  ];
+
+  // =========================
+  // EXPORT
+  // =========================
+  const buffer = await workbook.xlsx.writeBuffer();
+
+  const blob = new Blob([buffer], {
+    type:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const fileName = `verified_interns_${
+    new Date().toISOString().split("T")[0]
+  }.xlsx`;
+
+  saveAs(blob, fileName);
+};
 
   const handleExportExcel = async () => {
     try {
