@@ -8,7 +8,7 @@ interface ChangeInternDetailsProps {
     id?: string;
     name?: string;
     ojtYear?: string;
-    ojtNumber?: string;
+    adminNote?: string;
     gender?: string;
     deploymentDate?: string;
     endDate?: string;
@@ -24,14 +24,13 @@ export const ChangeInterDetailsModal = ({
 }: ChangeInternDetailsProps): JSX.Element => {
   const titleId = useId();
   const descriptionId = useId();
-  const internNameId = useId();
-  const ojtIdFieldId = useId();
+  const adminNotesId = useId();
   const genderFieldId = useId();
   const deploymentDateId = useId();
   const endDateId = useId();
 
   const [ojtYear, setOjtYear] = useState(intern?.ojtYear ?? "2026");
-  const [ojtNumber, setOjtNumber] = useState(intern?.ojtNumber ?? "001");
+  const [adminNote, setAdminNote] = useState(intern?.adminNote ?? "");
   const [gender, setGender] = useState(intern?.gender ?? "Female");
   const [deploymentDate, setDeploymentDate] = useState(
     intern?.deploymentDate ?? "",
@@ -41,33 +40,38 @@ export const ChangeInterDetailsModal = ({
 
   useEffect(() => {
     setOjtYear(intern?.ojtYear ?? "2026");
-    setOjtNumber(intern?.ojtNumber ?? "001");
     setGender(intern?.gender ?? "Female");
-    setDeploymentDate(intern?.deploymentDate ?? "");
-    setEndDate(intern?.endDate ?? "");
+
+    // Normalize incoming date strings to YYYY-MM-DD which DatePicker expects
+    const normalizeToYMD = (d?: string) => {
+      if (!d) return "";
+      try {
+        const dt = new Date(d);
+        if (isNaN(dt.getTime())) return "";
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, "0");
+        const day = String(dt.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      } catch {
+        return "";
+      }
+    };
+
+    setDeploymentDate(normalizeToYMD(intern?.deploymentDate));
+    setEndDate(normalizeToYMD(intern?.endDate));
   }, [intern]);
-
-  const handleOjtNumberChange = (value: string) => {
-    const numericValue = value.replace(/\D/g, "").slice(0, 3);
-    setOjtNumber(numericValue);
-  };
-
-  const handleOjtNumberBlur = () => {
-    if (!ojtNumber) setOjtNumber("001");
-    else setOjtNumber(ojtNumber.padStart(3, "0"));
-  };
 
   const handleSave = async () => {
     setIsSaving(true);
     const payload = {
       id: intern?.id,
       ojtYear,
-      ojtNumber,
+      adminNote,
       gender,
-      deploymentDate,
-      endDate,
+      // ensure dates are sent as YYYY-MM-DD (or empty string)
+      deploymentDate: deploymentDate || null,
+      endDate: endDate || null,
     };
-
     try {
       await new Promise((resolve) => setTimeout(resolve, 3000));
       if (onSave) onSave(payload);
@@ -116,35 +120,6 @@ export const ChangeInterDetailsModal = ({
 
           {/* Form */}
           <form className="grid gap-6 md:grid-cols-2 md:grid-rows-[102px_86px]">
-            {/* OJT ID */}
-            <div className="flex flex-col gap-1.5 pt-0 pb-4">
-              <label
-                htmlFor={ojtIdFieldId}
-                className="text-sm font-bold text-gray-700"
-              >
-                OJT ID Number
-              </label>
-              <div className="flex w-full">
-                <div className="flex items-center rounded-l-md border border-gray-300 bg-gray-50 px-4 py-2 text-blue-700">
-                  {ojtYear}
-                </div>
-                <input
-                  id={ojtIdFieldId}
-                  aria-describedby={`${ojtIdFieldId}-hint`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={3}
-                  value={ojtNumber}
-                  onChange={(e) => handleOjtNumberChange(e.target.value)}
-                  onBlur={handleOjtNumberBlur}
-                  className="flex-1 rounded-r-md border border-gray-300 px-3 py-2 text-sm text-black"
-                />
-              </div>
-              <p id={`${ojtIdFieldId}-hint`} className="text-xs text-gray-500">
-                Auto-formats to 3 digits (e.g., 1 → 001)
-              </p>
-            </div>
-
             {/* Gender */}
             <div className="flex flex-col gap-1.5">
               <label
@@ -173,6 +148,28 @@ export const ChangeInterDetailsModal = ({
               </div>
               <p id={`${genderFieldId}-hint`} className="text-xs text-gray-500">
                 Used for certificate generation (Mr./Ms., he/she, his/her)
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1.5 pt-0 pb-4">
+              <label
+                htmlFor={adminNotesId}
+                className="text-sm font-bold text-gray-700"
+              >
+                Note
+              </label>
+              <div className="flex w-full">
+                <input
+                  id={adminNotesId}
+                  aria-describedby={`${adminNotesId}-hint`}
+                  type="text"
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+                />
+              </div>
+              <p id={`${adminNotesId}-hint`} className="text-xs text-gray-500">
+                Notes for the intern.
               </p>
             </div>
 
@@ -230,7 +227,7 @@ export const ChangeInterDetailsModal = ({
       </section>
 
       {isSaving && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-sm">
+        <div className="fixed inset-0 z-60 flex items-center justify-center backdrop-blur-sm">
           <div className="flex aspect-square w-64 flex-col items-center justify-center gap-4 rounded-2xl bg-blue-50/95 p-7 shadow-2xl ring-1 ring-blue-100 sm:w-72">
             <div className="flex h-24 w-24 items-center justify-center">
               <DotLottieReact

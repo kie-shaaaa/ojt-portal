@@ -4,6 +4,7 @@ import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { apiCall } from "@/lib/api";
 import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -120,230 +121,225 @@ export const VerifiedInternsTableSection = ({
   };
 
   const exportToExcel = async (dataToExport: Intern[]) => {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Verified Interns");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Verified Interns");
 
-  // =========================
-  // COLUMN SETUP
-  // =========================
-  worksheet.columns = [
-    { header: "OJT ID", key: "ojtId", width: 15 },
-    { header: "Intern Name", key: "name", width: 28 },
-    { header: "Gender", key: "gender", width: 12 },
-    { header: "School", key: "school", width: 35 },
-    { header: "Course", key: "details", width: 25 },
-    { header: "Deployment Date", key: "start", width: 18 },
-    { header: "End Date", key: "end", width: 18 },
-    { header: "Email", key: "email", width: 35 },
-    { header: "Status", key: "status", width: 15 },
-    { header: "Verified Date", key: "verified", width: 18 },
-  ];
+    // =========================
+    // COLUMN SETUP
+    // =========================
+    worksheet.columns = [
+      { header: "OJT ID", key: "ojtId", width: 15 },
+      { header: "Intern Name", key: "name", width: 28 },
+      { header: "Gender", key: "gender", width: 12 },
+      { header: "School", key: "school", width: 35 },
+      { header: "Course", key: "details", width: 25 },
+      { header: "Deployment Date", key: "start", width: 18 },
+      { header: "End Date", key: "end", width: 18 },
+      { header: "Email", key: "email", width: 35 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Verified Date", key: "verified", width: 18 },
+    ];
 
-  // =========================
-  // TITLE ROW
-  // =========================
-  worksheet.mergeCells("A1:J1");
+    // =========================
+    // TITLE ROW
+    // =========================
+    worksheet.mergeCells("A1:J1");
 
-  const titleCell = worksheet.getCell("A1");
+    const titleCell = worksheet.getCell("A1");
 
-  titleCell.value = "VERIFIED INTERNS";
+    titleCell.value = "VERIFIED INTERNS";
 
-  titleCell.font = {
-    bold: true,
-    size: 18,
-    color: { argb: "FFFFFFFF" },
-  };
-
-  titleCell.alignment = {
-    horizontal: "center",
-    vertical: "middle",
-  };
-
-  titleCell.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "1F4E78" },
-  };
-
-  worksheet.getRow(1).height = 30;
-
-  // =========================
-  // HEADER ROW
-  // =========================
-  const headerRow = worksheet.getRow(3);
-
-  worksheet.columns.forEach((col, index) => {
-    headerRow.getCell(index + 1).value = String(col.header);
-  });
-
-  headerRow.height = 25;
-
-  headerRow.eachCell((cell) => {
-    cell.font = {
+    titleCell.font = {
       bold: true,
+      size: 18,
       color: { argb: "FFFFFFFF" },
-      size: 11,
     };
 
-    cell.alignment = {
+    titleCell.alignment = {
       horizontal: "center",
       vertical: "middle",
-      wrapText: true,
     };
 
-    cell.fill = {
+    titleCell.fill = {
       type: "pattern",
       pattern: "solid",
       fgColor: { argb: "1F4E78" },
     };
 
-    cell.border = {
-      top: { style: "thin", color: { argb: "D9E2F3" } },
-      left: { style: "thin", color: { argb: "D9E2F3" } },
-      bottom: { style: "thin", color: { argb: "D9E2F3" } },
-      right: { style: "thin", color: { argb: "D9E2F3" } },
-    };
-  });
+    worksheet.getRow(1).height = 30;
 
-  // =========================
-  // DATA ROWS
-  // =========================
-  dataToExport.forEach((intern, index) => {
-    const row = worksheet.addRow({
-      ojtId: getOjtId(intern),
-      name: getInternName(intern),
-      gender: intern.gender || "Not set",
-      school: intern.school_name || "Not set",
-      details: intern.course || "—",
-      start: formatDate(intern.deployment_date),
-      end: formatDate(intern.end_date),
-      email: intern.email,
-      status: intern.original_status || "Not set",
-      verified: formatDate(intern.confirmed_at),
+    // =========================
+    // HEADER ROW
+    // =========================
+    const headerRow = worksheet.getRow(3);
+
+    worksheet.columns.forEach((col, index) => {
+      headerRow.getCell(index + 1).value = String(col.header);
     });
 
-    row.height = 22;
+    headerRow.height = 25;
 
-    row.eachCell((cell) => {
+    headerRow.eachCell((cell) => {
+      cell.font = {
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+        size: 11,
+      };
+
       cell.alignment = {
-        vertical: "middle",
         horizontal: "center",
+        vertical: "middle",
         wrapText: true,
       };
 
-      cell.border = {
-        top: { style: "thin", color: { argb: "D9D9D9" } },
-        left: { style: "thin", color: { argb: "D9D9D9" } },
-        bottom: { style: "thin", color: { argb: "D9D9D9" } },
-        right: { style: "thin", color: { argb: "D9D9D9" } },
-      };
-
-      // Alternating row colors
       cell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: {
-          argb: index % 2 === 0 ? "F8FAFC" : "EAF2F8",
-        },
+        fgColor: { argb: "1F4E78" },
       };
 
-      cell.font = {
-        size: 10,
-        color: { argb: "1F2937" },
+      cell.border = {
+        top: { style: "thin", color: { argb: "D9E2F3" } },
+        left: { style: "thin", color: { argb: "D9E2F3" } },
+        bottom: { style: "thin", color: { argb: "D9E2F3" } },
+        right: { style: "thin", color: { argb: "D9E2F3" } },
       };
     });
 
-    // Status color styling
-    const statusCell = row.getCell(9);
+    // =========================
+    // DATA ROWS
+    // =========================
+    dataToExport.forEach((intern, index) => {
+      const row = worksheet.addRow({
+        ojtId: getOjtId(intern),
+        name: getInternName(intern),
+        gender: intern.gender || "Not set",
+        school: intern.school_name || "Not set",
+        details: intern.course || "—",
+        start: formatDate(intern.deployment_date),
+        end: formatDate(intern.end_date),
+        email: intern.email,
+        status: intern.original_status || "Not set",
+        verified: formatDate(intern.confirmed_at),
+      });
 
-    if (
-      String(intern.original_status).toLowerCase() === "verified"
-    ) {
-      statusCell.font = {
+      row.height = 22;
+
+      row.eachCell((cell) => {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "center",
+          wrapText: true,
+        };
+
+        cell.border = {
+          top: { style: "thin", color: { argb: "D9D9D9" } },
+          left: { style: "thin", color: { argb: "D9D9D9" } },
+          bottom: { style: "thin", color: { argb: "D9D9D9" } },
+          right: { style: "thin", color: { argb: "D9D9D9" } },
+        };
+
+        // Alternating row colors
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: {
+            argb: index % 2 === 0 ? "F8FAFC" : "EAF2F8",
+          },
+        };
+
+        cell.font = {
+          size: 10,
+          color: { argb: "1F2937" },
+        };
+      });
+
+      // Status color styling
+      const statusCell = row.getCell(9);
+
+      if (String(intern.original_status).toLowerCase() === "verified") {
+        statusCell.font = {
+          bold: true,
+          color: { argb: "008000" },
+        };
+      }
+
+      if (String(intern.original_status).toLowerCase() === "completed") {
+        statusCell.font = {
+          bold: true,
+          color: { argb: "1D4ED8" },
+        };
+      }
+    });
+
+    // =========================
+    // TOTAL ROW
+    // =========================
+    const totalRow = worksheet.addRow([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "TOTAL",
+      dataToExport.length,
+    ]);
+
+    totalRow.height = 24;
+
+    totalRow.eachCell((cell) => {
+      cell.font = {
         bold: true,
-        color: { argb: "008000" },
+        color: { argb: "FFFFFFFF" },
       };
-    }
 
-    if (
-      String(intern.original_status).toLowerCase() === "completed"
-    ) {
-      statusCell.font = {
-        bold: true,
-        color: { argb: "1D4ED8" },
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
       };
-    }
-  });
 
-  // =========================
-  // TOTAL ROW
-  // =========================
-  const totalRow = worksheet.addRow([
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "TOTAL",
-    dataToExport.length,
-  ]);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "1F4E78" },
+      };
 
-  totalRow.height = 24;
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFFFFF" } },
+        left: { style: "thin", color: { argb: "FFFFFF" } },
+        bottom: { style: "thin", color: { argb: "FFFFFF" } },
+        right: { style: "thin", color: { argb: "FFFFFF" } },
+      };
+    });
 
-  totalRow.eachCell((cell) => {
-    cell.font = {
-      bold: true,
-      color: { argb: "FFFFFFFF" },
-    };
+    // =========================
+    // FREEZE HEADER
+    // =========================
+    worksheet.views = [
+      {
+        state: "frozen",
+        ySplit: 3,
+      },
+    ];
 
-    cell.alignment = {
-      horizontal: "center",
-      vertical: "middle",
-    };
+    // =========================
+    // EXPORT
+    // =========================
+    const buffer = await workbook.xlsx.writeBuffer();
 
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "1F4E78" },
-    };
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
 
-    cell.border = {
-      top: { style: "thin", color: { argb: "FFFFFF" } },
-      left: { style: "thin", color: { argb: "FFFFFF" } },
-      bottom: { style: "thin", color: { argb: "FFFFFF" } },
-      right: { style: "thin", color: { argb: "FFFFFF" } },
-    };
-  });
+    const fileName = `verified_interns_${
+      new Date().toISOString().split("T")[0]
+    }.xlsx`;
 
-  // =========================
-  // FREEZE HEADER
-  // =========================
-  worksheet.views = [
-    {
-      state: "frozen",
-      ySplit: 3,
-    },
-  ];
-
-  // =========================
-  // EXPORT
-  // =========================
-  const buffer = await workbook.xlsx.writeBuffer();
-
-  const blob = new Blob([buffer], {
-    type:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-
-  const fileName = `verified_interns_${
-    new Date().toISOString().split("T")[0]
-  }.xlsx`;
-
-  saveAs(blob, fileName);
-};
+    saveAs(blob, fileName);
+  };
 
   const handleExportExcel = async () => {
     try {
@@ -387,6 +383,9 @@ export const VerifiedInternsTableSection = ({
 
   const handleEdit = (intern: Intern) => {
     // Open the Change Intern Details modal with mock data derived from the intern
+    // debug: log intern being edited
+    // eslint-disable-next-line no-console
+    console.log("[UI] handleEdit - editingIntern source:", intern);
     setEditingIntern(intern);
   };
 
@@ -819,56 +818,94 @@ export const VerifiedInternsTableSection = ({
           intern={{
             id: editingIntern.id.toString(),
             name: getInternName(editingIntern),
-            ojtYear:
-              (editingIntern.deployment_date
-                ? new Date(editingIntern.deployment_date)
-                    .getFullYear()
-                    .toString()
-                : null) || "2026",
-            ojtNumber: (() => {
-              const parts = getOjtId(editingIntern)?.split("-") || [];
-              const last = parts.length
-                ? parts[parts.length - 1]
-                : getOjtId(editingIntern);
-              return (last || "001").slice(-3).padStart(3, "0");
+            // Prefer deriving year from ojt_id if available, else fallback to deployment_date year
+            ojtYear: (() => {
+              if (editingIntern.ojt_id) {
+                const parts = editingIntern.ojt_id.split("-").filter(Boolean);
+                const yearPart = parts.length >= 2 ? parts[1] : parts[0];
+                if (/^\d{4}$/.test(yearPart)) return yearPart;
+              }
+              if (editingIntern.deployment_date) {
+                return new Date(editingIntern.deployment_date)
+                  .getFullYear()
+                  .toString();
+              }
+              return "2026";
             })(),
+            adminNote: editingIntern.admin_notes ?? "",
             gender: editingIntern.gender || "Female",
             deploymentDate: editingIntern.deployment_date || undefined,
             endDate: editingIntern.end_date || undefined,
           }}
           onClose={() => setEditingIntern(null)}
-          onSave={(payload) => {
-            // Apply changes to the local rows state so the table reflects edits
-            const computeNewOjtId = (
-              oldId: string,
-              p: {
-                ojtYear?: string;
-                ojtNumber?: string;
-              },
-            ) => {
-              const parts = (oldId || "").split("-").filter(Boolean);
-              if (parts.length >= 2) {
-                // replace last with number
-                parts[parts.length - 1] =
-                  p.ojtNumber ?? parts[parts.length - 1];
-                // replace year if provided
-                if (p.ojtYear) parts[parts.length - 2] = p.ojtYear;
-                return parts.join("-");
-              }
-              return `${p.ojtYear ?? "2026"}-${p.ojtNumber ?? "001"}`;
+          onSave={async (payload) => {
+            // Send update to backend and reflect changes locally
+            const body = {
+              id: Number(payload.id),
+              ojtYear: payload.ojtYear,
+              adminNote: payload.adminNote,
+              gender: payload.gender,
+              deploymentDate: payload.deploymentDate,
+              endDate: payload.endDate,
             };
 
-            setEditedInterns((prev) => ({
-              ...prev,
-              [Number(payload.id)]: {
-                gender: payload.gender ?? editingIntern.gender,
-                deployment_date:
-                  payload.deploymentDate ?? editingIntern.deployment_date,
-                end_date: payload.endDate ?? editingIntern.end_date,
-                ojt_id: computeNewOjtId(getOjtId(editingIntern), payload),
-              },
-            }));
-            setEditingIntern(null);
+            try {
+              const res = await apiCall("/ojt/edit-Ojt", {
+                method: "PUT",
+                body: JSON.stringify(body),
+              });
+
+              // apiCall returns a Response when not ok
+              if ((res as Response)?.ok === false) {
+                // try to extract message
+                let msg = "Failed to update intern";
+                try {
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                  msg = (await (res as Response).json())?.message || msg;
+                } catch {}
+                toast.error(msg);
+                return;
+              }
+
+              // res should be the success object { status, ok, message, data }
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              const updated = (res as any)?.data ?? (res as any);
+
+              if (!updated) {
+                toast.success("Intern updated");
+                setEditingIntern(null);
+                return;
+              }
+
+              // Update local editedInterns to reflect changed fields
+              setEditedInterns((prev) => ({
+                ...prev,
+                [updated.id]: {
+                  gender: updated.gender ?? editingIntern?.gender,
+                  deployment_date:
+                    updated.deployment_date ?? editingIntern?.deployment_date,
+                  end_date: updated.end_date ?? editingIntern?.end_date,
+                  ojt_id:
+                    updated.ojt_id ??
+                    editingIntern?.ojt_id ??
+                    getOjtId(editingIntern!),
+                  admin_notes:
+                    updated.admin_notes ?? editingIntern?.admin_notes,
+                },
+              }));
+
+              toast.success("Intern updated successfully");
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error("Failed to update intern:", error);
+              const msg =
+                error instanceof Error
+                  ? error.message
+                  : "Failed to update intern";
+              toast.error(msg);
+            } finally {
+              setEditingIntern(null);
+            }
           }}
         />
       )}
