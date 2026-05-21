@@ -159,7 +159,7 @@ const ChangeStatusModal = ({
 
   useEffect(() => {
     setSelectedStatus(statusToId(application?.status));
-    
+
     // If in appointment-date mode, initialize from existing appointment date
     if (mode === "appointment-date" && application?.appointmentDate) {
       const date = new Date(application.appointmentDate);
@@ -252,7 +252,9 @@ const ChangeStatusModal = ({
       onClose();
     } catch (error) {
       console.error("Failed to update appointment date:", error);
-      toast.error("We could not update the appointment date. Please try again.");
+      toast.error(
+        "We could not update the appointment date. Please try again.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -269,14 +271,18 @@ const ChangeStatusModal = ({
     // Validate required schedule fields when setting interview or accepted
     if (selectedStatus === "for-interview") {
       if (!interviewDate || !interviewTime) {
-        toast.error("Please set interview date and time before updating status.");
+        toast.error(
+          "Please set interview date and time before updating status.",
+        );
         return;
       }
     }
 
     if (selectedStatus === "accepted") {
       if (!acceptedDate || !acceptedTime) {
-        toast.error("Please set orientation date and time before updating status.");
+        toast.error(
+          "Please set orientation date and time before updating status.",
+        );
         return;
       }
     }
@@ -299,6 +305,14 @@ const ChangeStatusModal = ({
         body: JSON.stringify({
           id: applicationId,
           status: backendStatus,
+          interviewDate:
+            selectedStatus === "for-interview" ? interviewDate : undefined,
+          interviewTime:
+            selectedStatus === "for-interview" ? interviewTime : undefined,
+          acceptedDate:
+            selectedStatus === "accepted" ? acceptedDate : undefined,
+          acceptedTime:
+            selectedStatus === "accepted" ? acceptedTime : undefined,
         }),
       });
 
@@ -324,7 +338,7 @@ const ChangeStatusModal = ({
           body: JSON.stringify({
             type: appointmentType, // or map to interview/orientation if needed
             appointmentDate: appointmentDateISO,
-            applicationId: applicationId
+            applicationId: applicationId,
           }),
         });
       }
@@ -337,15 +351,18 @@ const ChangeStatusModal = ({
       onClose();
     } catch (error) {
       console.error("Failed to update:", error);
-      toast.error("We could not update the application status. Please try again.");
+      toast.error(
+        "We could not update the application status. Please try again.",
+      );
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleConfirm = mode === "appointment-date" 
-    ? handleConfirmAppointmentDateMode 
-    : handleConfirmStatusMode;
+  const handleConfirm =
+    mode === "appointment-date"
+      ? handleConfirmAppointmentDateMode
+      : handleConfirmStatusMode;
 
   return (
     <div
@@ -370,8 +387,8 @@ const ChangeStatusModal = ({
             {bulkMode
               ? `Change Status for ${bulkCount} Applications`
               : mode === "appointment-date"
-              ? "Change Appointment Date"
-              : "Change Application Status"}
+                ? "Change Appointment Date"
+                : "Change Application Status"}
           </h2>
 
           <button
@@ -429,7 +446,8 @@ const ChangeStatusModal = ({
 
                 {statusOptions.map((option) => {
                   const isSelected = selectedStatus === option.id;
-                  const isCurrent = statusToId(application?.status) === option.id;
+                  const isCurrent =
+                    statusToId(application?.status) === option.id;
 
                   return (
                     <label

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { AppointmentType } from '../data/types';
 import { LogsService } from './logs.service';
@@ -46,7 +46,7 @@ export class AppointmentsService {
     const client = this.databaseService.getClient();
 
     try {
-      const duplicate = await client.query(
+      const existingAppointment = await client.query(
         `
           SELECT * FROM appointments
           WHERE type = $1 AND
@@ -55,8 +55,40 @@ export class AppointmentsService {
         [type, applicationId],
       );
 
-      if ((duplicate.rowCount ?? 0) > 0) {
-        throwAppError('conflict', 'Appointment already exists');
+      if ((existingAppointment.rowCount ?? 0) > 0) {
+        const result = await client.query(
+          `
+            UPDATE appointments
+            SET
+              appointment_date = $1,
+              is_cancelled = FALSE,
+              is_done = FALSE
+            WHERE type = $2 AND
+              application_id = $3
+            RETURNING *
+          `,
+          [appointmentDate, type, applicationId],
+        );
+
+        if (result.rows.length === 0) {
+          throwAppError('server_error', 'Failed to update appointment');
+        }
+
+        await this.logsService
+          .logOther({
+            userId: 0,
+            action: 'Appointment Updated',
+            details: `Appointment updated for application ${applicationId} to ${appointmentDate}`,
+            ipAddress: undefined,
+          })
+          .catch((err) =>
+            console.error('Failed to log appointment update', err),
+          );
+
+        return SuccessHandler(
+          'Appointment updated successfully',
+          result.rows[0],
+        );
       }
 
       const result = await client.query(
@@ -87,6 +119,9 @@ export class AppointmentsService {
       return SuccessHandler('Appointment created successfully', result.rows[0]);
     } catch (error) {
       console.error('[APPOINTMENT] Error:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throwAppError('server_error', 'Failed to create appointment');
     }
   }
