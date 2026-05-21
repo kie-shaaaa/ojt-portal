@@ -73,6 +73,38 @@ type ApiApplicationRecord = {
   reviewed_date: string | null;
 };
 
+type ApplicationLookupResponse = {
+  ok?: boolean;
+  message?: string;
+  data?: ApiApplicationRecord[];
+};
+
+function getVisibleToastCount() {
+  return toast.getToasts().filter((entry) => !("dismiss" in entry)).length;
+}
+
+function showTrackError(message: string) {
+  if (getVisibleToastCount() > 0) return;
+  toast.error(message);
+}
+
+function extractApplications(response: unknown): ApiApplicationRecord[] | null {
+  if (Array.isArray(response)) {
+    return response as ApiApplicationRecord[];
+  }
+
+  if (
+    response &&
+    typeof response === "object" &&
+    "data" in response &&
+    Array.isArray((response as ApplicationLookupResponse).data)
+  ) {
+    return (response as ApplicationLookupResponse).data ?? null;
+  }
+
+  return null;
+}
+
 function mapApplicationRecord(
   application: ApiApplicationRecord,
 ): ApplicationRecord {
@@ -100,9 +132,15 @@ function mapApplicationRecord(
 }
 
 async function fetchApplicationRecord(id: string, email: string) {
-  const response = (await apiCall(
+  const response = await apiCall(
     `/applications/fetch?id=${encodeURIComponent(id)}&email=${encodeURIComponent(email)}`,
-  )) as ApiApplicationRecord[];
+  );
+
+  const applications = extractApplications(response);
+
+  if (!applications) {
+    throw new Error("Unexpected application lookup response.");
+  }
 
   const normalizedEmail = email.toLowerCase();
   const numericId = Number(id);
@@ -110,7 +148,7 @@ async function fetchApplicationRecord(id: string, email: string) {
   // Strict verification: require both id and email to match the same record.
   // The server may return rows that match id OR email; do not accept an id-only match.
   const matchedApplication =
-    response.find(
+    applications.find(
       (application) =>
         application.id === numericId &&
         application.email.toLowerCase() === normalizedEmail,
@@ -129,18 +167,30 @@ async function fetchApplicationRecordWithDiagnostics(id: string, email: string) 
   if (exact) return exact;
 
   // Check id-only
-  const idOnly = (await apiCall(
+  const idOnlyResponse = await apiCall(
     `/applications/fetch?id=${encodeURIComponent(id)}&email=`,
-  )) as ApiApplicationRecord[];
+  );
+
+  const idOnly = extractApplications(idOnlyResponse);
+
+  if (!idOnly) {
+    throw new Error("Unexpected application lookup response.");
+  }
 
   if (idOnly.find((app) => app.id === numericId)) {
     throw new Error("ID_EXISTS_EMAIL_MISMATCH");
   }
 
   // Check email-only
-  const emailOnly = (await apiCall(
+  const emailOnlyResponse = await apiCall(
     `/applications/fetch?id=&email=${encodeURIComponent(email)}`,
-  )) as ApiApplicationRecord[];
+  );
+
+  const emailOnly = extractApplications(emailOnlyResponse);
+
+  if (!emailOnly) {
+    throw new Error("Unexpected application lookup response.");
+  }
 
   if (emailOnly.find((app) => app.email.toLowerCase() === normalizedEmail)) {
     throw new Error("EMAIL_EXISTS_ID_MISMATCH");
@@ -459,13 +509,13 @@ export default function TrackPage(): JSX.Element {
 
     if (!trimmedApplicationId || !trimmedEmail) {
       setResult(null);
-      toast.error("Please enter your application ID and email address.");
+      showTrackError("Please enter your application ID and email address.");
       return;
     }
 
     if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
       setResult(null);
-      toast.error("Please enter a valid email address.");
+      showTrackError("Please enter a valid email address.");
       return;
     }
 
@@ -473,7 +523,7 @@ export default function TrackPage(): JSX.Element {
 
     if (!numericId) {
       setResult(null);
-      toast.error("Please enter a valid Application ID.");
+      showTrackError("Please enter a valid Application ID.");
       return;
     }
 
@@ -487,7 +537,7 @@ export default function TrackPage(): JSX.Element {
 
       if (!matchedApplication) {
         setResult(null);
-        toast.error("No application matched that ID and email address.");
+        showTrackError("No application matched that ID and email address.");
         return;
       }
 
@@ -496,22 +546,22 @@ export default function TrackPage(): JSX.Element {
       setResult(null);
       if (fetchError instanceof Error) {
         if (fetchError.message === "ID_EXISTS_EMAIL_MISMATCH") {
-          toast.error(
+          showTrackError(
             "Application ID exists but the email does not match. Please use the email used during application.",
           );
         } else if (fetchError.message === "EMAIL_EXISTS_ID_MISMATCH") {
-          toast.error(
+          showTrackError(
             "Email exists but the Application ID does not match. Please check your Application ID.",
           );
         } else if (fetchError.message.includes("fetch")) {
-          toast.error(
+          showTrackError(
             "We couldn't load that application right now. Please try again.",
           );
         } else {
-          toast.error(fetchError.message);
+          showTrackError(fetchError.message);
         }
       } else {
-        toast.error("We couldn't load that application right now. Please try again.");
+        showTrackError("We couldn't load that application right now. Please try again.");
       }
     } finally {
       setIsLoading(false);

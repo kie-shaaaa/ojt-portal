@@ -8,8 +8,6 @@ import {
   Heart,
   FileCheck,
   Image as LucideImage,
-  ArrowLeft,
-  ArrowRight,
   AlertCircle,
   Download,
   Info,
@@ -153,8 +151,9 @@ const UploadCardItem = ({
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const displayError = error && !fileName ? error : undefined;
   const isMissing = card.required && !fileName;
-  const hasError = !!error || isMissing;
+  const hasError = !!displayError || isMissing;
   const isValid = !!fileName && !hasError;
 
   // Determine content class: if missing/invalid, show red styling; otherwise use card's default
@@ -195,9 +194,9 @@ const UploadCardItem = ({
             onSelectFile(card.id, file);
           }}
         />
-        <div className="box-border gap-1 pt-3 pb-0 px-0 inline-flex items-center relative flex-[0_0_auto]">
+        <div className="box-border gap-1 pt-3 pb-0 px-0 flex items-center relative w-full min-w-0">
           <Upload size={16} className="text-blue-700" />
-          <div className="relative flex items-center justify-center w-fit mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-xs text-center tracking-[0] leading-4 whitespace-nowrap">
+          <div className="relative flex-1 min-w-0 mt-[-1.00px] [font-family:'Nimbus_Sans-Bold',Helvetica] font-bold text-blue-700 text-xs text-left tracking-[0] leading-4 overflow-hidden whitespace-nowrap text-ellipsis">
             {fileName || "No file chosen"}
           </div>
         </div>
@@ -208,7 +207,7 @@ const UploadCardItem = ({
               id={`${inputId}-error`}
               className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-red-600 text-xs tracking-[0] leading-4"
             >
-              {error ?? (isMissing ? "This file is required" : null)}
+              {displayError ?? (isMissing ? "This file is required" : null)}
             </div>
           </div>
         ) : null}
