@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Eye, FileText, Download, Maximize2 } from "lucide-react";
+import { X, Eye, FileText, Download, Maximize2, Check } from "lucide-react";
 import { JSX, memo, useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useApplicationFiles } from "@/hooks/useApplicationFiles";
@@ -50,32 +50,12 @@ const formatFileSize = (bytes: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-const rejectFile = async (id: number) => {
-  try {
-    const result = await apiCall("/applications/reject-file", {
-      method: "POST",
-      body: JSON.stringify({
-        fileId: id,
-      }),
-    });
-
-    if (!result.ok) {
-      throw new Error("Rejecting file has failed");
-    }
-
-    window.location.reload();
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to reject file";
-    console.error(errorMessage, error);
-    toast.error(errorMessage);
-  }
-};
-
 const FileCard = memo(
   ({
     file,
     onPreview,
+    onRejectToggle,
+    isSelected,
   }: {
     file: {
       id: number;
@@ -90,6 +70,19 @@ const FileCard = memo(
       signedUrl: string;
     };
     onPreview?: (url: string) => void;
+    onRejectToggle?: (file: {
+      id: number;
+      application_id: number;
+      file_type: string;
+      document_key: string | null;
+      file_name: string;
+      file_extension: string;
+      file_path: string;
+      file_size: number;
+      uploaded_at: string;
+      signedUrl: string;
+    }) => void;
+    isSelected?: boolean;
   }): JSX.Element => {
     const { file_name, file_size, file_extension, signedUrl, document_key } =
       file;
@@ -114,7 +107,13 @@ const FileCard = memo(
     };
 
     return (
-      <div className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 shadow-sm">
+      <div
+        className={`grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2 shadow-sm transition ${
+          isSelected
+            ? "border border-red-300 bg-red-50 ring-1 ring-red-200"
+            : "border border-gray-100 bg-gray-50"
+        }`}
+      >
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white ring-1 ring-gray-100">
           <FileText className="h-5 w-5 text-red-500" />
         </div>
@@ -131,12 +130,24 @@ const FileCard = memo(
         <div className="flex items-center gap-2 justify-self-end">
           <button
             type="button"
-            onClick={() => rejectFile(file.id)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
-            title="Reject File"
+            onClick={() => onRejectToggle?.(file)}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium ring-1 transition ${
+              isSelected
+                ? "bg-red-600 text-white ring-red-600 hover:bg-red-700"
+                : "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100"
+            }`}
+            title={
+              isSelected
+                ? "Remove from rejection selection"
+                : "Select file for rejection"
+            }
           >
-            <X size={14} />
-            <span className="sr-only">Reject File</span>
+            {isSelected ? <Check size={14} /> : <X size={14} />}
+            <span className="sr-only">
+              {isSelected
+                ? "Remove from rejection selection"
+                : "Select file for rejection"}
+            </span>
           </button>
           <button
             type="button"
@@ -169,6 +180,8 @@ const CompiledFilesModal = memo(
   ({
     files,
     onClose,
+    onRejectToggle,
+    selectedRejectFileIds,
   }: {
     files: Array<{
       id: number;
@@ -183,6 +196,19 @@ const CompiledFilesModal = memo(
       signedUrl: string;
     }>;
     onClose: () => void;
+    onRejectToggle: (file: {
+      id: number;
+      application_id: number;
+      file_type: string;
+      document_key: string | null;
+      file_name: string;
+      file_extension: string;
+      file_path: string;
+      file_size: number;
+      uploaded_at: string;
+      signedUrl: string;
+    }) => void;
+    selectedRejectFileIds: number[];
   }): JSX.Element => {
     const [isVisible, setIsVisible] = useState(false);
 
@@ -261,11 +287,26 @@ const CompiledFilesModal = memo(
                         <div className="flex flex-row gap-3">
                           <button
                             type="button"
-                            onClick={() => rejectFile(file.id)}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-red-50 px-3 text-xs font-medium text-red-700 ring-1 ring-red-200 transition hover:bg-red-100"
+                            onClick={() => onRejectToggle(file)}
+                            className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium ring-1 transition ${
+                              selectedRejectFileIds.includes(file.id)
+                                ? "bg-red-600 text-white ring-red-600 hover:bg-red-700"
+                                : "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100"
+                            }`}
+                            title={
+                              selectedRejectFileIds.includes(file.id)
+                                ? "Remove from rejection selection"
+                                : "Select file for rejection"
+                            }
                           >
-                            <X size={14} />
-                            Reject File
+                            {selectedRejectFileIds.includes(file.id) ? (
+                              <Check size={14} />
+                            ) : (
+                              <X size={14} />
+                            )}
+                            {selectedRejectFileIds.includes(file.id)
+                              ? "Selected"
+                              : "Reject File"}
                           </button>
                           <button
                             type="button"
@@ -354,6 +395,184 @@ const CompiledFilesModal = memo(
 
 CompiledFilesModal.displayName = "CompiledFilesModal";
 
+const RejectFilesConfirmModal = memo(
+  ({
+    open,
+    files,
+    selectedRejectFileIds,
+    onToggleFile,
+    onClose,
+    onConfirm,
+    isSubmitting,
+  }: {
+    open: boolean;
+    files: Array<{
+      id: number;
+      application_id: number;
+      file_type: string;
+      document_key: string | null;
+      file_name: string;
+      file_extension: string;
+      file_path: string;
+      file_size: number;
+      uploaded_at: string;
+      signedUrl: string;
+    }>;
+    selectedRejectFileIds: number[];
+    onToggleFile: (file: {
+      id: number;
+      application_id: number;
+      file_type: string;
+      document_key: string | null;
+      file_name: string;
+      file_extension: string;
+      file_path: string;
+      file_size: number;
+      uploaded_at: string;
+      signedUrl: string;
+    }) => void;
+    onClose: () => void;
+    onConfirm: () => void;
+    isSubmitting: boolean;
+  }): JSX.Element | null => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+      if (!open) {
+        setIsVisible(false);
+        return;
+      }
+
+      const animationFrameId = requestAnimationFrame(() => setIsVisible(true));
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+      };
+    }, [open]);
+
+    useEscapeKey(onClose);
+
+    if (!open) return null;
+
+    const selectedFiles = files.filter((file) =>
+      selectedRejectFileIds.includes(file.id),
+    );
+
+    return (
+      <div
+        className={`fixed inset-0 z-[100001] flex items-center justify-center bg-black/60 p-4 transition-opacity duration-150 ease-out ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={onClose}
+      >
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-files-title"
+          onClick={(event) => event.stopPropagation()}
+          className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out ${
+            isVisible
+              ? "scale-100 translate-y-0 opacity-100"
+              : "scale-95 translate-y-2 opacity-0"
+          }`}
+        >
+          <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <div>
+              <h1
+                id="reject-files-title"
+                className="text-lg font-bold text-red-700"
+              >
+                Confirm File Rejection
+              </h1>
+              <p className="text-xs text-gray-500">
+                The applicant will receive one email listing all selected files.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Close rejection confirmation"
+              className="text-gray-400 transition hover:text-gray-600"
+              onClick={onClose}
+            >
+              <X size={20} />
+            </button>
+          </header>
+
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="mb-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {selectedFiles.length} file
+              {selectedFiles.length === 1 ? "" : "s"} selected for rejection.
+            </div>
+
+            <div className="space-y-3">
+              {files.map((file) => {
+                const title =
+                  file.document_key?.toUpperCase() || file.file_name.toUpperCase();
+                const selected = selectedRejectFileIds.includes(file.id);
+
+                return (
+                  <button
+                    key={file.id}
+                    type="button"
+                    onClick={() => onToggleFile(file)}
+                    className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
+                      selected
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 bg-white hover:bg-gray-50"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-5 w-5 items-center justify-center rounded border text-[11px] font-bold ${
+                        selected
+                          ? "border-red-600 bg-red-600 text-white"
+                          : "border-gray-300 bg-white text-transparent"
+                      }`}
+                    >
+                      <Check size={12} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-gray-900">
+                        {title}
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        {formatFileSize(file.file_size)} •{" "}
+                        {file.file_extension.toUpperCase()}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <footer className="flex flex-col gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={selectedFiles.length === 0 || isSubmitting}
+              className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting
+                ? "Rejecting..."
+                : `Reject ${selectedFiles.length} File${selectedFiles.length === 1 ? "" : "s"}`}
+            </button>
+          </footer>
+        </section>
+      </div>
+    );
+  },
+);
+
+RejectFilesConfirmModal.displayName = "RejectFilesConfirmModal";
+
 const FileTextPreview = memo(({ url }: { url: string }): JSX.Element => {
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -400,6 +619,11 @@ export const ApplicationDetails = ({
 }: ApplicationDetailsProps): JSX.Element => {
   const [isVisible, setIsVisible] = useState(false);
   const [showCompiledView, setShowCompiledView] = useState(false);
+  const [selectedRejectFileIds, setSelectedRejectFileIds] = useState<number[]>(
+    [],
+  );
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [isRejectingFiles, setIsRejectingFiles] = useState(false);
   const applicationId = (() => {
     if (!application?.id) return undefined;
     const match = application.id.match(/(\d+)$/);
@@ -552,6 +776,54 @@ export const ApplicationDetails = ({
   );
 
   const fileUploads = files.length > 0 ? files : [];
+  const handleToggleRejectFile = useCallback(
+    (file: (typeof fileUploads)[number]) => {
+      setSelectedRejectFileIds((current) => {
+        const isSelected = current.includes(file.id);
+        const nextSelection = isSelected
+          ? current.filter((id) => id !== file.id)
+          : [...current, file.id];
+
+        setShowRejectConfirm(nextSelection.length > 0);
+        return nextSelection;
+      });
+    },
+    [],
+  );
+
+  const handleConfirmRejectFiles = useCallback(async () => {
+    if (selectedRejectFileIds.length === 0) {
+      toast.error("Please select at least one file to reject.");
+      return;
+    }
+
+    try {
+      setIsRejectingFiles(true);
+
+      const result = await apiCall("/applications/reject-files", {
+        method: "POST",
+        body: JSON.stringify({ fileIds: selectedRejectFileIds }),
+      });
+
+      if (!result.ok) {
+        throw new Error("Rejecting files has failed");
+      }
+
+      toast.success(
+        selectedRejectFileIds.length === 1
+          ? "File rejected successfully."
+          : "Files rejected successfully.",
+      );
+      window.location.reload();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reject files";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    } finally {
+      setIsRejectingFiles(false);
+    }
+  }, [selectedRejectFileIds]);
 
   return (
     <div
@@ -656,6 +928,8 @@ export const ApplicationDetails = ({
                     key={file.id}
                     file={file}
                     onPreview={handlePreviewOpen}
+                    onRejectToggle={handleToggleRejectFile}
+                    isSelected={selectedRejectFileIds.includes(file.id)}
                   />
                 ))
               ) : (
@@ -671,8 +945,23 @@ export const ApplicationDetails = ({
         <CompiledFilesModal
           files={fileUploads}
           onClose={() => setShowCompiledView(false)}
+          onRejectToggle={handleToggleRejectFile}
+          selectedRejectFileIds={selectedRejectFileIds}
         />
       )}
+
+      <RejectFilesConfirmModal
+        open={showRejectConfirm}
+        files={fileUploads}
+        selectedRejectFileIds={selectedRejectFileIds}
+        onToggleFile={handleToggleRejectFile}
+        onClose={() => {
+          setShowRejectConfirm(false);
+          setSelectedRejectFileIds([]);
+        }}
+        onConfirm={handleConfirmRejectFiles}
+        isSubmitting={isRejectingFiles}
+      />
     </div>
   );
 };

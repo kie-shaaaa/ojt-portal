@@ -472,6 +472,26 @@ export class ApplicationsController {
     }
   }
 
+  @Post('reject-files')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async rejectFiles(
+    @Body() body: { fileIds: number[] },
+    @Req() req: FastifyRequest & { user?: any },
+  ) {
+    const userId = req.user?.id;
+    if (!Array.isArray(body.fileIds) || body.fileIds.length === 0) {
+      throw new BadRequestException('At least one fileId is required');
+    }
+
+    try {
+      return this.fileUploadsService.deleteFiles(body.fileIds, userId);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to reject files';
+      throw new BadRequestException(message);
+    }
+  }
+
   /**
    * Resubmit application files after rejection
    * @param id application ID from URL param
