@@ -42,6 +42,7 @@ jobs:
                    cache-dependency-path: ${{ matrix.workdir }}/package-lock.json
 
             - name: Installing Dependencies
+              working-directory: ${{ matrix.workdir }}
               run: npm ci
 
             - name: Lint Checking
