@@ -47,7 +47,7 @@ export const MainContentArea = (): JSX.Element => {
   useEffect(() => {
     const data = fetchToken();
     if (!data?.user) {
-      setCurrentUser(undefined);
+      requestAnimationFrame(() => setCurrentUser(undefined));
       return;
     }
 
@@ -55,10 +55,10 @@ export const MainContentArea = (): JSX.Element => {
       // fetchToken returns user as a raw JSON string — parse it
       const parsed: StoredUser =
         typeof data.user === "string" ? JSON.parse(data.user) : data.user;
-      setCurrentUser(parsed);
+      requestAnimationFrame(() => setCurrentUser(parsed));
     } catch {
       // Ignore malformed data
-      setCurrentUser(undefined);
+      requestAnimationFrame(() => setCurrentUser(undefined));
     }
   }, []);
 

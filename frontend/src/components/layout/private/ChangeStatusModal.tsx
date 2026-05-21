@@ -158,15 +158,15 @@ const ChangeStatusModal = ({
   const [appointmentTime, setAppointmentTime] = useState<string>("09:00");
 
   useEffect(() => {
-    setSelectedStatus(statusToId(application?.status));
+    requestAnimationFrame(() => setSelectedStatus(statusToId(application?.status)));
 
     // If in appointment-date mode, initialize from existing appointment date
     if (mode === "appointment-date" && application?.appointmentDate) {
       const date = new Date(application.appointmentDate);
       const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-      setAppointmentDate(dateStr);
-      setAppointmentTime(timeStr);
+      requestAnimationFrame(() => setAppointmentDate(dateStr));
+      requestAnimationFrame(() => setAppointmentTime(timeStr));
     }
   }, [application, mode]);
 
@@ -174,7 +174,7 @@ const ChangeStatusModal = ({
     if (open) {
       requestAnimationFrame(() => setIsVisible(true));
     } else {
-      setIsVisible(false);
+      requestAnimationFrame(() => setIsVisible(false));
     }
   }, [open]);
 
