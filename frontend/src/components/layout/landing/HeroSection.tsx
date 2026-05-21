@@ -35,7 +35,7 @@ export const HeroSection = (): JSX.Element => {
     if (saved) {
       try {
         const { isOpen } = JSON.parse(saved);
-        setIsPortalOpen(isOpen);
+        requestAnimationFrame(() => setIsPortalOpen(isOpen));
       } catch (error) {
         console.error("Failed to load portal settings:", error);
       }

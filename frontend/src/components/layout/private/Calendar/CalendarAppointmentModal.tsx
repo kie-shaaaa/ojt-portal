@@ -102,13 +102,15 @@ export default function CalendarAppointmentModal({
     if (open) {
       requestAnimationFrame(() => setIsVisible(true));
     } else {
-      setIsVisible(false);
+      requestAnimationFrame(() => setIsVisible(false));
     }
   }, [open]);
 
   useEffect(() => {
     if (open && appointments.length > 0) {
-      setActiveAppointmentId(selectedAppointmentId ?? appointments[0].id);
+      requestAnimationFrame(() =>
+        setActiveAppointmentId(selectedAppointmentId ?? appointments[0].id),
+      );
     }
   }, [open, appointments, selectedAppointmentId]);
 

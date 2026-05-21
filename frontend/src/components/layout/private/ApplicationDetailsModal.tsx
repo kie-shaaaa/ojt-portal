@@ -439,7 +439,7 @@ const RejectFilesConfirmModal = memo(
 
     useEffect(() => {
       if (!open) {
-        setIsVisible(false);
+        requestAnimationFrame(() => setIsVisible(false));
         return;
       }
 
