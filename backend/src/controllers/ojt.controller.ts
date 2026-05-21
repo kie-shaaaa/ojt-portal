@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { OjtService } from '../services/ojt.service';
 import { SuccessResponse } from '../data/types';
+import type { UpdateOjtDto } from '../data/dto/update-ojt.dto';
 
 @Controller('ojt')
 export class OjtController {
@@ -30,15 +31,9 @@ export class OjtController {
   }
 
   @Put('edit-Ojt')
-  async editOjt(@Body() id: number) {
+  async editOjt(@Body() body: UpdateOjtDto): Promise<SuccessResponse> {
     try {
-      // Implementation to be added
-      return {
-        status: 'success',
-        ok: true,
-        message: 'OJT updated',
-        data: null,
-      };
+      return await this.ojtService.updateOjt(body);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to update OJT';

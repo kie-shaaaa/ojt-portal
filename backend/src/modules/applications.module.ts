@@ -5,6 +5,7 @@ import { DatabaseModule } from './database.module';
 import { StorageModule } from './storage.module';
 import { MailerModule } from './mailer.module';
 import { LogsModule } from './logs.module';
+import { AppointmentsModule } from './appointments.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { LogsModule } from './logs.module';
     forwardRef(() => StorageModule),
     MailerModule,
     LogsModule,
+    AppointmentsModule,
   ],
   exports: [ApplicationsService],
   providers: [ApplicationsService],

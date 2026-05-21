@@ -13,6 +13,7 @@ import { UploadedFile } from '../data/types/file-upload.types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
 import { MailerService } from './mailer.service';
 import { LogsService } from './logs.service';
+import { AppointmentsService } from './appointments.service';
 
 @Injectable()
 export class ApplicationsService {
@@ -21,6 +22,7 @@ export class ApplicationsService {
     private readonly fileUploadsService: FileUploadsService,
     private readonly mailerService: MailerService,
     private readonly logsService: LogsService,
+    private readonly appointmentsService: AppointmentsService,
   ) {}
 
   async submitApplication(
@@ -195,7 +197,7 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      // Log application submission (system operation)
+      /* Log application submission (system operation)
       await this.logsService
         .logOther({
           userId: 0,
@@ -206,6 +208,7 @@ export class ApplicationsService {
         .catch((err) =>
           console.error('Failed to log application submission', err),
         );
+      */
 
       return SuccessHandler(
         'Application submitted successfully',
@@ -576,6 +579,23 @@ export class ApplicationsService {
       }
 
       if (status === 'for_interview') {
+        // If interview date/time provided, create an interview appointment
+        try {
+          if (interviewDate) {
+            const interviewDateTime = interviewTime
+              ? new Date(`${interviewDate}T${interviewTime}`)
+              : new Date(interviewDate);
+
+            await this.appointmentsService.addAppointment(
+              'interview',
+              interviewDateTime,
+              id,
+            );
+          }
+        } catch (err) {
+          console.error('Failed to create interview appointment', err);
+        }
+
         const mailSent = await this.mailerService.responseEmail({
           to: data.email,
           firstName: data.first_name,
@@ -590,6 +610,23 @@ export class ApplicationsService {
         if (!mailSent)
           throwAppError('server_error', 'Interview mailing failed');
       } else if (status === 'pending accept') {
+        // If accepted date/time provided, create an orientation appointment
+        try {
+          if (acceptedDate) {
+            const acceptedDateTime = acceptedTime
+              ? new Date(`${acceptedDate}T${acceptedTime}`)
+              : new Date(acceptedDate);
+
+            await this.appointmentsService.addAppointment(
+              'orientation',
+              acceptedDateTime,
+              id,
+            );
+          }
+        } catch (err) {
+          console.error('Failed to create orientation appointment', err);
+        }
+
         const mailSent = await this.mailerService.responseEmail({
           to: data.email,
           firstName: data.first_name,

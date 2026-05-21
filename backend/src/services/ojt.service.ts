@@ -4,6 +4,7 @@ import { DatabaseService } from './database/database.service';
 import { AllOjt } from '../data/types';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
 import { LogsService } from './logs.service';
+import type { UpdateOjtDto } from '../data/dto/update-ojt.dto';
 
 @Injectable()
 export class OjtService {
@@ -116,7 +117,7 @@ export class OjtService {
     try {
       const res = await client.query(
         `
-        DELETE FROM applications
+        DELETE FROM ojt_data
         WHERE id = $1
         RETURNING *
         `,
@@ -141,6 +142,74 @@ export class OjtService {
     } catch (error) {
       console.error('[OJT] Error deleting OJT record:', error);
       throwAppError('server_error', 'Failed to delete OJT record');
+    }
+  }
+
+  async updateOjt(update: UpdateOjtDto) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const { id, adminNote, gender, deploymentDate, endDate } = update;
+
+      const exists = await client.query(
+        `SELECT * FROM ojt_data WHERE id = $1`,
+        [id],
+      );
+
+      if (exists.rowCount === 0) {
+        throwAppError('not_found', 'OJT record not found');
+      }
+
+      const sets: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      // Only update fields that exist in the ojt_data table.
+      // Fields allowed: admin_notes, gender, deployment_date, end_date
+      if (adminNote !== undefined) {
+        sets.push(`admin_notes = $${idx}`);
+        values.push(adminNote);
+        idx++;
+      }
+      if (gender !== undefined) {
+        sets.push(`gender = $${idx}`);
+        values.push(gender);
+        idx++;
+      }
+      if (deploymentDate !== undefined) {
+        sets.push(`deployment_date = $${idx}`);
+        values.push(deploymentDate);
+        idx++;
+      }
+      if (endDate !== undefined) {
+        sets.push(`end_date = $${idx}`);
+        values.push(endDate);
+        idx++;
+      }
+
+      if (sets.length === 0) {
+        return SuccessHandler('No changes made', exists.rows[0]);
+      }
+
+      const query = `UPDATE ojt_data SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`;
+      values.push(id);
+
+      const res = await client.query(query, values);
+
+      // Log OJT update (system operation) — use generic 'other' action to avoid enum mismatch
+      await this.logsService
+        .logOther({
+          userId: 0,
+          action: 'other',
+          details: `OJT record ${id} updated`,
+          ipAddress: undefined,
+        })
+        .catch((err) => console.error('Failed to log OJT update', err));
+
+      return SuccessHandler('OJT record updated successfully', res.rows[0]);
+    } catch (error) {
+      console.error('[OJT] Error updating OJT record:', error);
+      throwAppError('server_error', 'Failed to update OJT record');
     }
   }
 }
