@@ -277,28 +277,58 @@ export class FileUploadsService {
    * Delete file from Supabase and database
    */
   async deleteFile(fileId: number, userId: number) {
+    return this.deleteFiles([fileId], userId);
+  }
+
+  /**
+   * Delete multiple files from Supabase and database, then notify the applicant once.
+   */
+  async deleteFiles(fileIds: number[], userId: number) {
     try {
+      const uniqueFileIds = [...new Set(fileIds.map((id) => Number(id)))].filter(
+        (id) => Number.isFinite(id) && id > 0,
+      );
+
+      if (uniqueFileIds.length === 0) {
+        throw new BadRequestException('At least one file ID is required');
+      }
+
       const dbClient = this.dbService.getClient();
       // Step 1: Get file metadata from database before deleting anything.
       const result = await dbClient.query<{
+        id: number;
         file_path: string;
         application_id: number;
         document_key: string | null;
         file_name: string;
       }>(
-        'SELECT file_path, application_id, document_key, file_name FROM file_uploads WHERE id = $1',
-        [fileId],
+        'SELECT id, file_path, application_id, document_key, file_name FROM file_uploads WHERE id = ANY($1::int[]) ORDER BY id',
+        [uniqueFileIds],
       );
 
       if (result.rows.length === 0) {
         throw new BadRequestException('File not found');
       }
 
-      const fileRow = result.rows[0];
-      const filePath = fileRow.file_path;
-      const applicationId = fileRow.application_id;
-      const rejectedFileLabel =
-        fileRow.document_key || fileRow.file_name || 'Uploaded file';
+      if (result.rows.length !== uniqueFileIds.length) {
+        const foundIds = new Set(result.rows.map((row) => row.id));
+        const missingId = uniqueFileIds.find((id) => !foundIds.has(id));
+        throw new BadRequestException(
+          missingId ? `File not found: ${missingId}` : 'One or more files were not found',
+        );
+      }
+
+      const applicationIds = new Set(result.rows.map((row) => row.application_id));
+      if (applicationIds.size !== 1) {
+        throw new BadRequestException(
+          'Selected files must belong to the same application',
+        );
+      }
+
+      const applicationId = result.rows[0].application_id;
+      const requiredFiles = result.rows.map(
+        (row) => row.document_key || row.file_name || 'Uploaded file',
+      );
 
       // Fetch the applicant before removing the file so the email can still be sent
       // even if the file metadata is later removed.
@@ -309,13 +339,24 @@ export class FileUploadsService {
         ? applicantRes.data[0]
         : applicantRes.data;
 
-      // Step 2: Delete from Supabase
-      await this.supabaseService.remove(this.SUPABASE_BUCKET, filePath);
+      for (const fileRow of result.rows) {
+        // Step 2: Delete from Supabase
+        await this.supabaseService.remove(this.SUPABASE_BUCKET, fileRow.file_path);
 
-      // Step 3: Delete from database
-      await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [fileId]);
+        // Step 3: Delete from database
+        await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [fileRow.id]);
 
-      this.logger.log(`File deleted: ${filePath}`);
+        this.logger.log(`File deleted: ${fileRow.file_path}`);
+
+        // Log file deletion (system operation)
+        await this.logsService
+          .logFileDeleted({
+            userId: userId,
+            filename: fileRow.file_path,
+            ipAddress: undefined,
+          })
+          .catch((err) => console.error('Failed to log file deletion', err));
+      }
 
       const resubmissionDtoBase = {
         to: applicantData?.email || '',
@@ -325,7 +366,7 @@ export class FileUploadsService {
       };
       const resubmissionDto = {
         ...resubmissionDtoBase,
-        requiredFiles: [rejectedFileLabel],
+        requiredFiles,
       };
 
       // Always notify the applicant when an admin rejects a file.
@@ -340,16 +381,11 @@ export class FileUploadsService {
         }
       }
 
-      // Log file deletion (system operation)
-      await this.logsService
-        .logFileDeleted({
-          userId: userId,
-          filename: filePath,
-          ipAddress: undefined,
-        })
-        .catch((err) => console.error('Failed to log file deletion', err));
-
-      return SuccessHandler('Application File Deleted');
+      return SuccessHandler(
+        uniqueFileIds.length === 1
+          ? 'Application File Deleted'
+          : 'Application Files Deleted',
+      );
     } catch (error) {
       this.logger.error(`File deletion failed: ${error}`, error);
       throw error;
