@@ -49,16 +49,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser =
       localStorage.getItem("user") || sessionStorage.getItem("user");
 
-    if (storedToken) setToken(storedToken);
+    if (storedToken) requestAnimationFrame(() => setToken(storedToken));
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        requestAnimationFrame(() => setUser(JSON.parse(storedUser)));
       } catch {
         localStorage.removeItem("user");
         sessionStorage.removeItem("user");
       }
     }
-    setIsLoading(false);
+    requestAnimationFrame(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(

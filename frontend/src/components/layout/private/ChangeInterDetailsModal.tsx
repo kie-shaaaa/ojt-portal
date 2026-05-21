@@ -39,9 +39,8 @@ export const ChangeInterDetailsModal = ({
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setOjtYear(intern?.ojtYear ?? "2026");
-    setGender(intern?.gender ?? "Female");
-
+    requestAnimationFrame(() => setOjtYear(intern?.ojtYear ?? "2026"));
+    requestAnimationFrame(() => setGender(intern?.gender ?? "Female"));
     // Normalize incoming date strings to YYYY-MM-DD which DatePicker expects
     const normalizeToYMD = (d?: string) => {
       if (!d) return "";
@@ -57,8 +56,8 @@ export const ChangeInterDetailsModal = ({
       }
     };
 
-    setDeploymentDate(normalizeToYMD(intern?.deploymentDate));
-    setEndDate(normalizeToYMD(intern?.endDate));
+    requestAnimationFrame(() => setDeploymentDate(normalizeToYMD(intern?.deploymentDate)));
+    requestAnimationFrame(() => setEndDate(normalizeToYMD(intern?.endDate)));
   }, [intern]);
 
   const handleSave = async () => {

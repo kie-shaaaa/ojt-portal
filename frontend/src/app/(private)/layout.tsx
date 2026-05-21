@@ -30,7 +30,7 @@ export default function PrivateLayout({
         // fetchToken returns user as a raw JSON string — parse it
         const parsed: StoredUser =
           typeof data.user === "string" ? JSON.parse(data.user) : data.user;
-        setCurrentUser(parsed);
+        requestAnimationFrame(() => setCurrentUser(parsed));
       } catch {
         // Ignore malformed data
       }

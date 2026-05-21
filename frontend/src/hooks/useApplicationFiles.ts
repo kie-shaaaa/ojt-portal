@@ -76,8 +76,8 @@ export function useApplicationFiles(
     const normalizedId = normalizeApplicationId(applicationId);
 
     if (!normalizedId && !applicantEmail) {
-      setFiles([]);
-      setError(null);
+      requestAnimationFrame(() => setFiles([]));
+      requestAnimationFrame(() => setError(null));
       return;
     }
 
@@ -131,15 +131,15 @@ export function useApplicationFiles(
           }
         }
 
-        setFiles(resolvedFiles);
+        requestAnimationFrame(() => setFiles(resolvedFiles));
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error occurred";
         console.error("[useApplicationFiles] Error:", errorMessage);
-        setError(errorMessage);
-        setFiles([]);
+        requestAnimationFrame(() => setError(errorMessage));
+        requestAnimationFrame(() => setFiles([]));
       } finally {
-        setLoading(false);
+        requestAnimationFrame(() => setLoading(false));
       }
     };
 
