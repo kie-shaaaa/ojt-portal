@@ -212,8 +212,8 @@ const statusMeta: Record<
 > = {
   pending: {
     label: "Pending",
-    badgeClassName: "bg-amber-100 text-amber-800",
-    panelClassName: "border-amber-200 bg-amber-50 text-amber-900",
+    badgeClassName: "bg-orange-100 text-orange-800",
+    panelClassName: "border-orange-200 bg-orange-50 text-orange-900",
     icon: Clock3,
     title: "What's Next?",
     description:
@@ -221,8 +221,8 @@ const statusMeta: Record<
   },
   under_review: {
     label: "Under Review",
-    badgeClassName: "bg-sky-100 text-sky-800",
-    panelClassName: "border-sky-200 bg-sky-50 text-sky-900",
+    badgeClassName: "bg-blue-100 text-blue-800",
+    panelClassName: "border-blue-200 bg-blue-50 text-blue-900",
     icon: Search,
     title: "Currently Under Review",
     description:
@@ -230,8 +230,8 @@ const statusMeta: Record<
   },
   for_interview: {
     label: "For Interview",
-    badgeClassName: "bg-emerald-100 text-emerald-800",
-    panelClassName: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    badgeClassName: "bg-violet-100 text-violet-800",
+    panelClassName: "border-violet-200 bg-violet-50 text-violet-900",
     icon: CalendarClock,
     title: "For Interview",
     description:
