@@ -63,6 +63,20 @@ const wrapEmail = (header: string, body: string) =>
 
 const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
 
+// clearer fallback text used when date/time details are not yet available
+const tbaText = 'To be announced — details will be sent in a follow-up email.';
+
+// normalize values: treat empty strings as missing, format Date objects
+const renderValue = (v?: string | Date | null) => {
+  if (v == null) return tbaText;
+  if (v instanceof Date) {
+    if (isNaN(v.valueOf())) return tbaText;
+    return v.toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' });
+  }
+  const s = String(v).trim();
+  return s ? s : tbaText;
+};
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 @Injectable()
@@ -248,7 +262,6 @@ export class MailerService {
 
       ${infoBox(`
         <strong>Submission ID:</strong> ${ref}<br/>
-        <strong>Application Type:</strong> ${applicationType}<br/>
         <strong>Date Submitted:</strong> ${submittedDate}<br/>
         <strong>Status:</strong> Under Review
       `)}
@@ -335,16 +348,16 @@ export class MailerService {
     const detailsBlock = isScheduled
       ? infoBox(`
         <strong>Interview Details</strong><br/><br/>
-        📅 <strong>Date:</strong> ${interviewDate ?? 'To be announced'}<br/>
-        🕐 <strong>Time:</strong> ${interviewTime ?? 'To be announced'}<br/>
+        📅 <strong>Date:</strong> ${renderValue(interviewDate)}<br/>
+        🕐 <strong>Time:</strong> ${renderValue(interviewTime)}<br/>
         📍 <strong>Location:</strong> ${interviewLocation ?? 'NTC Main Office, Quezon City'}<br/>
         🔖 <strong>Reference No.:</strong> ${ref}
       `)
       : isOrientation
         ? infoBox(`
         <strong>Orientation Details</strong><br/><br/>
-        📅 <strong>Date:</strong> ${acceptedDate ?? 'To be announced'}<br/>
-        🕐 <strong>Time:</strong> ${acceptedTime ?? 'To be announced'}<br/>
+        📅 <strong>Date:</strong> ${renderValue(acceptedDate)}<br/>
+        🕐 <strong>Time:</strong> ${renderValue(acceptedTime)}<br/>
         🔖 <strong>Reference No.:</strong> ${ref}
       `)
         : infoBox(`<strong>Reference No.:</strong> ${ref}`);
@@ -411,8 +424,8 @@ export class MailerService {
           `Dear ${fullName},`,
           '',
           `Reference No. : ${ref}`,
-          `Date          : ${interviewDate ?? 'TBA'}`,
-          `Time          : ${interviewTime ?? 'TBA'}`,
+          `Date          : ${renderValue(interviewDate)}`,
+          `Time          : ${renderValue(interviewTime)}`,
           `Location      : ${interviewLocation ?? 'NTC Main Office, Quezon City'}`,
           '',
           adminNote ? `Note: ${adminNote}\n` : '',
@@ -431,8 +444,8 @@ export class MailerService {
             `Dear ${fullName},`,
             '',
             `Reference No. : ${ref}`,
-            `Date          : ${acceptedDate ?? 'TBA'}`,
-            `Time          : ${acceptedTime ?? 'TBA'}`,
+            `Date          : ${renderValue(acceptedDate)}`,
+            `Time          : ${renderValue(acceptedTime)}`,
             '',
             adminNote ? `Note: ${adminNote}\n` : '',
             'David M. Zaldua',
@@ -465,8 +478,7 @@ export class MailerService {
   // ─── 5. Resubmission email ────────────────────────────────────────────────
 
   async resubmissionEmail(dto: ResubmissionEmailDto): Promise<boolean> {
-    const { to, firstName, lastName, applicationId, requiredFiles } =
-      dto;
+    const { to, firstName, lastName, applicationId, requiredFiles } = dto;
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const portalUrl = process.env.FRONTEND_URL || 'https://ojt.ntc.gov.ph';
