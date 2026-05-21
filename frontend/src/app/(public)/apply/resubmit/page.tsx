@@ -19,6 +19,7 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 
 type ApplicationStatus =
   | "pending"
@@ -690,4 +691,6 @@ function formatSize(bytes: number) {
   return `${Math.round((bytes / Math.pow(1024, index)) * 100) / 100} ${units[index]}`;
 }
 
-export default ResubmissionPage;
+export default dynamic(() => Promise.resolve(ResubmissionPage), {
+  ssr: false,
+});
