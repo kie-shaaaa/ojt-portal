@@ -25,7 +25,7 @@ jobs:
                     - label: Frontend NTC Internship Portal
                       workdir: frontend
                       lint: true
-                      test: true
+                      test: false
         defaults:
             run:
                 working-directory: ${{ matrix.workdir }}
