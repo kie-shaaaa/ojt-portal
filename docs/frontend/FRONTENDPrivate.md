@@ -104,7 +104,6 @@ Allows authorized users to manage applicant applications by viewing, editing, an
     - The updated information is saved to the database.
 8. If the user deletes an application:
     - The system prompts for confirmation before deletion.
-    - The user may export application records for documentation or reporting purposes.
     - The system logs user actions for monitoring and auditing.
 
 ### Technical Notes
@@ -180,3 +179,104 @@ Allows authorized users to manage interview and orientation schedules by viewing
 - Confirmation prompts help prevent accidental appointment removal.
 - Consistent spacing and typography improve readability.
 - Calendar interactions are designed to minimize scheduling errors.
+
+## OJT Data
+
+### Purpose
+
+Allows authorized users to manage verified intern by viewing, editing, and deleting interns.
+
+### UI Elements
+
+- **Filter Applications Card:** Allows users to filter application records by school and time period.
+- **School Dropdown:** Filters applications based on selected school.
+- **Time Period Dropdown:** Filters applications based on submission date range.
+- **Verified Interns Table:** Displays all verified interns records.
+- **Search Bar:** Allows users to search applicants by name or applicant ID.
+- **Export Button:** Exports application records for reporting or documentation in .xlsx format.
+- **Action Buttons:**
+    - **View Button:** Opens full intern details.
+    - **Edit Button:** Updates intern details.
+    - **Delete Button:** Removes the intern record.
+
+### Authenticated User Flow (Step-by-Step)
+
+1. The authorized user logs into the admin portal.
+2. The system redirects the user to dashboard and switch the OJT Data page using the sidebar.
+3. The user views the list of verified interns.
+4. The user may filter records using:
+    - School dropdown
+    - Time period dropdown
+    - Search bar
+5. The system dynamically updates the table based on selected filters.
+6. The user may select a verified intern to:
+    - View intern details
+    - Edit intern details
+    - Delete the intern in the table
+7. If the user edits detail intern:
+    - The system validates the changes.
+    - The updated information is saved to the database.
+8. If the user deletes an application:
+    - The system prompts for confirmation before deletion.
+    - The system logs user actions for monitoring and auditing.
+
+### Technical Notes
+
+- Verified intern records are retrieved dynamically from the database.
+- Filtering and search functions update the table in real time.
+- Export functionality supports .xlsx format.
+- CRUD operations are connected to backend API endpoints.
+- Status updates are persisted in the database immediately after modification.
+
+### Accessibility & UX
+
+- Uses clear labels and readable typography for better usability.
+- Action buttons include icons with recognizable functions.
+- Search and filter controls are grouped for efficient navigation.
+- Interactive elements include hover and focus states for accessibility.
+- Confirmation dialogs prevent accidental deletion of records.
+- Table layout maintains proper spacing and alignment for readability.
+
+## Accounts
+
+### Purpose
+
+Allows authorized users to manage accounts by editing, changing, and deleting accounts.
+
+### UI Elements
+
+- **Filter Applications Card:** Allows users to filter accounts by account type and time period.
+- **Account type Dropdown:** Filters applications based on account (employee or admin).
+- **Time Period Dropdown:** Filters applications based on date range.
+- **Accounts Table:** Displays all the authorized users.
+- **Search Bar:** Allows users to search applicants by username or email.
+- **Create Account Button:** Allows users to create a new account for employee or admin.
+- **Action Buttons:**
+    - **Edit Account Button:** Update account details (username or account type).
+    - **Reset Password Button:** Change account password.
+    - **Delete Button:** Removes the account in the table.
+
+### Technical Notes
+- Account data is dynamically fetched from the backend database using authenticated API requests.
+- Search functionality supports filtering by username and email in real time.
+- Filter dropdowns are connected to query parameters for account type and date sorting.
+- Role-based access control (RBAC) ensures only authorized administrators can manage accounts.
+- CRUD operations (Create, Update, Delete) are handled through secured backend endpoints.
+- Password reset functionality uses encrypted password handling and secure validation.
+- Confirmation modal/dialog should appear before deleting accounts to prevent accidental removal.
+- Form validation is implemented for required fields such as username, and password.
+- Audit logs may be integrated to track account management actions for security and monitoring purposes.
+- Toast notifications or alerts provide feedback for successful or failed operations.
+
+### Accessibility & UX
+- Clear visual hierarchy using cards, tables, badges, and action buttons for easier navigation.
+- Search bar includes placeholder text to guide users on searchable fields.
+- Dropdown filters use descriptive labels for better usability.
+- Action buttons include icons and tooltips to improve recognition and reduce confusion.
+- Color-coded account type badges help users quickly distinguish admin and employee accounts.- Interactive elements include hover and focus states for better accessibility feedback.
+- Confirmation prompts prevent accidental account deletion.
+- Empty states and loading indicators are displayed when no records are available or data is loading.
+- Error messages are specific and user-friendly during failed actions or invalid inputs.
+- Form inputs include validation messages and accessible labels.
+- Consistent spacing and alignment improve readability and reduce visual clutter.
+- Search and filtering actions should update results quickly to maintain smooth user interaction.
