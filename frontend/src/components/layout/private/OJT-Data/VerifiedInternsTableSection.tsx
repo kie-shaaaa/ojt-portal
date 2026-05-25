@@ -159,13 +159,12 @@ export const VerifiedInternsTableSection = ({
       { header: "End Date", key: "end", width: 18 },
       { header: "Email", key: "email", width: 35 },
       { header: "Status", key: "status", width: 15 },
-      { header: "Verified Date", key: "verified", width: 18 },
     ];
 
     // =========================
     // TITLE ROW
     // =========================
-    worksheet.mergeCells("A1:J1");
+    worksheet.mergeCells("A1:I1");
 
     const titleCell = worksheet.getCell("A1");
 
@@ -241,7 +240,7 @@ export const VerifiedInternsTableSection = ({
         start: formatDate(intern.deployment_date),
         end: formatDate(intern.end_date),
         email: intern.email,
-        status: intern.original_status || "Not set",
+        status: intern.original_status || "accepted",
         verified: formatDate(intern.confirmed_at),
       });
 
@@ -298,7 +297,6 @@ export const VerifiedInternsTableSection = ({
     // TOTAL ROW
     // =========================
     const totalRow = worksheet.addRow([
-      "",
       "",
       "",
       "",
