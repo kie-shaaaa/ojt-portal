@@ -1,6 +1,14 @@
 "use client";
 
-import { Download, Eye, Pencil, Trash2, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Pencil,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
@@ -53,6 +61,9 @@ type Props = {
   isLoading: boolean;
   onDeleteApplication: (applicationId: number) => void;
   onStatusChange: (applicationId: number, status: string) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  onClearFilters: () => void;
 };
 
 const columns = [
@@ -170,6 +181,9 @@ export const ApplicationsTableSection = ({
   isLoading,
   onDeleteApplication,
   onStatusChange,
+  searchQuery,
+  onSearchChange,
+  onClearFilters,
 }: Props): JSX.Element => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
@@ -182,12 +196,14 @@ export const ApplicationsTableSection = ({
   const [changeStatusApplication, setChangeStatusApplication] =
     useState<ApplicationRow | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] =
     useState(false);
   const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
+  const searchInputId = "applications-table-search";
+  const currentPage = 1;
+  const totalPages = 1;
 
   const searchParams = useSearchParams();
 
@@ -204,6 +220,7 @@ export const ApplicationsTableSection = ({
   }, [applications]);
 
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const activeSearchQuery = searchQuery.trim() ? debouncedSearch : "";
 
   const filteredApplications = useMemo(() => {
     return applicationsState.filter((application) => {
@@ -213,7 +230,7 @@ export const ApplicationsTableSection = ({
           )
         : true;
 
-      const matchesSearch = debouncedSearch
+      const matchesSearch = activeSearchQuery
         ? [
             application.id,
             application.applicantName,
@@ -222,12 +239,12 @@ export const ApplicationsTableSection = ({
           ]
             .join(" ")
             .toLowerCase()
-            .includes(debouncedSearch.toLowerCase())
+            .includes(activeSearchQuery.toLowerCase())
         : true;
 
       return matchesStatus && matchesSearch;
     });
-  }, [applicationsState, normalizedStatusParam, searchQuery]);
+  }, [applicationsState, activeSearchQuery, normalizedStatusParam]);
 
   const visibleSelectedRows = useMemo(() => {
     const filteredIds = new Set(
@@ -661,68 +678,74 @@ export const ApplicationsTableSection = ({
   return (
     <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
-      <div className="flex flex-col border-b border-slate-100">
-          <div className="flex items-center justify-between px-6 py-5">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-800">
-              Applications
-            </h2>
+      <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 max-[767px]:flex-col max-[767px]:items-start">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-slate-800">
+            Applications
+          </h2>
 
-            <p className="text-sm font-medium text-slate-500">
-              {isLoading
-                ? "Synchronizing with database..."
-                : `Total: ${applicationsState.length} • Showing: ${filteredApplications.length}`}
-            </p>
+          <p className="text-sm font-medium text-slate-500">
+            {isLoading
+              ? "Synchronizing with database..."
+              : `Total: ${applicationsState.length} • Showing: ${filteredApplications.length}`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 max-[767px]:w-full max-[767px]:flex-col max-[767px]:items-stretch">
+          <div className="relative w-full sm:w-[28rem] lg:w-[34rem] max-[767px]:w-full">
+            <Search
+              size={18}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <label htmlFor={searchInputId} className="sr-only">
+              Search applications
+            </label>
+
+            <input
+              id={searchInputId}
+              type="search"
+              value={searchQuery}
+              placeholder="Search by name, email, phone, or ID..."
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-700 outline-none transition focus:border-slate-300 focus:ring-0"
+            />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-[767px]:justify-end">
             <button
-              className="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+              className="flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-700 hover:to-emerald-800 active:scale-95"
               onClick={handleExportApplications}
               type="button"
             >
-              <Download size={18} className="text-slate-500" />
+              <Download size={18} className="text-white" />
               Export
             </button>
 
-            {selectedRows.size > 0 && (
-              <>
-                <button
-                  className="flex items-center gap-2 rounded-xl border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 active:scale-95"
-                  onClick={() => setShowBulkStatusModal(true)}
-                  title={`Change status for ${selectedRows.size} selected applications`}
-                >
-                  Change Status ({selectedRows.size})
-                </button>
+            <div className="flex items-center gap-2 max-[767px]:justify-end">
+              <button
+                type="button"
+                disabled
+                aria-label="Previous page"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <span className="px-3 py-2 text-sm font-semibold text-slate-600">
+                 {currentPage} / {totalPages}
+              </span>
 
               <button
-                className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700"
-                onClick={() => setShowBulkDeleteConfirm(true)}
-                disabled={isBulkDeleting}
-                title={`Delete ${selectedRows.size} selected applications`}
+                type="button"
+                disabled
+                aria-label="Next page"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Delete Selected ({selectedRows.size})
+                <ChevronRight size={20} />
               </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Toolbar */}
-        <div className="flex items-center gap-4 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
-          <div className="relative flex-1 max-w-md">
-            <Search
-              size={18}
-              className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
-            />
-
-            <input
-              type="text"
-              value={searchQuery}
-              placeholder="Search by name, email, phone, or ID..."
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-11 text-sm shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-            />
+            </div>
           </div>
         </div>
       </div>
@@ -760,7 +783,7 @@ export const ApplicationsTableSection = ({
             </p>
 
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={onClearFilters}
               className="mt-4 text-sm font-bold text-blue-600 hover:underline"
             >
               Clear search
@@ -934,6 +957,43 @@ export const ApplicationsTableSection = ({
           </tbody>
         </table>
       </div>
+
+      {selectedRows.size > 0 && (
+        <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
+          <p className="text-sm font-semibold text-blue-900">
+            ✓ {selectedRows.size} application
+            {selectedRows.size !== 1 ? "s" : ""} selected
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportApplications}
+              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
+              type="button"
+            >
+              Export Selected
+            </button>
+
+            <button
+              onClick={() => setShowBulkStatusModal(true)}
+              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
+              title={`Change status for ${selectedRows.size} selected applications`}
+              type="button"
+            >
+              Change Status
+            </button>
+
+            <button
+              onClick={() => setShowBulkDeleteConfirm(true)}
+              disabled={isBulkDeleting}
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 border border-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+            >
+              Delete Selected
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {selectedApplication && (

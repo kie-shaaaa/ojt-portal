@@ -5,7 +5,15 @@ import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { apiCall } from "@/lib/api";
-import { Download, Eye, SquarePen, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Search,
+  SquarePen,
+  Trash2,
+} from "lucide-react";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
@@ -39,11 +47,25 @@ interface Intern {
 
 interface VerifiedInternsTableSectionProps {
   interns: Intern[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  onClearFilters: () => void;
+  currentPage: number;
+  totalPages: number;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
   onViewDetails?: (intern: ModalInternData) => void;
 }
 
 export const VerifiedInternsTableSection = ({
   interns,
+  searchTerm,
+  onSearchChange,
+  onClearFilters,
+  currentPage,
+  totalPages,
+  onPreviousPage,
+  onNextPage,
   onViewDetails,
 }: VerifiedInternsTableSectionProps): JSX.Element => {
   const [selectedInterns, setSelectedInterns] = useState<number[]>([]);
@@ -515,19 +537,37 @@ export const VerifiedInternsTableSection = ({
     <>
       <section className="flex relative self-stretch w-full flex-col items-start rounded-xl border border-solid border-slate-200 bg-white shadow-lg overflow-hidden">
         {/* Header with title and export button */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 pb-4 w-full border-b border-slate-100 bg-linear-to-r from-slate-50 to-transparent">
+        <div className="flex flex-col gap-4 w-full border-b border-slate-100 p-6 pb-4 bg-linear-to-r from-slate-50 to-transparent sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
-              <h3 className="text-xl font-bold text-slate-900">
-                Verified Interns
-              </h3>
-            </div>
+            <h3 className="text-xl font-bold text-slate-900">
+              Verified Interns
+            </h3>
             <p className="text-sm text-slate-500 ml-4">
-              {`${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
+              {`Page: ${currentPage} of ${totalPages} • ${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="ml-auto flex w-full max-w-fit flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
+              <Search
+                size={18}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+
+              <label htmlFor="ojt-intern-search" className="sr-only">
+                Search interns
+              </label>
+
+              <input
+                id="ojt-intern-search"
+                type="search"
+                value={searchTerm}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder="Search by OJT ID or name..."
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-700 outline-none transition focus:border-slate-300 focus:ring-0"
+              />
+            </div>
+
             {/* Export to Excel Button */}
             <button
               onClick={handleExportExcel}
@@ -538,18 +578,29 @@ export const VerifiedInternsTableSection = ({
               Export
             </button>
 
-            {selectedInterns.length > 0 && (
+            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-end sm:ml-auto">
               <button
-                onClick={() => setShowBulkDeleteConfirm(true)}
-                disabled={isBulkDeleting}
-                className="flex items-center gap-2 rounded-lg bg-linear-to-r from-red-600 to-red-700 px-4 py-2 text-sm font-semibold text-white transition-all shadow-sm hover:from-red-700 hover:to-red-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                title={`Delete ${selectedInterns.length} selected interns`}
+                onClick={onPreviousPage}
                 type="button"
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Trash2 size={16} />
-                Delete Selected ({selectedInterns.length})
+                <ChevronLeft size={18} />
               </button>
-            )}
+              <span className="px-3 py-2 text-sm font-semibold text-slate-600">
+                {currentPage} / {totalPages }
+              </span>
+              <button
+                onClick={onNextPage}
+                type="button"
+                disabled={currentPage >= totalPages}
+                aria-label="Next page"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -637,17 +688,27 @@ export const VerifiedInternsTableSection = ({
 
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-6 py-14 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                        <span className="text-xl">📋</span>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                        <Search size={32} />
                       </div>
-                      <p className="text-slate-600 font-semibold">
+
+                      <h3 className="text-lg font-bold text-slate-800">
                         No interns found
+                      </h3>
+
+                      <p className="max-w-xs text-sm text-slate-500">
+                        We couldn&apos;t find any interns matching your current search or filter criteria.
                       </p>
-                      <p className="text-slate-500 text-xs">
-                        Try adjusting your search or filters
-                      </p>
+
+                      <button
+                        onClick={onClearFilters}
+                        className="mt-4 text-sm font-bold text-blue-600 hover:underline"
+                        type="button"
+                      >
+                        Clear search
+                      </button>
                     </div>
                   </td>
                 </tr>

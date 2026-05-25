@@ -1,8 +1,8 @@
 "use client";
 
 import { AccountRow } from "../../../../app/(private)/accounts/page";
-import { JSX, useState } from "react";
-import { UserPlus, KeyRound, SquarePen, Trash2 } from "lucide-react";
+import { JSX, useId, useState } from "react";
+import { KeyRound, Search, SquarePen, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { EditAccountModal } from "../EditAccountModal";
 import { ResetPasswordModal } from "../ResetPasswordModal";
@@ -31,15 +31,20 @@ interface AccountsTableSectionProps {
   accounts: AccountRow[];
   onAccountsChange: (accounts: AccountRow[]) => void;
   user?: StoredUser;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
 export const AccountsTableSection = ({
   accounts,
   onAccountsChange,
   user,
+  searchTerm,
+  onSearchChange,
 }: AccountsTableSectionProps): JSX.Element => {
   const { logout } = useAuth();
   const router = useRouter();
+  const searchInputId = useId();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -227,7 +232,7 @@ export const AccountsTableSection = ({
   return (
     <>
       <section className="flex flex-col items-start pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-xl overflow-hidden border border-solid border-gray-100 shadow-sm">
-        <div className="flex items-start justify-between p-6 relative self-stretch w-full flex-[0_0_auto]">
+        <div className="flex items-start justify-between gap-4 p-6 relative self-stretch w-full flex-[0_0_auto] max-[767px]:flex-col max-[767px]:items-start">
           <div className="flex items-center gap-3">
             <h2 className="m-0 font-bold text-gray-700 text-lg">
               Admin &amp; Employee Accounts
@@ -237,17 +242,40 @@ export const AccountsTableSection = ({
             </p>
           </div>
 
-          {user?.account_type == "admin" && (
-            <button
-              type="button"
-              onClick={handleCreateClick}
-              aria-label="Create account"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0033a0] text-white rounded-lg hover:bg-[#002a80] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0033a0]"
-            >
-              <UserPlus className="w-4 h-4 text-white" aria-hidden="true" />
-              <span className="text-sm font-semibold">Create Account</span>
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-4 max-[767px]:ml-0 max-[767px]:w-full max-[767px]:flex-col max-[767px]:items-stretch">
+            <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
+              <Search
+                size={18}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+
+              <label htmlFor={searchInputId} className="sr-only">
+                Search by username or email
+              </label>
+
+              <input
+                id={searchInputId}
+                type="search"
+                value={searchTerm}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder="Search by username or email..."
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-700 outline-none transition focus:border-slate-300 focus:ring-0"
+              />
+            </div>
+
+            {user?.account_type == "admin" && (
+              <button
+                type="button"
+                onClick={handleCreateClick}
+                aria-label="Create account"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#0033a0] text-white rounded-lg hover:bg-[#002a80] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#0033a0]"
+              >
+                <UserPlus className="w-4 h-4 text-white" aria-hidden="true" />
+                <span className="text-sm font-semibold">Create Account</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="px-6 pb-6 w-full">
@@ -287,6 +315,34 @@ export const AccountsTableSection = ({
               </thead>
 
               <tbody className="bg-white">
+                {accounts.length === 0 && (
+                  <tr>
+                    <td colSpan={user?.account_type == "admin" ? 6 : 5} className="px-6 py-14 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                          <Search size={32} />
+                        </div>
+
+                        <h3 className="text-lg font-bold text-slate-800">
+                          No accounts found
+                        </h3>
+
+                        <p className="max-w-xs text-sm text-slate-500">
+                          We couldn&apos;t find any accounts matching your current search.
+                        </p>
+
+                        <button
+                          onClick={() => onSearchChange("")}
+                          className="mt-4 text-sm font-bold text-blue-600 hover:underline"
+                          type="button"
+                        >
+                          Clear search
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
                 {accounts.map((account) => {
                   const accountIsAdmin = account.account_type === "admin";
 
