@@ -54,6 +54,14 @@ export default function OJTDataPage() {
     sortByDate: "Newest First",
   });
 
+  const resetOjtFilters = () => {
+    setSearchTerm("");
+    setFilters({
+      school: "All Schools",
+      sortByDate: "Newest First",
+    });
+  };
+
   // Fetch interns from API
   useEffect(() => {
     const fetchInterns = async () => {
@@ -229,10 +237,7 @@ export default function OJTDataPage() {
         data-id="main-content-area"
       >
         <section className="w-full" aria-label="OJT data header">
-          <OjtDataHeaderSection
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-          />
+          <OjtDataHeaderSection />
         </section>
         <section className="w-full" aria-label="Intern statistics overview">
           <InternStatsOverviewSection stats={currentStats} />
@@ -247,42 +252,18 @@ export default function OJTDataPage() {
         <section className="w-full" aria-label="Verified interns table">
           <VerifiedInternsTableSection
             interns={filteredInterns}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onClearFilters={resetOjtFilters}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPreviousPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onNextPage={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             onViewDetails={(intern) => {
               setModalIntern(intern);
               setShowModal(true);
             }}
           />
-        </section>
-        <section
-          className="flex w-full items-center justify-between gap-6"
-          aria-label="Pagination controls"
-        >
-          <div>
-            <p className="text-sm font-medium text-slate-500">
-              Page: {currentPage} of {totalPages || 1}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-              aria-label="Previous page"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <span className="px-3 py-2 text-sm font-semibold text-slate-600">
-              {currentPage} / {totalPages || 1}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-              aria-label="Next page"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
         </section>
       </main>
       {showModal && (

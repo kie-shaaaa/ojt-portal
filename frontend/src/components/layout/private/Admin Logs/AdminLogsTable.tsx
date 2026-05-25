@@ -111,6 +111,7 @@ export const AdminLogsTable = ({
   const [isLoading, setIsLoading] = useState(initialLoading ?? false);
   const [totalLogs, setTotalLogs] = useState(0);
   const [selectedLog, setSelectedLog] = useState<LogRow | null>(null);
+  const searchInputId = "admin-logs-search";
 
   useEffect(() => {
     let cancelled = false;
@@ -157,12 +158,13 @@ export const AdminLogsTable = ({
   }, [currentPage]);
 
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const activeSearchQuery = searchQuery.trim() ? debouncedSearch : "";
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       // Search query filter
-      if (debouncedSearch) {
-        const query = debouncedSearch.toLowerCase();
+      if (activeSearchQuery) {
+        const query = activeSearchQuery.toLowerCase();
         const matchesSearch =
           log.id.toLowerCase().includes(query) ||
           log.userId.toLowerCase().includes(query) ||
@@ -202,7 +204,7 @@ export const AdminLogsTable = ({
 
       return true;
     });
-  }, [logs, searchQuery, filters]);
+  }, [logs, activeSearchQuery, filters]);
 
   const shouldVirtualize = filteredLogs.length >= 10;
   const { scrollRef, windowedRange } = useVirtualizedRows({
@@ -237,7 +239,7 @@ export const AdminLogsTable = ({
     <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
       <div className="flex flex-col border-b border-slate-100">
-        <div className="flex items-center justify-between px-6 py-5">
+        <div className="flex items-center justify-between gap-4 px-6 py-5 max-[767px]:flex-col max-[767px]:items-start">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Admin Logs
@@ -250,44 +252,60 @@ export const AdminLogsTable = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1 || isLoading}
-              className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-            >
-              <ChevronLeft size={18} />
-            </button>
+          <div className="ml-auto flex w-full max-w-fit items-center gap-4 max-[767px]:ml-0 max-[767px]:w-full max-[767px]:max-w-none max-[767px]:flex-col max-[767px]:items-stretch">
+            <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
+              <Search
+                size={18}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
 
-            <span className="px-3 py-2 text-sm font-semibold text-slate-600">
-              {currentPage} / {totalPages || 1}
-            </span>
+              <label htmlFor={searchInputId} className="sr-only">
+                Search logs
+              </label>
 
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage >= totalPages || isLoading}
-              className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
+              <input
+                id={searchInputId}
+                type="search"
+                value={searchQuery}
+                placeholder="Search by ID, action, details, or IP..."
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-700 outline-none transition focus:border-slate-300 focus:ring-0"
+              />
 
-        {/* Toolbar */}
-        <div className="flex items-center gap-4 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
-          <div className="relative flex-1 max-w-md">
-            <Search
-              size={18}
-              className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
-            />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full p-1 text-gray-400 transition hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <span className="text-lg leading-none">×</span>
+                </button>
+              )}
+            </div>
 
-            <input
-              type="text"
-              value={searchQuery}
-              placeholder="Search by ID, action, details, or IP..."
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pr-4 pl-11 text-sm shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-            />
+            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-end">
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1 || isLoading}
+                className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <span className="px-3 py-2 text-sm font-semibold text-slate-600">
+                {currentPage} / {totalPages }
+              </span>
+
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages || isLoading}
+                className="rounded-xl border border-slate-200 px-3 py-2.5 text-slate-700 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

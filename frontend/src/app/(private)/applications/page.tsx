@@ -46,6 +46,14 @@ export default function ApplicationPage(): JSX.Element {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  const resetApplicationsFilters = () => {
+    setSearchQuery("");
+    setFilters({
+      school: "all-schools",
+      timePeriod: "all-time",
+    });
+  };
+
   // School options state
   const [schoolOptions, setSchoolOptions] = useState<FilterOption[]>([
     { value: "all-schools", label: "All Schools" },
@@ -269,6 +277,9 @@ export default function ApplicationPage(): JSX.Element {
         isLoading={isLoading}
         onDeleteApplication={handleDeleteApplication}
         onStatusChange={handleStatusChange}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onClearFilters={resetApplicationsFilters}
       />
     </main>
   );

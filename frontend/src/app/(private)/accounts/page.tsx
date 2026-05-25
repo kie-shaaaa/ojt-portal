@@ -129,8 +129,6 @@ export const MainContentArea = (): JSX.Element => {
       aria-label="Accounts main content"
     >
       <AccountsHeaderSection
-        searchTerm={searchTerm}
-        onSearchChange={(value: string) => setSearchTerm(value)}
       />
 
       <AccountsStatsSection accounts={accounts} />
@@ -144,6 +142,8 @@ export const MainContentArea = (): JSX.Element => {
           accounts={filteredAccounts}
           onAccountsChange={handleAccountsChange}
           user={currentUser}
+          searchTerm={searchTerm}
+          onSearchChange={(value: string) => setSearchTerm(value)}
         />
       )}
     </main>
