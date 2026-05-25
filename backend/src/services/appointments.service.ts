@@ -3,6 +3,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { AppointmentType } from '../data/types';
 import { LogsService } from './logs.service';
+import { MailerService } from './mailer.service';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class AppointmentsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly logsService: LogsService,
+    private readonly mailerService: MailerService,
   ) {}
 
   private async updateAppointmentStatus(
@@ -126,19 +128,123 @@ export class AppointmentsService {
     }
   }
 
-  async cancelAppointment(id: number) {
+  async cancelAppointment(id: number, cancellationReason?: string) {
+    const client = this.databaseService.getClient();
+
     try {
-      const appointment = await this.updateAppointmentStatus(
-        id,
-        { isCancelled: true, isDone: false },
-        'Appointment not found',
+      const appointmentResult = await client.query(
+        `
+          SELECT
+            a.id,
+            a.application_id,
+            a.type,
+            a.appointment_date,
+            a.is_cancelled,
+            a.is_done,
+            ap.first_name,
+            ap.last_name,
+            ap.email,
+            ap.status,
+            ap.admin_notes
+          FROM appointments a
+          LEFT JOIN applications ap ON ap.id = a.application_id
+          WHERE a.id = $1
+        `,
+        [id],
       );
 
+      if (appointmentResult.rowCount === 0) {
+        throwAppError('not_found', 'Appointment not found');
+      }
+
+      const appointment = appointmentResult.rows[0];
+
+      await client.query('BEGIN');
+
+      await client.query(
+        `
+          UPDATE appointments
+          SET is_cancelled = TRUE,
+              is_done = FALSE
+          WHERE id = $1
+        `,
+        [id],
+      );
+
+      const trimmedReason = cancellationReason?.trim();
+
+      if (appointment.application_id) {
+        if (trimmedReason) {
+          const updatedNotes = appointment.admin_notes
+            ? `${appointment.admin_notes}\n\n${trimmedReason}`
+            : trimmedReason;
+
+          await client.query(
+            `
+              UPDATE applications
+              SET status = 'under_review',
+                  admin_notes = $2
+              WHERE id = $1
+            `,
+            [appointment.application_id, updatedNotes],
+          );
+        } else {
+          await client.query(
+            `
+              UPDATE applications
+              SET status = 'under_review'
+              WHERE id = $1
+            `,
+            [appointment.application_id],
+          );
+        }
+      }
+
       // Log appointment cancellation
+      if (appointment.application_id) {
+        await this.logsService
+          .logApplicationStatusChange({
+            oldStatus: appointment.status,
+            newStatus: 'under_review',
+            ipAddress: undefined,
+          })
+          .catch((err) =>
+            console.error('Failed to log application status change', err),
+          );
+
+        if (trimmedReason) {
+          await this.logsService
+            .logAdminNotesAdded({
+              notes: trimmedReason,
+              ipAddress: undefined,
+            })
+            .catch((err) => console.error('Failed to log admin notes', err));
+        }
+
+        if (appointment.email) {
+          const mailSent = await this.mailerService.statusUpdateEmail({
+            to: appointment.email,
+            firstName: appointment.first_name,
+            lastName: appointment.last_name,
+            applicationId: appointment.application_id,
+            status: 'under_review',
+            adminNote: trimmedReason || undefined,
+          });
+
+          if (!mailSent) {
+            throwAppError('server_error', 'Status update mailing failed');
+          }
+        }
+      }
+
+      await client.query('COMMIT');
+
       await this.logsService
         .logOther({
           action: 'Appointment Cancelled',
-          details: `Appointment ${id} cancelled`,
+          details: trimmedReason
+            ? `Appointment ${id} cancelled. Message: ${trimmedReason}`
+            : `Appointment ${id} cancelled`,
           ipAddress: undefined,
         })
         .catch((err) =>
@@ -147,7 +253,11 @@ export class AppointmentsService {
 
       return SuccessHandler('Appointment cancelled successfully', appointment);
     } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
       console.error('[APPOINTMENT] Error cancelling appointment:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throwAppError('server_error', 'Failed to cancel appointment');
     }
   }
@@ -323,6 +433,7 @@ export class AppointmentsService {
         a.appointment_date,
         a.application_id,
         a.is_done,
+        ap.status AS application_status,
         ap.first_name AS application_first_name,
         ap.last_name AS application_last_name,
         ap.email AS application_email,

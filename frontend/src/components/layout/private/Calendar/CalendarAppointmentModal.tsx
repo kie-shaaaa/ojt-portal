@@ -4,6 +4,7 @@ import { JSX, useEffect, useMemo, useState } from "react";
 import { CalendarAppointment } from "./calendarTypes";
 import { X } from "lucide-react";
 import ChangeStatusModal from "../ChangeStatusModal";
+import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
 type Props = {
   open: boolean;
@@ -11,7 +12,10 @@ type Props = {
   selectedAppointmentId?: string | null;
   onClose: () => void;
   onChangeStatus: (appointment: CalendarAppointment) => void;
-  onClearAppointment: (appointment: CalendarAppointment, reason?: string) => void;
+  onClearAppointment: (
+    appointment: CalendarAppointment,
+    reason?: string,
+  ) => void | Promise<void>;
   onComplete: (appointment: CalendarAppointment) => void;
 };
 
@@ -97,6 +101,7 @@ export default function CalendarAppointmentModal({
   const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -406,17 +411,33 @@ export default function CalendarAppointmentModal({
               <button
                 type="button"
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                onClick={() => {
-                  setIsClearModalOpen(false);
-                  onClearAppointment(activeAppointment, cancellationReason || undefined);
+                disabled={isClearing}
+                onClick={async () => {
+                  try {
+                    setIsClearing(true);
+                    await onClearAppointment(
+                      activeAppointment,
+                      cancellationReason || undefined,
+                    );
+                    setIsClearModalOpen(false);
+                  } finally {
+                    setIsClearing(false);
+                  }
                 }}
               >
-                Confirm clear
+                {isClearing ? "Clearing..." : "Confirm clear"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <ProcessingLoaderOverlay
+        open={isClearing}
+        title="Clearing"
+        description="Please wait while the appointment is cleared."
+        className="fixed inset-0 z-[1000000] flex items-center justify-center backdrop-blur-sm"
+      />
     </div>
   );
 }
