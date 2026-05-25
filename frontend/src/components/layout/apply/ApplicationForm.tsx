@@ -12,6 +12,7 @@ import { FormActionsSection } from "./FormActionsSection";
 import { apiCall } from "@/lib/api";
 import ApplicationSubmittedModal from "../../modals/ApplicationSubmittedModal";
 import { useRouter } from "next/navigation";
+import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
 export type FormStep = 1 | 2 | 3 | 4;
 
@@ -375,6 +376,12 @@ export const ApplicationForm = (): JSX.Element => {
       <ApplicationSubmittedModal
         isOpen={isSuccessModalOpen}
         onClose={handleSuccessModalClose}
+      />
+
+      <ProcessingLoaderOverlay
+        open={isSubmitting}
+        title="Submitting"
+        description="Please wait while we send your application."
       />
     </main>
   );

@@ -13,6 +13,7 @@ import DatePicker from "../DatePicker";
 import TimePicker from "../TimePicker";
 import { apiCall } from "@/lib/api";
 import { toast } from "sonner";
+import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
 type StatusOption = {
   id: string;
@@ -583,6 +584,13 @@ const ChangeStatusModal = ({
           </button>
         </div>
       </section>
+
+      <ProcessingLoaderOverlay
+        open={isUpdating}
+        title="Updating"
+        description="Please wait while the application status is being saved."
+        className="fixed inset-0 z-[100000] flex items-center justify-center backdrop-blur-sm"
+      />
     </div>
   );
 };

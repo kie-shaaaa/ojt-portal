@@ -27,6 +27,32 @@ import { throwAppError } from '../../utils/handlers';
 export class LogsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
+  private fallbackUserIdPromise: Promise<number> | null = null;
+
+  private async resolveFallbackUserId(): Promise<number> {
+    if (!this.fallbackUserIdPromise) {
+      this.fallbackUserIdPromise = (async () => {
+        const client = this.databaseService.getClient();
+        const result = await client.query<{ id: number }>(
+          `
+            SELECT id
+            FROM user_accounts
+            ORDER BY id ASC
+            LIMIT 1
+          `,
+        );
+
+        if (!result.rows[0]?.id) {
+          throw new Error('No user account available for system logging');
+        }
+
+        return result.rows[0].id;
+      })();
+    }
+
+    return this.fallbackUserIdPromise;
+  }
+
   async fetchAllLogs(limit: number, page: number): Promise<FetchAllLogs> {
     const client = this.databaseService.getClient();
     try {
@@ -101,12 +127,15 @@ export class LogsService {
   ) {
     const client = this.databaseService.getClient();
     try {
+      const resolvedUserId =
+        userId && userId > 0 ? userId : await this.resolveFallbackUserId();
+
       await client.query(
         `
         INSERT INTO logs (user_id, action, details, ip_address)
         VALUES ($1, $2, $3, $4);
         `,
-        [userId || null, action, details || null, ipAddress || null],
+        [resolvedUserId, action, details || null, ipAddress || null],
       );
     } catch (error) {
       console.error(`Failed to insert log (${action})`, error);
@@ -238,8 +267,12 @@ export class LogsService {
   async logOther(payload: LogOther) {
     await this.insertLog(
       payload.userId,
-      (payload.action as LogAction) || 'other',
-      payload.details,
+      'other',
+      payload.action
+        ? payload.details
+          ? `${payload.action}: ${payload.details}`
+          : payload.action
+        : payload.details,
       payload.ipAddress,
     );
   }

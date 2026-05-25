@@ -17,6 +17,7 @@ type AppointmentRow = {
   appointment_date: string;
   application_id?: number | null;
   is_done?: boolean;
+  application_status?: string | null;
   application_first_name?: string | null;
   application_last_name?: string | null;
   application_email?: string | null;
@@ -50,6 +51,10 @@ const mapAppointmentRowToCalendarAppointment = (
   }
 
   if (row.type !== "interview" && row.type !== "orientation") {
+    return null;
+  }
+
+  if (row.application_status === "under_review") {
     return null;
   }
 
@@ -250,6 +255,17 @@ export default function Page() {
         method: "PATCH",
         body: JSON.stringify(body),
       });
+
+      setAppointments((prev) =>
+        prev.filter((item) => item.id !== appointment.id),
+      );
+      setSelectedAppointments((prev) =>
+        prev.filter((item) => item.id !== appointment.id),
+      );
+
+      setSelectedAppointmentId((currentSelectedId) =>
+        currentSelectedId === appointment.id ? null : currentSelectedId,
+      );
 
       await refreshAppointments();
       setShowAppointmentModal(false);

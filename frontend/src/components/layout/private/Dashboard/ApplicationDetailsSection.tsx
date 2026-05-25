@@ -11,10 +11,9 @@ import {
   Lock,
   LockOpen,
 } from "lucide-react";
-
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import DatePicker from "@/components/layout/DatePicker";
 import { apiCall } from "@/lib/api";
+import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
 function getUserIdFromToken(): number | undefined {
   const token =
@@ -347,24 +346,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
       </section>
 
       {/* Saving Modal */}
-      {isSaving && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="flex aspect-square w-64 flex-col items-center justify-center gap-4 rounded-2xl bg-blue-50/95 p-7 shadow-2xl ring-1 ring-blue-100 sm:w-72">
-            <div className="flex h-24 w-24 items-center justify-center">
-              <DotLottieReact
-                src="https://lottie.host/199225e8-1f26-4f62-950a-41cfed998703/4esdI4dLN5.lottie"
-                loop
-                autoplay
-                style={{ height: "100%", width: "100%" }}
-              />
-            </div>
-
-            <p className="text-xl font-bold tracking-wide text-slate-800">
-              Saving
-            </p>
-          </div>
-        </div>
-      )}
+      <ProcessingLoaderOverlay open={isSaving} title="Saving" />
     </section>
   );
 };

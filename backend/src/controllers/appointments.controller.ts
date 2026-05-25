@@ -71,16 +71,20 @@ export class AppointmentsController {
     @Body()
     body: {
       appointmentId: number;
+      cancellationReason?: string;
     },
   ) {
     try {
-      const { appointmentId } = body;
+      const { appointmentId, cancellationReason } = body;
 
       if (!appointmentId) {
         throw new BadRequestException('appointment id are required');
       }
 
-      return await this.appointmentService.cancelAppointment(appointmentId);
+      return await this.appointmentService.cancelAppointment(
+        appointmentId,
+        cancellationReason,
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to cancel appointment',
