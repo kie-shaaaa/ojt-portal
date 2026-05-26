@@ -64,7 +64,9 @@ const mapAppointmentRowToCalendarAppointment = (
     ? "Completed"
     : row.type === "interview"
       ? "For interview"
-      : "Accepted";
+      : row.application_status === "accepted"
+        ? "Accepted"
+        : "Pending Accept";
   const dateKey = formatDateKey(appointmentDate);
   const appointmentTime = formatTime(appointmentDate);
   const applicantName = [row.application_first_name, row.application_last_name]
@@ -209,6 +211,7 @@ export default function Page() {
       (acc, appointment) => {
         if (
           appointment.status !== "Accepted" &&
+          appointment.status !== "Pending Accept" &&
           appointment.status !== "For interview"
         ) {
           return acc;
@@ -313,7 +316,7 @@ export default function Page() {
         }
 
         const nextAppointmentType =
-          newStatus === "Accepted"
+          newStatus === "Pending Accept" || newStatus === "Accepted"
             ? "Orientation"
             : newStatus === "For interview"
               ? "Interview"
@@ -324,21 +327,21 @@ export default function Page() {
           status: newStatus as CalendarAppointment["status"],
           appointmentType: nextAppointmentType,
           dateKey:
-            newStatus === "Accepted" || newStatus === "For interview"
+            newStatus === "Pending Accept" || newStatus === "Accepted" || newStatus === "For interview"
               ? (scheduleDate ?? item.dateKey)
               : "",
           appointmentTime:
-            newStatus === "Accepted" || newStatus === "For interview"
+            newStatus === "Pending Accept" || newStatus === "Accepted" || newStatus === "For interview"
               ? (scheduleTime ?? item.appointmentTime)
               : "",
           title:
-            newStatus === "Accepted"
+            newStatus === "Pending Accept" || newStatus === "Accepted"
               ? `Orientation - ${item.applicantName}`
               : newStatus === "For interview"
                 ? `Interview - ${item.applicantName}`
                 : `${newStatus} - ${item.applicantName}`,
           tag:
-            newStatus === "Accepted"
+            newStatus === "Pending Accept" || newStatus === "Accepted"
               ? "Orientation"
               : newStatus === "For interview"
                 ? "For Interview"

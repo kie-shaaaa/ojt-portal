@@ -62,6 +62,7 @@ export default function ApplicationPage(): JSX.Element {
   const normalizeStatusForStorage = (status: string) => {
     const normalized = status.toLowerCase();
 
+    if (normalized.includes("pending accept")) return "pending accept";
     if (normalized.includes("pending")) return "pending";
     if (normalized.includes("under")) return "under_review";
     if (normalized.includes("interview")) return "for_interview";

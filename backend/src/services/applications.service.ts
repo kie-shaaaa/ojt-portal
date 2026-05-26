@@ -532,31 +532,27 @@ export class ApplicationsService {
       }
 
       if (status === 'pending accept') {
-        await client.query<AllOjt>(
+        const existingOjt = await client.query(
           `
-          INSERT INTO ojt_data (
-            application_type,
-            first_name,
-            last_name,
-            email,
-            phone,
-            school_name,
-            hours_needed,
-            course,
-            deployment_date,
-            moved_to_ojt_at
-          )
-          VALUES (
-            $1, $2, $3, $4, $5,
-            $6, $7, $8, $9,
-            CURRENT_TIMESTAMP
-          )
-        `,
+          UPDATE ojt_data
+          SET
+            application_type = $2,
+            first_name = $3,
+            last_name = $4,
+            phone = $5,
+            school_name = $6,
+            hours_needed = $7,
+            course = $8,
+            deployment_date = $9,
+            moved_to_ojt_at = CURRENT_TIMESTAMP
+          WHERE email = $1
+          RETURNING id
+          `,
           [
+            application.email,
             application.application_type,
             application.first_name,
             application.last_name,
-            application.email,
             application.phone,
             application.school_name,
             application.hours_needed,
@@ -564,6 +560,41 @@ export class ApplicationsService {
             application.deployment_date,
           ],
         );
+
+        if (existingOjt.rowCount === 0) {
+          await client.query<AllOjt>(
+            `
+            INSERT INTO ojt_data (
+              application_type,
+              first_name,
+              last_name,
+              email,
+              phone,
+              school_name,
+              hours_needed,
+              course,
+              deployment_date,
+              moved_to_ojt_at
+            )
+            VALUES (
+              $1, $2, $3, $4, $5,
+              $6, $7, $8, $9,
+              CURRENT_TIMESTAMP
+            )
+          `,
+            [
+              application.application_type,
+              application.first_name,
+              application.last_name,
+              application.email,
+              application.phone,
+              application.school_name,
+              application.hours_needed,
+              application.course,
+              application.deployment_date,
+            ],
+          );
+        }
       }
 
       // 2. If accepted → move confirmed_at is stamped
@@ -627,15 +658,18 @@ export class ApplicationsService {
           console.error('Failed to create orientation appointment', err);
         }
 
-        const mailSent = await this.mailerService.responseEmail({
+        const frontendBaseUrl =
+          process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+        const confirmUrl = `${frontendBaseUrl}/track?confirm=1&id=${id}&email=${encodeURIComponent(data.email)}`;
+
+        const mailSent = await this.mailerService.acceptanceConfirmationEmail({
           to: data.email,
           firstName: data.first_name,
           lastName: data.last_name,
           applicationId: id,
-          status: 'orientation',
-          acceptedDate: acceptedDate,
-          acceptedTime: acceptedTime,
-          adminNote,
+          orientationDate: acceptedDate,
+          orientationTime: acceptedTime,
+          confirmUrl,
         });
         if (!mailSent)
           throwAppError('server_error', 'Interview mailing failed');
@@ -662,6 +696,119 @@ export class ApplicationsService {
       await client.query('ROLLBACK').catch(() => undefined);
       console.error('[APPLICATIONS] Error updating status:', error);
       throwAppError('server_error', 'Failed to update application status');
+    }
+  }
+
+  async confirmAcceptance(
+    applicationId: number,
+    email: string,
+  ): Promise<SuccessResponse> {
+    const client = this.databaseService.getClient();
+
+    try {
+      const exists = await client.query<Application>(
+        `
+              SELECT * FROM applications
+              WHERE id = $1 AND LOWER(email) = LOWER($2)
+              `,
+        [applicationId, email],
+      );
+
+      if (exists.rowCount === 0) {
+        throwAppError('not_found', 'Application not found');
+      }
+
+      const application = exists.rows[0];
+
+      if (application.status === 'accepted') {
+        return SuccessHandler('Acceptance already confirmed', application);
+      }
+
+      if (application.status !== 'pending accept') {
+        throwAppError('bad_request', 'Application is not pending acceptance');
+      }
+
+      const orientationAppointment = await client.query<{
+        appointment_date: Date;
+      }>(
+        `
+          SELECT appointment_date
+          FROM appointments
+          WHERE application_id = $1
+            AND type = 'orientation'
+            AND is_cancelled = FALSE
+          ORDER BY appointment_date DESC
+          LIMIT 1
+        `,
+        [applicationId],
+      );
+
+      if (orientationAppointment.rowCount === 0) {
+        throwAppError('not_found', 'Orientation schedule not found');
+      }
+
+      const appointmentDate = orientationAppointment.rows[0].appointment_date;
+      const orientationDate = appointmentDate.toLocaleDateString('en-PH', {
+        dateStyle: 'long',
+      });
+      const orientationTime = appointmentDate.toLocaleTimeString('en-PH', {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+
+      await client.query('BEGIN');
+
+      const updated = await client.query<Application>(
+        `
+          UPDATE applications
+          SET status = 'accepted', reviewed_date = CURRENT_TIMESTAMP
+          WHERE id = $1
+          RETURNING *
+        `,
+        [applicationId],
+      );
+
+      await client.query(
+        `
+          UPDATE ojt_data
+          SET confirmed_at = CURRENT_TIMESTAMP
+          WHERE email = $1
+        `,
+        [email],
+      );
+
+      const mailed = await this.mailerService.responseEmail({
+        to: application.email,
+        firstName: application.first_name,
+        lastName: application.last_name,
+        applicationId,
+        status: 'orientation',
+        acceptedDate: orientationDate,
+        acceptedTime: orientationTime,
+      });
+
+      if (!mailed) {
+        throwAppError('server_error', 'Orientation mailing failed');
+      }
+
+      await client.query('COMMIT');
+
+      await this.logsService
+        .logApplicationStatusChange({
+          userId: 0,
+          oldStatus: 'pending accept',
+          newStatus: 'accepted',
+          ipAddress: undefined,
+        })
+        .catch((err) =>
+          console.error('Failed to log acceptance confirmation', err),
+        );
+
+      return SuccessHandler('Acceptance confirmed successfully', updated.rows[0]);
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      console.error('[APPLICATIONS] Error confirming acceptance:', error);
+      throwAppError('server_error', 'Failed to confirm acceptance');
     }
   }
 

@@ -378,6 +378,37 @@ export class ApplicationsController {
     }
   }
 
+  @Post('confirm-acceptance')
+  async confirmAcceptance(
+    @Body()
+    body: {
+      id: number;
+      email: string;
+    },
+  ) {
+    try {
+      const applicationId = Number(body.id);
+      const email = String(body.email ?? '').trim();
+
+      if (!applicationId || !email) {
+        throw new BadRequestException('id and email are required');
+      }
+
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        throw new BadRequestException('Invalid email');
+      }
+
+      return await this.applicationService.confirmAcceptance(
+        applicationId,
+        email,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to confirm acceptance';
+      throw new BadRequestException(message);
+    }
+  }
+
   /**
    * Get notifications/pending count endpoint
    * @returns count of pending applications

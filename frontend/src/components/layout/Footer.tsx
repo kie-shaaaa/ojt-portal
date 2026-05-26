@@ -28,14 +28,12 @@ const contactItems = [
     value: "8-924-3775",
     icon: Phone,
     iconClassName: "w-5 h-5 text-slate-200",
-    href: "tel:8-924-3775",
   },
   {
     label: "Email:",
     value: "human.resource@ntc.gov.ph",
     icon: Mail,
     iconClassName: "w-5 h-5 text-slate-200",
-    href: "mailto:human.resource@ntc.gov.ph",
   },
 ];
 
@@ -165,18 +163,9 @@ export const Footer = (): JSX.Element => {
                     </div>
                   </div>
                   <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                    {item.href ? (
-                      <a
-                        href={item.href}
-                        className="flex items-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] md:text-xs tracking-[0] leading-3 md:leading-4 relative w-fit focus:outline-none focus:underline hover:underline break-all"
-                      >
-                        {item.value}
-                      </a>
-                    ) : (
-                      <p className="mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] md:text-xs tracking-[0] leading-4 md:leading-[15px] relative">
-                        {item.value}
-                      </p>
-                    )}
+                    <p className="mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[10px] md:text-xs tracking-[0] leading-4 md:leading-[15px] relative break-all">
+                      {item.value}
+                    </p>
                   </div>
                 </div>
               </div>
