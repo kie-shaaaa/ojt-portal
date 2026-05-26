@@ -3,6 +3,8 @@ import { FormEvent, useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
 import { JSX } from "react";
 import { Phone, Mail, Clock, Send, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
+import { apiCall } from "@/lib/api";
 
 const contactCards = [
   {
@@ -52,6 +54,12 @@ const subjectOptions = [
   "Other",
 ];
 
+const MAX_NAME_LENGTH = 25;
+const MAX_MESSAGE_LENGTH = 500;
+
+const isValidEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 export const ContactSection = (): JSX.Element => {
   const fullNameId = useId();
   const emailId = useId();
@@ -71,9 +79,64 @@ export const ContactSection = (): JSX.Element => {
     subject: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    const trimmedName = formData.fullName.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedSubject = formData.subject.trim();
+    const trimmedMessage = formData.message.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedSubject || !trimmedMessage) {
+      toast.error("Please complete all contact fields");
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (trimmedName.length > MAX_NAME_LENGTH) {
+      toast.error(`Name must be ${MAX_NAME_LENGTH} characters or less`);
+      return;
+    }
+
+    if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
+      toast.error(`Message must be ${MAX_MESSAGE_LENGTH} characters or less`);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await apiCall("/mailer/contact", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: trimmedName,
+          email: trimmedEmail,
+          subject: trimmedSubject,
+          message: trimmedMessage,
+        }),
+      });
+
+      toast.success("Your message has been received");
+      setFormData({
+        fullName: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Unable to send your message";
+
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -158,20 +221,21 @@ export const ContactSection = (): JSX.Element => {
               <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
                 <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
                   <label
-                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-700 text-[10px] tracking-[0.50px] leading-[15px]"
+                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-blue-700 text-[10px] tracking-[0.50px] leading-[15px]"
                     htmlFor={fullNameId}
                   >
                     FULL NAME *
                   </label>
                 </div>
-                <div className="flex items-start justify-center px-3 md:px-4 py-2.5 md:py-3.5 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
                   <input
-                    className="relative grow border-[none] [background:none] self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-sm md:text-base tracking-[0] leading-[normal] p-0 outline-none placeholder:text-gray-500"
+                    className="relative w-full border-0 bg-transparent px-4 py-3.5 font-['Inter-Regular',Helvetica] text-sm md:text-base leading-6 outline-none transition-colors duration-200 placeholder:text-slate-400 text-slate-900"
                     id={fullNameId}
                     name="fullName"
                     placeholder="Enter your full name"
                     type="text"
                     autoComplete="name"
+                    maxLength={MAX_NAME_LENGTH}
                     required
                     value={formData.fullName}
                     onChange={(event) =>
@@ -186,20 +250,21 @@ export const ContactSection = (): JSX.Element => {
               <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
                 <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
                   <label
-                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-700 text-[10px] tracking-[0.50px] leading-[15px]"
+                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-blue-700 text-[10px] tracking-[0.50px] leading-[15px]"
                     htmlFor={emailId}
                   >
                     EMAIL ADDRESS *
                   </label>
                 </div>
-                <div className="flex items-start justify-center px-3 md:px-4 py-2.5 md:py-3.5 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
                   <input
-                    className="relative grow border-[none] [background:none] self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-sm md:text-base tracking-[0] leading-[normal] p-0 outline-none placeholder:text-gray-500"
+                    className="relative w-full border-0 bg-transparent px-4 py-3.5 font-['Inter-Regular',Helvetica] text-sm md:text-base leading-6 outline-none transition-colors duration-200 placeholder:text-slate-400 text-slate-900"
                     id={emailId}
                     name="email"
                     placeholder="Enter your email address"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
                     required
                     value={formData.email}
                     onChange={(event) =>
@@ -215,51 +280,51 @@ export const ContactSection = (): JSX.Element => {
                 <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
                   <label
                     htmlFor={subjectId}
-                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-700 text-[10px] tracking-[0.50px] leading-[15px]"
+                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-blue-700 text-[10px] tracking-[0.50px] leading-[15px]"
                   >
                     SUBJECT *
                   </label>
                 </div>
-                <div className="flex items-center justify-center px-3 md:px-4 py-2 md:py-3 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md border border-solid border-slate-200">
-                  <div className="pointer-events-none absolute right-3 md:right-4 top-1/2 -translate-y-1/2">
-                    <ChevronDown className="relative w-4 h-4 text-slate-400" aria-hidden="true" />
+                <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
+                  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-200 group-focus-within:text-[#3b66f5]">
+                    <ChevronDown className="relative h-4 w-4" aria-hidden="true" />
                   </div>
-                  <div className="flex flex-col items-start relative flex-1 grow">
-                    <select
-                      id={subjectId}
-                      name="subject"
-                      required
-                      value={formData.subject}
-                      onChange={(event) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          subject: event.target.value,
-                        }))
-                      }
-                      className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-800 text-sm md:text-base tracking-[0] leading-6 bg-transparent border-0 outline-none appearance-none pr-10"
-                    >
-                      <option value="" disabled className="text-slate-800">
-                        Select a subject
+                  <select
+                    id={subjectId}
+                    name="subject"
+                    required
+                    value={formData.subject}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        subject: event.target.value,
+                      }))
+                    }
+                    className={`relative w-full appearance-none border-0 bg-transparent px-4 py-3.5 pr-12 font-['Inter-Regular',Helvetica] text-sm md:text-base leading-6 outline-none transition-colors duration-200 ${
+                      formData.subject ? "text-slate-900" : "text-slate-400"
+                    }`}
+                  >
+                    <option value="" disabled className="text-slate-400">
+                      Select a subject
+                    </option>
+                    {subjectOptions.map((option) => (
+                      <option key={option} value={option} className="text-slate-900">
+                        {option}
                       </option>
-                      {subjectOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
                 <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
                   <label
                     htmlFor={messageId}
-                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-slate-700 text-[10px] tracking-[0.50px] leading-[15px]"
+                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-blue-700 text-[10px] tracking-[0.50px] leading-[15px]"
                   >
                     MESSAGE *
                   </label>
                 </div>
-                <div className="flex items-start justify-center pt-2 md:pt-3 pb-4 md:pb-6 px-3 md:px-4 relative self-stretch w-full flex-[0_0_auto] bg-slate-50 rounded-md overflow-hidden border border-solid border-slate-200">
+                <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
                   <div className="flex flex-col items-start relative flex-1 grow">
                     <textarea
                       id={messageId}
@@ -273,7 +338,8 @@ export const ContactSection = (): JSX.Element => {
                         }))
                       }
                       placeholder="Type your message here..."
-                      className="relative flex items-center self-stretch mt-[-1.00px] min-h-[24px] resize-none border-0 bg-transparent p-0 outline-none [font-family:'Inter-Regular',Helvetica] font-normal text-gray-500 text-sm md:text-base tracking-[0] leading-6 placeholder:text-gray-500"
+                      className="relative flex min-h-[96px] w-full resize-none border-0 bg-transparent px-4 py-3.5 font-['Inter-Regular',Helvetica] text-sm md:text-base leading-6 text-slate-900 outline-none transition-colors duration-200 placeholder:text-slate-400"
+                      maxLength={MAX_MESSAGE_LENGTH}
                       rows={3}
                     />
                   </div>
@@ -281,14 +347,15 @@ export const ContactSection = (): JSX.Element => {
               </div>
               <button
                 type="submit"
-                className="all-[unset] box-border flex justify-center gap-2 px-0 py-3 md:py-4 self-stretch w-full bg-[#3b66f5] rounded-md items-center relative flex-[0_0_auto] cursor-pointer hover:bg-[#2b5ee5] transition-colors"
+                disabled={isSubmitting}
+                className="all-[unset] box-border flex justify-center gap-2 px-0 py-3.5 md:py-4 self-stretch w-full rounded-xl items-center relative flex-[0_0_auto] cursor-pointer bg-gradient-to-r from-[#214abf] to-[#3b66f5] shadow-[0px_12px_24px_-10px_rgba(59,102,245,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0px_16px_30px_-12px_rgba(59,102,245,0.85)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
               >
-                <div className="absolute w-full h-full top-0 left-0 bg-[#ffffff01] rounded-md shadow-[0px_4px_6px_-4px_#0000001a,0px_10px_15px_-3px_#0000001a]" />
+                <div className="absolute inset-0 rounded-xl bg-white/5" />
                 <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
                   <Send className="relative w-3.5 md:w-[14.01px] h-3.5 md:h-[14.01px] text-white" aria-hidden="true" />
                 </div>
                 <span className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative w-fit">
-                  Send Message
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </span>
               </button>
             </form>

@@ -3,6 +3,7 @@ import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { ApplicationStatus } from '../data/types';
 import {
+  ContactMessageDto,
   ConfirmationEmailDto,
   DeletionEmailDto,
   ResubmissionEmailDto,
@@ -42,6 +43,14 @@ const alertBox = (content: string, color = '#FF0000') =>
     ${content}
   </div>`;
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const wrapEmail = (header: string, body: string) =>
   `<!DOCTYPE html>
   <html>
@@ -62,6 +71,8 @@ const wrapEmail = (header: string, body: string) =>
   </html>`;
 
 const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
+
+const contactAdminAddress = process.env.CONTACT_ADMIN_EMAIL?.trim() || '';
 
 // clearer fallback text used when date/time details are not yet available
 const tbaText = 'To be announced — details will be sent in a follow-up email.';
@@ -662,6 +673,115 @@ export class MailerService {
       html,
       text,
     });
+  }
+
+  async contactMessageEmail(dto: ContactMessageDto): Promise<{
+    adminSent: boolean;
+    senderSent: boolean;
+  }> {
+    const sanitizedFullName = dto.fullName.trim();
+    const sanitizedEmail = dto.email.trim();
+    const sanitizedSubject = dto.subject.trim();
+    const sanitizedMessage = dto.message.trim();
+    const escapedFullName = escapeHtml(sanitizedFullName);
+    const escapedEmail = escapeHtml(sanitizedEmail);
+    const escapedSubject = escapeHtml(sanitizedSubject);
+    const escapedMessage = escapeHtml(sanitizedMessage).replace(/\n/g, '<br/>');
+
+    const adminHtml = wrapEmail(
+      ntcHeader('OJT Application Portal Contact Message'),
+      `<p>Hello Human Resource Team,</p>
+      <p>You have received a new message from the <strong>NTC OJT Application Portal</strong> contact form.</p>
+
+      ${infoBox(`
+        <strong>Sender Name:</strong> ${escapedFullName}<br/>
+        <strong>Sender Email:</strong> ${escapedEmail}<br/>
+        <strong>Subject:</strong> ${escapedSubject}
+      `)}
+
+      <p><strong>Message:</strong></p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:16px;white-space:pre-wrap;line-height:1.7;">${escapedMessage}</div>
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>NTC OJT Application Portal</strong>
+      </p>`,
+    );
+
+    const adminText = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      'NEW CONTACT MESSAGE',
+      '='.repeat(60),
+      '',
+      `Name   : ${sanitizedFullName}`,
+      `Email  : ${sanitizedEmail}`,
+      `Subject: ${sanitizedSubject}`,
+      '',
+      'Message:',
+      sanitizedMessage,
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    const senderHtml = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${escapedFullName}</strong>,</p>
+      <p>Good day!</p>
+      <p>We have received your message and will get back to you as soon as possible.</p>
+
+      ${infoBox(`
+        <strong>Subject:</strong> ${escapedSubject}<br/>
+        <strong>Status:</strong> Message Received
+      `)}
+
+      <p>Thank you for reaching out to the <strong>National Telecommunications Commission OJT Application Portal</strong>.</p>
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>NTC OJT Application Portal</strong>
+      </p>`,
+    );
+
+    const senderText = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      'MESSAGE RECEIVED',
+      '='.repeat(60),
+      '',
+      `Dear ${sanitizedFullName},`,
+      '',
+      'We have received your message and will get back to you soon.',
+      '',
+      `Subject: ${sanitizedSubject}`,
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    if (!contactAdminAddress) {
+      this.logger.warn(
+        'CONTACT_ADMIN_EMAIL is empty; contact messages will only be sent to the sender.',
+      );
+    }
+
+    const [adminSent, senderSent] = await Promise.all([
+      contactAdminAddress
+        ? this.send({
+            to: contactAdminAddress,
+            subject: `NTC Portal – New Contact Message: ${sanitizedSubject}`,
+            html: adminHtml,
+            text: adminText,
+          })
+        : Promise.resolve(false),
+      this.send({
+        to: sanitizedEmail,
+        subject: 'NTC Portal – Message Received',
+        html: senderHtml,
+        text: senderText,
+      }),
+    ]);
+
+    return { adminSent, senderSent };
   }
 
   // ─── Dev-only: fire all 4 email types ────────────────────────────────────

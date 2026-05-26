@@ -48,6 +48,13 @@ export interface ResubmissionEmailDto {
   requiredFiles: string[];
 }
 
+export interface ContactMessageDto {
+  fullName: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
 export interface UpdateApplicationDto {
   id: number;
   status: ApplicationStatus;
