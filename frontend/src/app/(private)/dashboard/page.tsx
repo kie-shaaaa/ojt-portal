@@ -24,20 +24,17 @@ export default function DashboardPage(): ReactNode {
     }
 
     setIsCheckingAccess(false);
+
+    const successMessage = sessionStorage.getItem("login_success_toast");
+    if (successMessage) {
+      sessionStorage.removeItem("login_success_toast");
+      toast.success(successMessage);
+    }
   }, [router]);
 
   if (isCheckingAccess) {
     return null;
   }
-
-  useEffect(() => {
-    const successMessage = sessionStorage.getItem("login_success_toast");
-
-    if (!successMessage) return;
-
-    sessionStorage.removeItem("login_success_toast");
-    toast.success(successMessage);
-  }, []);
 
   return (
     <main
