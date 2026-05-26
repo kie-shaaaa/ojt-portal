@@ -56,13 +56,13 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   // }
 
   if (!response.ok) {
-    return response;
-    // Temporary, removed for cleaner management of error
+    const errorMessage =
+      data?.message ||
+      data?.error ||
+      response.statusText ||
+      `Request failed with status ${response.status}`;
 
-    // throw new Error(
-    //   data?.message ||
-    //     `Request failed due to unknown error: ${response.status}`,
-    // );
+    throw new Error(errorMessage);
   }
 
   return data;
