@@ -4,6 +4,7 @@ import { type FormEvent, JSX, useId, useState } from "react";
 import { User, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export const LoginFormSection = (): JSX.Element => {
   const { login, isLoading } = useAuth();
@@ -22,16 +23,21 @@ export const LoginFormSection = (): JSX.Element => {
     setLocalError(null);
 
     if (!email || !password) {
-      setLocalError("Please enter both email and password");
+      const message = "Please enter both email and password";
+      setLocalError(message);
+      toast.error(message);
       return;
     }
 
     try {
       await login(email, password, rememberMe);
+      sessionStorage.setItem("login_success_toast", "Login successful");
       router.push("/dashboard");
     } catch (err: unknown) {
-      console.error("Login failed:", err);
-      setLocalError("Invalid email or password");
+      const message =
+        err instanceof Error ? err.message : "Invalid email or password";
+      setLocalError(message);
+      toast.error(message);
     }
   };
 
