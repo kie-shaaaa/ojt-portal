@@ -17,6 +17,16 @@ export interface ConfirmationEmailDto {
   submittedAt?: Date;
 }
 
+export interface AcceptanceConfirmationEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  orientationDate?: string;
+  orientationTime?: string;
+  confirmUrl: string;
+}
+
 export interface ResponseEmailDto {
   to: string;
   firstName: string;

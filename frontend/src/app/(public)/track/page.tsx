@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useId, useState, type ChangeEvent, type FormEvent } from "react";
+import { JSX, useEffect, useId, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -12,6 +12,7 @@ import {
   School,
   User,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import { apiCall } from "@/lib/api";
 import { toast } from "sonner";
@@ -365,7 +366,90 @@ function StatusPanel({ application }: { application: ApplicationRecord }) {
   );
 }
 
-function ResultSection({ application }: { application: ApplicationRecord }) {
+function AcceptanceConfirmModal({
+  open,
+  application,
+  onClose,
+  onConfirm,
+  isSubmitting,
+}: {
+  open: boolean;
+  application: ApplicationRecord | null;
+  onClose: () => void;
+  onConfirm: () => void;
+  isSubmitting: boolean;
+}) {
+  if (!open || !application) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="acceptance-confirm-title"
+        className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start gap-4">
+          <div className="rounded-2xl bg-amber-100 p-3 text-amber-700">
+            <BadgeCheck className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2
+              id="acceptance-confirm-title"
+              className="text-xl font-semibold text-slate-900"
+            >
+              Confirm Internship Acceptance
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Please confirm that you are accepting the internship. This will
+              mark your application as accepted and send your orientation email.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">{application.firstName} {application.lastName}</p>
+          <p className="mt-1">Application ID: {formatApplicationId(application.id)}</p>
+          <p>Email: {application.email}</p>
+          <p className="mt-1 text-amber-700">Status: Pending Accept</p>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-xl bg-linear-to-r from-blue-800 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-[0px_10px_20px_-8px_rgba(37,99,235,0.7)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? "Confirming..." : "Yes, confirm acceptance"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResultSection({
+  application,
+  onRequestAcceptanceConfirmation,
+}: {
+  application: ApplicationRecord;
+  onRequestAcceptanceConfirmation?: () => void;
+}) {
   const timeline = buildTimeline(application);
   const meta = statusMeta[application.status];
 
@@ -466,6 +550,25 @@ function ResultSection({ application }: { application: ApplicationRecord }) {
 
       <StatusPanel application={application} />
 
+      {application.status === "pending accept" ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
+          <p className="font-semibold">Action required</p>
+          <p className="mt-1">
+            Your internship is waiting for your confirmation. Open the email
+            link to review and confirm your acceptance.
+          </p>
+          {onRequestAcceptanceConfirmation ? (
+            <button
+              type="button"
+              onClick={onRequestAcceptanceConfirmation}
+              className="mt-4 inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700"
+            >
+              Confirm Acceptance
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="space-y-4 border-t border-slate-200 pt-6">
         <h3 className="text-lg font-semibold text-slate-900">
           Application Timeline
@@ -481,31 +584,28 @@ function ResultSection({ application }: { application: ApplicationRecord }) {
 }
 
 export default function TrackPage(): JSX.Element {
+  const searchParams = useSearchParams();
   const applicationIdInputId = useId();
   const emailInputId = useId();
+
+  const confirmParam = searchParams.get("confirm") ?? "";
+  const confirmedIdParam = searchParams.get("id") ?? "";
+  const confirmedEmailParam = searchParams.get("email") ?? "";
 
   const [applicationId, setApplicationId] = useState("");
   const [email, setEmail] = useState("");
   const [result, setResult] = useState<ApplicationRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAcceptanceModalOpen, setIsAcceptanceModalOpen] = useState(false);
+  const [isConfirmingAcceptance, setIsConfirmingAcceptance] = useState(false);
 
-  const handleApplicationIdChange = (event: ChangeEvent<HTMLInputElement>) => {
-    let nextValue = event.target.value.toUpperCase();
-
-    if (/^\d+$/.test(nextValue) && nextValue.length > 0) {
-      nextValue = `NTC-APP-${nextValue}`;
-    }
-
-    nextValue = nextValue.replace(/(NTC-APP-)+/g, "NTC-APP-");
-
-    setApplicationId(nextValue);
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const trimmedApplicationId = applicationId.trim();
-    const trimmedEmail = email.trim();
+  const loadApplicationRecord = async (
+    rawApplicationId: string,
+    rawEmail: string,
+    openConfirmationModal = false,
+  ) => {
+    const trimmedApplicationId = rawApplicationId.trim();
+    const trimmedEmail = rawEmail.trim();
 
     if (!trimmedApplicationId || !trimmedEmail) {
       setResult(null);
@@ -542,6 +642,10 @@ export default function TrackPage(): JSX.Element {
       }
 
       setResult(matchedApplication);
+
+      if (openConfirmationModal && matchedApplication.status === "pending accept") {
+        setIsAcceptanceModalOpen(true);
+      }
     } catch (fetchError) {
       setResult(null);
       if (fetchError instanceof Error) {
@@ -567,6 +671,78 @@ export default function TrackPage(): JSX.Element {
       setIsLoading(false);
     }
   };
+
+  const handleConfirmAcceptance = async () => {
+    if (!result) {
+      return;
+    }
+
+    const numericId = normalizeApplicationId(applicationId);
+
+    if (!numericId || !email.trim()) {
+      showTrackError("Please load your application before confirming acceptance.");
+      return;
+    }
+
+    setIsConfirmingAcceptance(true);
+
+    try {
+      await apiCall("/applications/confirm-acceptance", {
+        method: "POST",
+        body: JSON.stringify({
+          id: Number(numericId),
+          email: email.trim(),
+        }),
+      });
+
+      setResult((current) =>
+        current ? { ...current, status: "accepted" } : current,
+      );
+      setIsAcceptanceModalOpen(false);
+      toast.success("Acceptance confirmed. Your orientation email has been sent.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to confirm acceptance";
+      toast.error(message);
+    } finally {
+      setIsConfirmingAcceptance(false);
+    }
+  };
+
+  const handleApplicationIdChange = (event: ChangeEvent<HTMLInputElement>) => {
+    let nextValue = event.target.value.toUpperCase();
+
+    if (/^\d+$/.test(nextValue) && nextValue.length > 0) {
+      nextValue = `NTC-APP-${nextValue}`;
+    }
+
+    nextValue = nextValue.replace(/(NTC-APP-)+/g, "NTC-APP-");
+
+    setApplicationId(nextValue);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    await loadApplicationRecord(applicationId, email);
+  };
+
+  useEffect(() => {
+    if (confirmParam !== "1" || !confirmedIdParam || !confirmedEmailParam) {
+      return;
+    }
+
+    setApplicationId(
+      confirmedIdParam.toUpperCase().startsWith("NTC-APP-")
+        ? confirmedIdParam.toUpperCase()
+        : `NTC-APP-${confirmedIdParam}`,
+    );
+    setEmail(confirmedEmailParam);
+
+    void loadApplicationRecord(confirmedIdParam, confirmedEmailParam, true);
+    // The query-param driven modal should open once on entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleReturn = () => {
     if (window.history.length > 1) {
@@ -653,7 +829,22 @@ export default function TrackPage(): JSX.Element {
             </button>
           </form>
 
-          {result ? <ResultSection application={result} /> : null}
+          {result ? (
+            <ResultSection
+              application={result}
+              onRequestAcceptanceConfirmation={() =>
+                setIsAcceptanceModalOpen(true)
+              }
+            />
+          ) : null}
+
+          <AcceptanceConfirmModal
+            open={isAcceptanceModalOpen}
+            application={result}
+            onClose={() => setIsAcceptanceModalOpen(false)}
+            onConfirm={handleConfirmAcceptance}
+            isSubmitting={isConfirmingAcceptance}
+          />
 
           <div className="flex items-start">
             <button

@@ -3,6 +3,7 @@ import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import { ApplicationStatus } from '../data/types';
 import {
+  AcceptanceConfirmationEmailDto,
   ContactMessageDto,
   ConfirmationEmailDto,
   DeletionEmailDto,
@@ -73,6 +74,7 @@ const wrapEmail = (header: string, body: string) =>
 const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
 
 const contactAdminAddress = process.env.CONTACT_ADMIN_EMAIL?.trim() || '';
+const frontendBaseUrl = process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
 
 // clearer fallback text used when date/time details are not yet available
 const tbaText = 'To be announced — details will be sent in a follow-up email.';
@@ -315,6 +317,81 @@ export class MailerService {
     return this.send({
       to,
       subject: `NTC Application – Submission Confirmed [${ref}]`,
+      html,
+      text,
+    });
+  }
+
+  async acceptanceConfirmationEmail(
+    dto: AcceptanceConfirmationEmailDto,
+  ): Promise<boolean> {
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      confirmUrl,
+    } = dto;
+
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const safeConfirmUrl = escapeHtml(confirmUrl);
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${escapeHtml(fullName)}</strong>,</p>
+      <p>Good day!</p>
+      <p>Your application has been <strong>conditionally approved</strong> and is now pending your confirmation.</p>
+
+      ${infoBox(`
+        <strong>Reference No.:</strong> ${ref}<br/>
+        <strong>Status:</strong> Pending Acceptance
+      `)}
+
+      ${alertBox(`
+        <strong>Important:</strong> Please confirm that you are accepting the internship by clicking the button below. After you confirm, we will send your orientation schedule email.
+      `, '#d97706')}
+
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;">Confirm Acceptance</a>
+      </div>
+
+      <p>If the button does not work, copy and paste this link into your browser:</p>
+      <p style="word-break:break-all;"><a href="${safeConfirmUrl}" style="color:#0038A8;">${safeConfirmUrl}</a></p>
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>David M. Zaldua</strong><br/>
+        Administrative Officer IV<br/>
+        Human Resource Division
+      </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      'CONFIRM YOUR INTERNSHIP ACCEPTANCE',
+      '='.repeat(60),
+      '',
+      `Dear ${fullName},`,
+      '',
+      `Reference No.   : ${ref}`,
+      `Status          : Pending Acceptance`,
+      '',
+      'Please confirm your acceptance here:',
+      safeConfirmUrl,
+      '',
+      'After confirming, you will receive a separate orientation email.',
+      '',
+      'David M. Zaldua',
+      'Administrative Officer IV | Human Resource Division',
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Confirm Your Acceptance [${ref}]`,
       html,
       text,
     });
@@ -670,6 +747,79 @@ export class MailerService {
     return this.send({
       to,
       subject: `NTC Application – Status Update: ${label} [${ref}]`,
+      html,
+      text,
+    });
+  }
+
+  async appointmentExpiredEmail(dto: {
+    to: string;
+    firstName: string;
+    lastName: string;
+    applicationId: number;
+    appointmentDate: string | Date;
+    adminNote?: string;
+  }): Promise<boolean> {
+    const { to, firstName, lastName, applicationId, appointmentDate, adminNote } = dto;
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const expiredAt = renderValue(appointmentDate);
+
+    const noteBlock = adminNote
+      ? alertBox(
+          `<strong>Note from the Administrator:</strong><br/>${adminNote}`,
+          '#d97706',
+        )
+      : '';
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `<p>Dear <strong>${fullName}</strong>,</p>
+      <p>Good day!</p>
+      <p>Your interview appointment has <strong>expired</strong> because the scheduled date and time have already passed.</p>
+
+      ${infoBox(`
+        <strong>Reference No.:</strong> ${ref}<br/>
+        <strong>Appointment Date:</strong> ${expiredAt}<br/>
+        <strong>Status:</strong> Under Review
+      `)}
+
+      <p>Your application has been moved back to <strong>under review</strong>. Our team will contact you if another schedule becomes available.</p>
+      ${noteBlock}
+
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>David M. Zaldua</strong><br/>
+        Administrative Officer IV<br/>
+        Human Resource Division
+      </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      'APPOINTMENT EXPIRED',
+      '='.repeat(60),
+      '',
+      `Dear ${fullName},`,
+      '',
+      `Reference No.: ${ref}`,
+      `Appointment Date: ${expiredAt}`,
+      'Status: Under Review',
+      '',
+      'Your interview appointment has expired and your application has been moved back to under review.',
+      '',
+      adminNote ? `Note: ${adminNote}
+` : '',
+      'David M. Zaldua',
+      'Administrative Officer IV | Human Resource Division',
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Appointment Expired [${ref}]`,
       html,
       text,
     });
