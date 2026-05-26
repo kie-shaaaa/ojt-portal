@@ -165,16 +165,16 @@ export const ContactSection = (): JSX.Element => {
             {contactCards.map((card) => (
               <div
                 key={card.title}
-                className="flex items-start gap-3.5 md:gap-4 p-3.5 md:p-5 relative self-stretch w-full flex-[0_0_auto] bg-[#1e4197] rounded-lg border border-solid border-[#ffffff1a]"
+                className="flex items-start gap-4 md:gap-5 p-4 md:p-6 lg:p-7 min-h-[96px] md:min-h-[112px] relative self-stretch w-full flex-[0_0_auto] bg-[#1e4197] rounded-xl border border-solid border-[#ffffff1a] shadow-[0px_10px_24px_-18px_rgba(0,0,0,0.55)]"
               >
-                <div className="inline-flex flex-col items-start p-2 md:p-3 relative flex-[0_0_auto] bg-[#3b82f633] rounded-md">
+                <div className="inline-flex flex-col items-center justify-center p-3 md:p-4 relative flex-[0_0_auto] bg-[#3b82f633] rounded-xl min-w-12 min-h-12 md:min-w-14 md:min-h-14">
                   {card.icon && (
-                    <card.icon className={card.iconClassName} aria-hidden="true" />
+                    <card.icon className="relative w-5 h-5 md:w-6 md:h-6 text-white" aria-hidden="true" />
                   )}
                 </div>
                 <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
                   <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                    <h3 className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-xs md:text-sm tracking-[0] leading-5 relative w-fit">
+                    <h3 className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-base md:text-lg tracking-[0] leading-6 md:leading-7 relative w-fit">
                       {card.title}
                     </h3>
                   </div>
@@ -183,11 +183,11 @@ export const ContactSection = (): JSX.Element => {
                       key={`${card.title}-${line.label}`}
                       className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]"
                     >
-                      <p className="flex items-center mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-normal text-transparent text-xs tracking-[0] leading-4 relative w-fit">
+                      <p className="flex items-center mt-[-1.00px] [font-family:'Inter-SemiBold',Helvetica] font-normal text-transparent text-sm md:text-base tracking-[0] leading-5 md:leading-6 relative w-fit">
                         <span className="font-semibold text-white">
                           {line.label}
                         </span>
-                        <span className="[font-family:'Inter-Regular',Helvetica] text-slate-300">
+                        <span className="[font-family:'Inter-Regular',Helvetica] text-slate-200">
                           {" "}
                           {line.value}
                         </span>
