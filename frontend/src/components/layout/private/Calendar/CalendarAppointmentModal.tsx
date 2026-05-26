@@ -74,12 +74,12 @@ const getBadgeClasses = (label: string) => {
     return "bg-emerald-100 text-emerald-700";
   }
 
-  if (normalized.includes("accepted")) {
-    return "bg-green-100 text-green-700";
-  }
-
   if (normalized.includes("pending")) {
     return "bg-amber-100 text-amber-700";
+  }
+
+  if (normalized.includes("accepted")) {
+    return "bg-green-100 text-green-700";
   }
 
   return "bg-slate-100 text-slate-700";
@@ -250,7 +250,9 @@ export default function CalendarAppointmentModal({
                   </span>
                   <p className="text-sm text-gray-600">
                     {activeAppointment.status === "Accepted"
-                      ? "Confirmed and ready for the next step."
+                      ? "The applicant has confirmed and the orientation schedule is active."
+                      : activeAppointment.status === "Pending Accept"
+                      ? "Awaiting the applicant's confirmation email."
                       : activeAppointment.status === "For interview"
                         ? "Scheduled on the calendar for applicant review."
                         : activeAppointment.status === "Completed"

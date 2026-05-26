@@ -105,7 +105,7 @@ const idToStatus = (id: string) => {
     case "rejected":
       return "Rejected";
     case "accepted":
-      return "Accepted";
+      return "Pending Accept";
     default:
       return id;
   }
@@ -213,6 +213,7 @@ const ChangeStatusModal = ({
       case "for_interview":
         return "interview";
       case "accepted":
+      case "pending accept":
         return "orientation";
       default:
         return undefined;

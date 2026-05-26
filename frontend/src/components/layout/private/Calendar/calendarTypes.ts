@@ -1,6 +1,7 @@
 export type CalendarAppointmentStatus =
   | "For interview"
   | "Accepted"
+  | "Pending Accept"
   | "Pending"
   | "Completed";
 

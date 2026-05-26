@@ -12,8 +12,7 @@ import { AppointmentsModule } from './modules/appointments.module';
 import { SchoolsModule } from './modules/schools.module';
 import { CoursesModule } from './modules/courses.module';
 import { DatabaseModule } from './modules/database.module';
-import { MailerService } from './services/mailer.service';
-import { MailerController } from './controllers/mailer.controller';
+import { MailerModule } from './modules/mailer.module';
 import { LogsModule } from './modules/logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronjobService } from './services/cronjob.service';
@@ -29,9 +28,10 @@ import { CronjobService } from './services/cronjob.service';
     SchoolsModule,
     CoursesModule,
     LogsModule,
+    MailerModule,
     ScheduleModule.forRoot()
   ],
-  controllers: [AppController, DashboardController, MailerController],
-  providers: [AppService, DashboardService, JwtService, MailerService, CronjobService],
+  controllers: [AppController, DashboardController],
+  providers: [AppService, DashboardService, JwtService, CronjobService],
 })
 export class AppModule {}

@@ -730,7 +730,7 @@ export const ApplicationsTableSection = ({
                 aria-label="Previous page"
                 className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
 
               <span className="px-3 py-2 text-sm font-semibold text-slate-600">
@@ -743,7 +743,7 @@ export const ApplicationsTableSection = ({
                 aria-label="Next page"
                 className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
             </div>
           </div>
@@ -859,7 +859,10 @@ export const ApplicationsTableSection = ({
 
                 {/* Applicant */}
                 <td className="px-6 py-6 align-top">
-                  <div className="font-bold text-slate-900 transition-colors group-hover:text-blue-700">
+                  <div
+                    className="max-w-[220px] truncate font-bold text-slate-900 transition-colors group-hover:text-blue-700"
+                    title={application.applicantName}
+                  >
                     {application.applicantName}
                   </div>
 

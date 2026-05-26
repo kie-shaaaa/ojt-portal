@@ -337,36 +337,46 @@ export class AppointmentsService {
 
       // If it's an orientation appointment, also add to ojt_data
       if (isOrientationAppointment && appointment.application_id) {
-        await client.query(
+        const ojtResult = await client.query(
           `
-          INSERT INTO ojt_data (
-            application_type,
-            first_name,
-            last_name,
-            email,
-            phone,
-            school_name,
-            hours_needed,
-            course,
-            deployment_date,
-            moved_to_ojt_at,
-            confirmed_at
-          )
-          VALUES ($1, $2, $3, $4, '', $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-          ON CONFLICT (email) DO UPDATE
+          UPDATE ojt_data
           SET confirmed_at = CURRENT_TIMESTAMP
+          WHERE email = $1
+          RETURNING id
           `,
-          [
-            appointment.application_type,
-            appointment.first_name,
-            appointment.last_name,
-            appointment.email,
-            appointment.school_name,
-            appointment.hours_needed,
-            appointment.course,
-            appointment.deployment_date,
-          ],
+          [appointment.email],
         );
+
+        if (ojtResult.rowCount === 0) {
+          await client.query(
+            `
+            INSERT INTO ojt_data (
+              application_type,
+              first_name,
+              last_name,
+              email,
+              phone,
+              school_name,
+              hours_needed,
+              course,
+              deployment_date,
+              moved_to_ojt_at,
+              confirmed_at
+            )
+            VALUES ($1, $2, $3, $4, '', $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `,
+            [
+              appointment.application_type,
+              appointment.first_name,
+              appointment.last_name,
+              appointment.email,
+              appointment.school_name,
+              appointment.hours_needed,
+              appointment.course,
+              appointment.deployment_date,
+            ],
+          );
+        }
 
         // Also update the application status to 'accepted' if not already
         if (appointment.application_id) {
