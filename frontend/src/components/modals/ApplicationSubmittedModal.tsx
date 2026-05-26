@@ -32,15 +32,6 @@ export const ApplicationSubmittedModal = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-full bg-white text-emerald-600 transition-colors hover:bg-emerald-50"
-          aria-label="Close modal"
-        >
-          <X className="h-6 w-6" />
-        </button>
-
         <div className="px-8 py-6 text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
             <Image

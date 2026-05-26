@@ -517,6 +517,7 @@ export const OjtInformationSection = ({
                       type="text"
                       aria-required="true"
                       placeholder={field.label}
+                      maxLength={field.id === "hours" ? 3 : undefined}
                       value={data[field.id as keyof OjtInformationData] || ""}
                       onChange={handleTextChange(
                         field.id as keyof OjtInformationData,

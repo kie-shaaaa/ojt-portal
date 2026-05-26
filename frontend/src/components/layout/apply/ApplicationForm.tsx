@@ -11,6 +11,7 @@ import { DataPrivacySection } from "./DataPrivacySection";
 import { FormActionsSection } from "./FormActionsSection";
 import { apiCall } from "@/lib/api";
 import ApplicationSubmittedModal from "../../modals/ApplicationSubmittedModal";
+import ConfirmationModal from "../../modals/ConfirmationModal";
 import { useRouter } from "next/navigation";
 import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
@@ -50,6 +51,7 @@ export const ApplicationForm = (): JSX.Element => {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [personalDetails, setPersonalDetails] = useState<PersonalDetailsData>({
@@ -110,7 +112,9 @@ export const ApplicationForm = (): JSX.Element => {
     }
     if (!ojtInformation.hours.trim()) {
       errors.hours = "Hours to render is required";
-    } else if (parseInt(ojtInformation.hours) < 1) {
+    } else if (parseInt(ojtInformation.hours, 10) > 999) {
+      errors.hours = "Hours to render cannot exceed 999";
+    } else if (parseInt(ojtInformation.hours, 10) < 1) {
       errors.hours = "Hours must be greater than 0";
     }
     if (!ojtInformation.deploymentDate.trim()) {
@@ -159,6 +163,24 @@ export const ApplicationForm = (): JSX.Element => {
     return Object.keys(errors).length === 0;
   }, [dataPrivacy]);
 
+  const handleSubmit = useCallback(() => {
+    const isValid =
+      validatePersonalDetails() &&
+      validateOjtInformation() &&
+      validateDocuments() &&
+      validateDataPrivacy();
+
+    if (!isValid) {
+      return;
+    }
+    setIsConfirmationModalOpen(true);
+  }, [
+    validatePersonalDetails,
+    validateOjtInformation,
+    validateDocuments,
+    validateDataPrivacy,
+  ]);
+
   // Step navigation
   const handleNext = useCallback(() => {
     let isValid = false;
@@ -195,6 +217,8 @@ export const ApplicationForm = (): JSX.Element => {
       setCurrentStep((prev) => (prev + 1) as FormStep);
       setValidationErrors({});
       setSubmitError(null);
+    } else {
+      handleSubmit();
     }
   }, [
     currentStep,
@@ -202,6 +226,7 @@ export const ApplicationForm = (): JSX.Element => {
     validateOjtInformation,
     validateDocuments,
     validateDataPrivacy,
+    handleSubmit,
   ]);
 
   const handlePrevious = useCallback(() => {
@@ -214,17 +239,8 @@ export const ApplicationForm = (): JSX.Element => {
     }
   }, [currentStep, router]);
 
-  const handleSubmit = useCallback(() => {
-    const isValid =
-      validatePersonalDetails() &&
-      validateOjtInformation() &&
-      validateDocuments() &&
-      validateDataPrivacy();
-
-    if (!isValid) {
-      return;
-    }
-
+  const handleConfirmSubmit = useCallback(() => {
+    setIsConfirmationModalOpen(false);
     setSubmitError(null);
 
     const formData = new FormData();
@@ -285,10 +301,6 @@ export const ApplicationForm = (): JSX.Element => {
     personalDetails.lastName,
     personalDetails.phone,
     uploadedDocuments,
-    validateDataPrivacy,
-    validateDocuments,
-    validateOjtInformation,
-    validatePersonalDetails,
   ]);
 
   const handleSuccessModalClose = useCallback(() => {
@@ -358,7 +370,7 @@ export const ApplicationForm = (): JSX.Element => {
           {/* Navigation Buttons */}
           <FormActionsSection
             onPrevious={handlePrevious}
-            onNext={currentStep === 4 ? handleSubmit : handleNext}
+            onNext={handleNext}
             previousDisabled={false}
             nextDisabled={isSubmitting}
             previousLabel={currentStep === 1 ? "Return" : "Previous"}
@@ -372,6 +384,14 @@ export const ApplicationForm = (): JSX.Element => {
           />
         </div>
       </section>
+
+      <ConfirmationModal
+        isOpen={isConfirmationModalOpen}
+        onClose={() => setIsConfirmationModalOpen(false)}
+        onConfirm={handleConfirmSubmit}
+        personalDetails={personalDetails}
+        ojtInformation={ojtInformation}
+      />
 
       <ApplicationSubmittedModal
         isOpen={isSuccessModalOpen}
