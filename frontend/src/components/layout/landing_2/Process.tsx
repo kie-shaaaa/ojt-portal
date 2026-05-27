@@ -213,7 +213,7 @@ function RoadmapNode({
       <div className="relative group">
         <div className="absolute -inset-3 rounded-full bg-[#60a5fa]/30 blur-md opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
 
-        <div className="w-20 h-20 rounded-full bg-white border-4 border-slate-200 shadow-xl shadow-ntc-200/40 flex items-center justify-center relative z-10 text-[#1d4ed8] transition-transform duration-300 group-hover:scale-105 group-hover:border-ntc-200">
+        <div className="w-20 h-20 rounded-full bg-white border-4 border-slate-200 shadow-xl shadow-ntc-200/40 flex items-center justify-center relative z-10 text-[#1d4ed8] transition-transform duration-300 group-hover:scale-105 group-hover:border-[#bfdbfe]">
           {step.icon}
           <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[#1d4ed8] text-white flex items-center justify-center text-xs font-bold border-2 border-white">
             {index + 1}
