@@ -75,3 +75,15 @@ export interface UpdateApplicationDto {
   interviewLocation?: string;
   adminNote?: string;
 }
+
+export interface JwtPayload {
+  sub: number;
+  email: string;
+  account_type: 'admin' | 'employee' | 'user';
+}
+
+export interface AuthenticatedUser {
+  id: number;
+  email: string;
+  account_type: 'admin' | 'employee' | 'user';
+}

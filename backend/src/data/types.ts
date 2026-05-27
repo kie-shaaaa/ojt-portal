@@ -265,7 +265,7 @@ export type LogOther = BaseLog & { action?: string };
 
 export type Logs = {
   id: number;
-  user_id: number;
+  user_id: number | null;
   action: string;
   details: string;
   ip_address: string;
@@ -286,3 +286,9 @@ export type SuccessApiResponse<T = any> = ApiPromise<{
 }>;
 export type DataResponse<T> = ApiPromise<T | null>;
 export type ListResponse<T> = ApiPromise<T[] | null>;
+
+export type AuthenticatedUser = {
+  userId: number;
+  email: string;
+  account_type: 'admin' | 'employee' | 'user';
+};

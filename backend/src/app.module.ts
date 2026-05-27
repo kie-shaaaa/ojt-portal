@@ -16,6 +16,9 @@ import { MailerModule } from './modules/mailer.module';
 import { LogsModule } from './modules/logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronjobService } from './services/cronjob.service';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RequestContextModule } from './modules/request-context.module';
+import { RequestContextInterceptor } from './interceptors/request-context.interceptor';
 
 @Module({
   imports: [
@@ -28,10 +31,20 @@ import { CronjobService } from './services/cronjob.service';
     SchoolsModule,
     CoursesModule,
     LogsModule,
+    RequestContextModule,
     MailerModule,
-    ScheduleModule.forRoot()
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController, DashboardController],
-  providers: [AppService, DashboardService, JwtService, CronjobService],
+  providers: [
+    AppService,
+    DashboardService,
+    JwtService,
+    CronjobService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestContextInterceptor,
+    },
+  ],
 })
 export class AppModule {}

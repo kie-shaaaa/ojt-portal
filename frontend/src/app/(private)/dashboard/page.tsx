@@ -30,15 +30,6 @@ export default function DashboardPage(): ReactNode {
     return null;
   }
 
-  useEffect(() => {
-    const successMessage = sessionStorage.getItem("login_success_toast");
-
-    if (!successMessage) return;
-
-    sessionStorage.removeItem("login_success_toast");
-    toast.success(successMessage);
-  }, []);
-
   return (
     <main
       className="relative flex w-full flex-col items-start gap-6 p-8"

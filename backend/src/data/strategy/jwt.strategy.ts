@@ -1,23 +1,48 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy, type JwtFromRequestFunction } from 'passport-jwt';
+import { AuthenticatedUser, JwtPayload } from '../interfaces';
+
+type PassportJwtStrategyOptions = {
+  jwtFromRequest: JwtFromRequestFunction;
+  secretOrKey: string;
+};
+
+type PassportJwtStrategyConstructor = new (
+  options: PassportJwtStrategyOptions,
+) => unknown;
+
+const PassportJwtStrategy =
+  Strategy as unknown as PassportJwtStrategyConstructor;
+
+const bearerTokenExtractor: JwtFromRequestFunction = (
+  request: {
+    headers?: { authorization?: string };
+  } | null,
+): string | null => {
+  const authorizationHeader = request?.headers?.authorization;
+
+  if (!authorizationHeader) return null;
+
+  const [scheme, token] = authorizationHeader.split(' ');
+
+  if (scheme?.toLowerCase() !== 'bearer' || !token) return null;
+
+  return token;
+};
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    super({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.JWT_SECRET,
-    });
+    const strategyOptions: PassportJwtStrategyOptions = {
+      jwtFromRequest: bearerTokenExtractor,
+      secretOrKey: process.env.JWT_SECRET as string,
+    };
+
+    super(strategyOptions);
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async validate(payload: any) {
-    // whatever you return becomes req.user
+  validate(payload: JwtPayload): AuthenticatedUser {
     return {
       id: payload.sub,
       email: payload.email,

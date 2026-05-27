@@ -274,7 +274,6 @@ export class AuthService {
       await this.logsService.logPasswordReset({
         userId: user.id,
         method: 'password_change',
-        ipAddress: undefined,
       });
     } catch (error) {
       console.error('Password change failed', error);
@@ -283,7 +282,6 @@ export class AuthService {
           userId: user.id,
           action: 'Password Reset Failed',
           details: `Failed to reset password for ${email}`,
-          ipAddress: undefined,
         })
         .catch((err) =>
           console.error('Failed to log password reset error', err),
