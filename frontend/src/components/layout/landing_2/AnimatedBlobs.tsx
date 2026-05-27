@@ -16,7 +16,7 @@ export function AnimatedBlobs() {
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute top-[-10%] left-[-5%] w-[50vw] max-w-[600px] h-[50vw] max-h-[600px] rounded-full bg-ntc-300/20 blur-[80px] will-change-transform"
+        className="absolute top-[-10%] left-[-5%] w-[50vw] max-w-[600px] h-[50vw] max-h-[600px] rounded-full bg-[#93c5fd]/20 blur-[80px] will-change-transform"
         style={{ backfaceVisibility: 'hidden' }}
       />
       <MotionDiv

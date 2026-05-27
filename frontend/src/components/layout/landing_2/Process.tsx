@@ -67,12 +67,12 @@ export function Process() {
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ntc-50 text-ntc-700 text-sm font-semibold mb-4 border border-ntc-100 animate-[fadeUp_0.6s_ease-out_both]">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#eff6ff] text-[#1d4ed8] text-sm font-semibold mb-4 border border-[#dbeafe] animate-[fadeUp_0.6s_ease-out_both]">
             Your Roadmap
           </div>
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight animate-[fadeUp_0.6s_ease-out_0.1s_both]">
             A Simple Path from{' '}
-            <span className="text-ntc-700">Inquiry to Internship</span>
+            <span className="text-[#1d4ed8]">Inquiry to Internship</span>
           </h2>
           <p className="text-lg text-slate-600 animate-[fadeUp_0.6s_ease-out_0.2s_both]">
             Five clear steps. Take it at your own pace — we'll be here at every
@@ -211,11 +211,11 @@ function RoadmapNode({
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
       <div className="relative group">
-        <div className="absolute -inset-3 rounded-full bg-ntc-400/30 blur-md opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="absolute -inset-3 rounded-full bg-[#60a5fa]/30 blur-md opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
 
-        <div className="w-20 h-20 rounded-full bg-white border-4 border-slate-200 shadow-xl shadow-ntc-200/40 flex items-center justify-center relative z-10 text-ntc-700 transition-transform duration-300 group-hover:scale-105 group-hover:border-ntc-200">
+        <div className="w-20 h-20 rounded-full bg-white border-4 border-slate-200 shadow-xl shadow-ntc-200/40 flex items-center justify-center relative z-10 text-[#1d4ed8] transition-transform duration-300 group-hover:scale-105 group-hover:border-[#bfdbfe]">
           {step.icon}
-          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-ntc-700 text-white flex items-center justify-center text-xs font-bold border-2 border-white">
+          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[#1d4ed8] text-white flex items-center justify-center text-xs font-bold border-2 border-white">
             {index + 1}
           </div>
         </div>
@@ -246,7 +246,7 @@ function RoadmapMobile({ steps }: { steps: Step[] }) {
           whileInView={{ height: '100%' }}
           viewport={{ once: true }}
           transition={{ duration: 1.8, ease: 'easeInOut' }}
-          className="w-full h-full bg-gradient-to-b from-ntc-700 via-ntc-500 to-sky-400 rounded-full will-change-transform"
+          className="w-full h-full bg-gradient-to-b from-[#1d4ed8] via-[#3b82f6] to-sky-400 rounded-full will-change-transform"
           style={{ backfaceVisibility: 'hidden' }}
         />
       </div>
@@ -260,11 +260,11 @@ function RoadmapMobile({ steps }: { steps: Step[] }) {
           viewport={{ once: true }}
           transition={{ delay: i * 0.1 }}
         >
-          <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-white border-4 border-ntc-100 shadow-md flex items-center justify-center text-ntc-700 -translate-x-1/2 z-10">
+          <div className="absolute left-0 top-0 w-12 h-12 rounded-full bg-white border-4 border-[#dbeafe] shadow-md flex items-center justify-center text-[#1d4ed8] -translate-x-1/2 z-10">
             {step.icon}
           </div>
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-            <div className="text-xs font-bold text-ntc-600 uppercase tracking-wider mb-1">
+            <div className="text-xs font-bold text-[#2563eb] uppercase tracking-wider mb-1">
               Step {i + 1}
             </div>
             <h3 className="text-lg font-bold text-slate-900 mb-2">
