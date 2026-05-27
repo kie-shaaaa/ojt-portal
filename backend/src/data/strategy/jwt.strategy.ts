@@ -1,19 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, type Type } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, type JwtFromRequestFunction } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 import { AuthenticatedUser, JwtPayload } from '../interfaces';
 
-type PassportJwtStrategyOptions = {
-  jwtFromRequest: JwtFromRequestFunction;
-  secretOrKey: string;
-};
+const PassportJwtStrategy = Strategy as Type<unknown>;
 
-type PassportJwtStrategyConstructor = new (
-  options: PassportJwtStrategyOptions,
-) => unknown;
-
-const PassportJwtStrategy =
-  Strategy as unknown as PassportJwtStrategyConstructor;
+type JwtFromRequestFunction = (
+  request: {
+    headers?: { authorization?: string };
+  } | null,
+) => string | null;
 
 const bearerTokenExtractor: JwtFromRequestFunction = (
   request: {
@@ -32,14 +28,12 @@ const bearerTokenExtractor: JwtFromRequestFunction = (
 };
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtStrategy extends PassportStrategy(PassportJwtStrategy, 'jwt') {
   constructor() {
-    const strategyOptions: PassportJwtStrategyOptions = {
+    super({
       jwtFromRequest: bearerTokenExtractor,
-      secretOrKey: process.env.JWT_SECRET as string,
-    };
-
-    super(strategyOptions);
+      secretOrKey: process.env.JWT_SECRET ?? '',
+    });
   }
 
   validate(payload: JwtPayload): AuthenticatedUser {

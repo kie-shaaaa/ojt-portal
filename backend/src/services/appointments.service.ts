@@ -225,7 +225,7 @@ export class AppointmentsService {
       if (appointment.application_id) {
         await this.logsService
           .logApplicationStatusChange({
-            oldStatus: appointment.status,
+            oldStatus: appointment.status ?? undefined,
             newStatus: 'under_review',
           })
           .catch((err) =>
@@ -243,8 +243,8 @@ export class AppointmentsService {
         if (appointment.email) {
           const mailSent = await this.mailerService.statusUpdateEmail({
             to: appointment.email,
-            firstName: appointment.first_name,
-            lastName: appointment.last_name,
+            firstName: appointment.first_name ?? '',
+            lastName: appointment.last_name ?? '',
             applicationId: appointment.application_id,
             status: 'under_review',
             adminNote: trimmedReason || undefined,

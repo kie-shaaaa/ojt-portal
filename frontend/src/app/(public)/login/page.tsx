@@ -6,7 +6,7 @@ import { NavBar } from "../../../components/layout/NavBar";
 import { JSX, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export const LoginPage = (): JSX.Element => {
+export const LoginPage = (): JSX.Element | null => {
   const router = useRouter();
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
 

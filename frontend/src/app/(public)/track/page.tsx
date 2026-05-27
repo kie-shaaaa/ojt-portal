@@ -1,6 +1,14 @@
 "use client";
 
-import { JSX, useEffect, useId, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  JSX,
+  Suspense,
+  useEffect,
+  useId,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -116,7 +124,8 @@ function mapApplicationRecord(
     lastName: application.last_name,
     phone: application.phone,
     applicationType:
-      application.other_application_type ?? application.application_type.toUpperCase(),
+      application.other_application_type ??
+      application.application_type.toUpperCase(),
     submissionDate: application.submission_date,
     status: application.status,
     positionApplied: application.position_applied ?? undefined,
@@ -160,7 +169,10 @@ async function fetchApplicationRecord(id: string, email: string) {
 
 // Enhanced diagnostic fetch: when an exact id+email match isn't found, call
 // the server for id-only and email-only matches to provide clearer feedback.
-async function fetchApplicationRecordWithDiagnostics(id: string, email: string) {
+async function fetchApplicationRecordWithDiagnostics(
+  id: string,
+  email: string,
+) {
   const normalizedEmail = email.toLowerCase();
   const numericId = Number(id);
 
@@ -415,8 +427,12 @@ function AcceptanceConfirmModal({
         </div>
 
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-          <p className="font-semibold text-slate-900">{application.firstName} {application.lastName}</p>
-          <p className="mt-1">Application ID: {formatApplicationId(application.id)}</p>
+          <p className="font-semibold text-slate-900">
+            {application.firstName} {application.lastName}
+          </p>
+          <p className="mt-1">
+            Application ID: {formatApplicationId(application.id)}
+          </p>
           <p>Email: {application.email}</p>
           <p className="mt-1 text-amber-700">Status: Pending Accept</p>
         </div>
@@ -583,7 +599,7 @@ function ResultSection({
   );
 }
 
-export default function TrackPage(): JSX.Element {
+function TrackPageContent(): JSX.Element {
   const searchParams = useSearchParams();
   const applicationIdInputId = useId();
   const emailInputId = useId();
@@ -643,7 +659,10 @@ export default function TrackPage(): JSX.Element {
 
       setResult(matchedApplication);
 
-      if (openConfirmationModal && matchedApplication.status === "pending accept") {
+      if (
+        openConfirmationModal &&
+        matchedApplication.status === "pending accept"
+      ) {
         setIsAcceptanceModalOpen(true);
       }
     } catch (fetchError) {
@@ -665,7 +684,9 @@ export default function TrackPage(): JSX.Element {
           showTrackError(fetchError.message);
         }
       } else {
-        showTrackError("We couldn't load that application right now. Please try again.");
+        showTrackError(
+          "We couldn't load that application right now. Please try again.",
+        );
       }
     } finally {
       setIsLoading(false);
@@ -680,7 +701,9 @@ export default function TrackPage(): JSX.Element {
     const numericId = normalizeApplicationId(applicationId);
 
     if (!numericId || !email.trim()) {
-      showTrackError("Please load your application before confirming acceptance.");
+      showTrackError(
+        "Please load your application before confirming acceptance.",
+      );
       return;
     }
 
@@ -699,7 +722,9 @@ export default function TrackPage(): JSX.Element {
         current ? { ...current, status: "accepted" } : current,
       );
       setIsAcceptanceModalOpen(false);
-      toast.success("Acceptance confirmed. Your orientation email has been sent.");
+      toast.success(
+        "Acceptance confirmed. Your orientation email has been sent.",
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to confirm acceptance";
@@ -859,5 +884,13 @@ export default function TrackPage(): JSX.Element {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function TrackPage(): JSX.Element {
+  return (
+    <Suspense fallback={null}>
+      <TrackPageContent />
+    </Suspense>
   );
 }
