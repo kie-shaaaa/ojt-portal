@@ -36,6 +36,18 @@ export interface FileUploadResult {
   uploaded_at: string;
 }
 
+interface FileUploadRow {
+  id: number;
+  file_path: string;
+}
+
+interface ApplicationApplicantRow {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
 @Injectable()
 export class FileUploadsService {
   private readonly logger = new Logger(FileUploadsService.name);
@@ -140,7 +152,6 @@ export class FileUploadsService {
           userId: 0,
           filename: file.originalname,
           size: file.size,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log file upload', err));
 
@@ -150,7 +161,9 @@ export class FileUploadsService {
           if (file.cleanup) file.cleanup();
           else await unlink(file.path).catch(() => undefined);
         }
-      } catch {}
+      } catch {
+        this.logger.debug('Failed to clean up temporary upload file');
+      }
 
       return result;
     } catch (error) {
@@ -164,7 +177,11 @@ export class FileUploadsService {
           if (file.cleanup) file.cleanup();
           else await unlink(file.path).catch(() => undefined);
         }
-      } catch {}
+      } catch {
+        this.logger.debug(
+          'Failed to clean up temporary upload file after upload failure',
+        );
+      }
 
       throw error;
     }
@@ -249,7 +266,7 @@ export class FileUploadsService {
     try {
       const dbClient = this.dbService.getClient();
       // Step 1: Get file path from database
-      const result = await dbClient.query(
+      const result = await dbClient.query<FileUploadRow>(
         'SELECT file_path FROM file_uploads WHERE id = $1',
         [fileId],
       );
@@ -285,9 +302,9 @@ export class FileUploadsService {
    */
   async deleteFiles(fileIds: number[], userId: number) {
     try {
-      const uniqueFileIds = [...new Set(fileIds.map((id) => Number(id)))].filter(
-        (id) => Number.isFinite(id) && id > 0,
-      );
+      const uniqueFileIds = [
+        ...new Set(fileIds.map((id) => Number(id))),
+      ].filter((id) => Number.isFinite(id) && id > 0);
 
       if (uniqueFileIds.length === 0) {
         throw new BadRequestException('At least one file ID is required');
@@ -314,11 +331,15 @@ export class FileUploadsService {
         const foundIds = new Set(result.rows.map((row) => row.id));
         const missingId = uniqueFileIds.find((id) => !foundIds.has(id));
         throw new BadRequestException(
-          missingId ? `File not found: ${missingId}` : 'One or more files were not found',
+          missingId
+            ? `File not found: ${missingId}`
+            : 'One or more files were not found',
         );
       }
 
-      const applicationIds = new Set(result.rows.map((row) => row.application_id));
+      const applicationIds = new Set(
+        result.rows.map((row) => row.application_id),
+      );
       if (applicationIds.size !== 1) {
         throw new BadRequestException(
           'Selected files must belong to the same application',
@@ -335,16 +356,23 @@ export class FileUploadsService {
       const applicantRes =
         await this.applicationsService.getApplicationByIdOrEmail(applicationId);
 
-      const applicantData = Array.isArray(applicantRes.data)
-        ? applicantRes.data[0]
-        : applicantRes.data;
+      const applicantData = (
+        Array.isArray(applicantRes.data)
+          ? applicantRes.data[0]
+          : applicantRes.data
+      ) as ApplicationApplicantRow | undefined;
 
       for (const fileRow of result.rows) {
         // Step 2: Delete from Supabase
-        await this.supabaseService.remove(this.SUPABASE_BUCKET, fileRow.file_path);
+        await this.supabaseService.remove(
+          this.SUPABASE_BUCKET,
+          fileRow.file_path,
+        );
 
         // Step 3: Delete from database
-        await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [fileRow.id]);
+        await dbClient.query('DELETE FROM file_uploads WHERE id = $1', [
+          fileRow.id,
+        ]);
 
         this.logger.log(`File deleted: ${fileRow.file_path}`);
 
@@ -353,7 +381,6 @@ export class FileUploadsService {
           .logFileDeleted({
             userId: userId,
             filename: fileRow.file_path,
-            ipAddress: undefined,
           })
           .catch((err) => console.error('Failed to log file deletion', err));
       }

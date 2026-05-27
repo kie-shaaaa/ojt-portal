@@ -74,7 +74,6 @@ const wrapEmail = (header: string, body: string) =>
 const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
 
 const contactAdminAddress = process.env.CONTACT_ADMIN_EMAIL?.trim() || '';
-const frontendBaseUrl = process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
 
 // clearer fallback text used when date/time details are not yet available
 const tbaText = 'To be announced — details will be sent in a follow-up email.';
@@ -171,17 +170,12 @@ export class MailerService {
     }
   }
 
-  async onModuleDestroy() {
-    if (
-      this.transporter &&
-      typeof (this.transporter as any).close === 'function'
-    ) {
-      try {
-        (this.transporter as any).close();
-        this.logger.log('SMTP transporter closed');
-      } catch (e) {
-        this.logger.warn('Failed closing transporter');
-      }
+  onModuleDestroy() {
+    try {
+      this.transporter?.close();
+      this.logger.log('SMTP transporter closed');
+    } catch {
+      this.logger.warn('Failed closing transporter');
     }
   }
 
@@ -325,13 +319,7 @@ export class MailerService {
   async acceptanceConfirmationEmail(
     dto: AcceptanceConfirmationEmailDto,
   ): Promise<boolean> {
-    const {
-      to,
-      firstName,
-      lastName,
-      applicationId,
-      confirmUrl,
-    } = dto;
+    const { to, firstName, lastName, applicationId, confirmUrl } = dto;
 
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
@@ -348,9 +336,12 @@ export class MailerService {
         <strong>Status:</strong> Pending Acceptance
       `)}
 
-      ${alertBox(`
+      ${alertBox(
+        `
         <strong>Important:</strong> Please confirm that you are accepting the internship by clicking the button below. After you confirm, we will send your orientation schedule email.
-      `, '#d97706')}
+      `,
+        '#d97706',
+      )}
 
       <div style="text-align:center;margin:32px 0;">
         <a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;">Confirm Acceptance</a>
@@ -760,7 +751,14 @@ export class MailerService {
     appointmentDate: string | Date;
     adminNote?: string;
   }): Promise<boolean> {
-    const { to, firstName, lastName, applicationId, appointmentDate, adminNote } = dto;
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      appointmentDate,
+      adminNote,
+    } = dto;
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const expiredAt = renderValue(appointmentDate);
@@ -809,8 +807,10 @@ export class MailerService {
       '',
       'Your interview appointment has expired and your application has been moved back to under review.',
       '',
-      adminNote ? `Note: ${adminNote}
-` : '',
+      adminNote
+        ? `Note: ${adminNote}
+`
+        : '',
       'David M. Zaldua',
       'Administrative Officer IV | Human Resource Division',
       '',

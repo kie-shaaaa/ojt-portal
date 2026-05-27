@@ -28,13 +28,22 @@ export async function createLogs(client: Pool) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS logs (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES user_accounts(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES user_accounts(id) ON DELETE CASCADE,
       action log_action NOT NULL,
       details TEXT,
       ip_address VARCHAR(45),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  await client
+    .query(
+      `
+    ALTER TABLE IF EXISTS logs
+    ALTER COLUMN user_id DROP NOT NULL;
+  `,
+    )
+    .catch(() => undefined);
 
   await client
     .query(
@@ -65,5 +74,4 @@ export async function createLogs(client: Pool) {
     .catch(() => {
       // Index may already exist, ignore error
     });
-
 }

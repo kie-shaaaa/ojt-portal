@@ -1,13 +1,27 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Body,
   Controller,
   Post,
   BadRequestException,
-  Ip,
+  Req,
 } from '@nestjs/common';
 import type { AccountRegister, ChangePasswordResponse } from '../data/types';
 import { AuthService } from '../services/auth.service';
+import type { FastifyRequest } from 'fastify';
+
+function extractClientIp(request: FastifyRequest): string | undefined {
+  const forwardedFor = request.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  const realIp = request.headers['x-real-ip'];
+  if (typeof realIp === 'string' && realIp.trim()) {
+    return realIp.trim();
+  }
+
+  return request.ip || request.socket?.remoteAddress || undefined;
+}
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -15,7 +29,7 @@ export class AuthController {
   @Post('signin')
   async signIn(
     @Body() body: AccountRegister,
-    @Ip() ipAddress: string,
+    @Req() request: FastifyRequest,
   ): Promise<{
     access_token: string;
     user: {
@@ -29,11 +43,7 @@ export class AuthController {
         throw new BadRequestException('Email and password are required');
       }
 
-      let clientIp = ipAddress;
-      if (clientIp === '::1' || clientIp === '127.0.0.1' || !clientIp) {
-        clientIp = '203.0.113.195';
-      }
-      body.ipAddress = clientIp;
+      body.ipAddress = extractClientIp(request);
 
       const result = await this.authService.signInAccount(
         body.email,

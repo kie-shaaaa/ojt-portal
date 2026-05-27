@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type ReactElement, useId } from "react";
+import { type ChangeEvent, type ReactElement, useId, type KeyboardEvent } from "react";
 import { FileText, AlertCircle } from "lucide-react";
 
 interface PersonalDetailsData {
@@ -26,6 +26,12 @@ export const PersonalDetailsSection = ({
   const emailId = useId();
   const phoneId = useId();
   const emailHintId = useId();
+
+  const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (/[0-9]/.test(event.key)) {
+      event.preventDefault();
+    }
+  };
 
   const formatPhoneNumber = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -85,6 +91,8 @@ export const PersonalDetailsSection = ({
                 name="firstName"
                 value={data.firstName}
                 onChange={handleChange("firstName")}
+                onKeyDown={handleNameKeyDown}
+                maxLength={25}
                 placeholder="Enter your first name"
                 autoComplete="given-name"
                 required
@@ -125,6 +133,8 @@ export const PersonalDetailsSection = ({
                 name="lastName"
                 value={data.lastName}
                 onChange={handleChange("lastName")}
+                onKeyDown={handleNameKeyDown}
+                maxLength={25}
                 placeholder="Enter your last name"
                 autoComplete="family-name"
                 required

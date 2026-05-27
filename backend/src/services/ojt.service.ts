@@ -97,7 +97,6 @@ export class OjtService {
           userId: 0,
           action: 'Application Transferred to OJT',
           details: `Application ${applcationId} transferred to OJT by ${applicationData.rows[0].first_name} ${applicationData.rows[0].last_name}`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log OJT transfer', err));
 
@@ -134,7 +133,6 @@ export class OjtService {
           userId: 0,
           action: 'OJT Record Deleted',
           details: `OJT record ${id} has been deleted`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log OJT deletion', err));
 
@@ -196,13 +194,11 @@ export class OjtService {
 
       const res = await client.query(query, values);
 
-      // Log OJT update (system operation) — use generic 'other' action to avoid enum mismatch
       await this.logsService
         .logOther({
           userId: 0,
           action: 'other',
           details: `OJT record ${id} updated`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log OJT update', err));
 

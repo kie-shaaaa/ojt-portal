@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
+import { RequestContextService } from './request-context.service';
 import {
   LogSignIn,
   LogChangePassword,
@@ -25,32 +26,28 @@ import { throwAppError } from '../../utils/handlers';
 
 @Injectable()
 export class LogsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly requestContext: RequestContextService,
+  ) {}
 
-  private fallbackUserIdPromise: Promise<number> | null = null;
-
-  private async resolveFallbackUserId(): Promise<number> {
-    if (!this.fallbackUserIdPromise) {
-      this.fallbackUserIdPromise = (async () => {
-        const client = this.databaseService.getClient();
-        const result = await client.query<{ id: number }>(
-          `
-            SELECT id
-            FROM user_accounts
-            ORDER BY id ASC
-            LIMIT 1
-          `,
-        );
-
-        if (!result.rows[0]?.id) {
-          throw new Error('No user account available for system logging');
-        }
-
-        return result.rows[0].id;
-      })();
+  private resolveUserId(userId?: number): number | null {
+    if (typeof userId === 'number' && userId > 0) {
+      return userId;
     }
 
-    return this.fallbackUserIdPromise;
+    const contextUserId = this.requestContext.getUserId();
+    if (typeof contextUserId === 'number' && contextUserId > 0) {
+      return contextUserId;
+    }
+
+    return null;
+  }
+
+  private resolveIpAddress(ipAddress?: string): string | null {
+    const candidate =
+      ipAddress?.trim() || this.requestContext.getIpAddress()?.trim();
+    return candidate || null;
   }
 
   async fetchAllLogs(limit: number, page: number): Promise<FetchAllLogs> {
@@ -97,7 +94,11 @@ export class LogsService {
         INSERT INTO logs (user_id, action, details, ip_address)
         VALUES ($1, 'Logged In', $2, $3);
         `,
-        [logs.userId, status, logs.ipAddress],
+        [
+          this.resolveUserId(logs.userId),
+          status,
+          this.resolveIpAddress(logs.ipAddress),
+        ],
       );
     } catch (error) {
       console.error('Failed to log sign-in event', error);
@@ -112,7 +113,11 @@ export class LogsService {
         INSERT INTO logs (user_id, action, details, ip_address)
         VALUES ($1, 'Password Reset', $2, $3);
         `,
-        [log.userId, log.details, log.ipAddress],
+        [
+          this.resolveUserId(log.userId),
+          log.details,
+          this.resolveIpAddress(log.ipAddress),
+        ],
       );
     } catch (error) {
       console.error('Failed to log password change', error);
@@ -127,15 +132,19 @@ export class LogsService {
   ) {
     const client = this.databaseService.getClient();
     try {
-      const resolvedUserId =
-        userId && userId > 0 ? userId : await this.resolveFallbackUserId();
+      const resolvedUserId = this.resolveUserId(userId);
 
       await client.query(
         `
         INSERT INTO logs (user_id, action, details, ip_address)
         VALUES ($1, $2, $3, $4);
         `,
-        [resolvedUserId, action, details || null, ipAddress || null],
+        [
+          resolvedUserId,
+          action,
+          details || null,
+          this.resolveIpAddress(ipAddress),
+        ],
       );
     } catch (error) {
       console.error(`Failed to insert log (${action})`, error);

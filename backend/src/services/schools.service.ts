@@ -52,7 +52,6 @@ export class SchoolService {
           userId: 0,
           action: 'School Created',
           details: `School '${school}' has been inserted`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log school creation', err));
 

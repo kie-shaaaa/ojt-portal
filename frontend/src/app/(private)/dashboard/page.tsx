@@ -1,22 +1,34 @@
 "use client";
 
-import { JSX, useEffect } from "react";
+import { useEffect, ReactNode, useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { ApplicationsHeaderSection } from "@/components/layout/private/Dashboard/ApplicationsHeaderSection";
 import { ApplicationChartsSection } from "@/components/layout/private/Dashboard/ApplicationCharts";
 import { ApplicationDetailsSection } from "@/components/layout/private/Dashboard/ApplicationDetailsSection";
 import { ApplicationStatsSection } from "@/components/layout/private/Dashboard/ApplicationStatsSection";
 
-export default function DashboardPage(): JSX.Element {
+export default function DashboardPage(): ReactNode {
+  const router = useRouter();
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+
   useEffect(() => {
-    const successMessage = sessionStorage.getItem("login_success_toast");
+    const accessToken =
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token");
 
-    if (!successMessage) return;
+    if (!accessToken) {
+      router.replace("/login");
+      return;
+    }
 
-    sessionStorage.removeItem("login_success_toast");
-    toast.success(successMessage);
-  }, []);
+    setIsCheckingAccess(false);
+  }, [router]);
+
+  if (isCheckingAccess) {
+    return null;
+  }
 
   return (
     <main

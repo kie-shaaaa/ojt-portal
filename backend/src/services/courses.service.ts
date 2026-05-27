@@ -52,7 +52,6 @@ export class CourseService {
           userId: 0,
           action: 'Course Created',
           details: `Course '${course}' has been inserted`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log course creation', err));
 
