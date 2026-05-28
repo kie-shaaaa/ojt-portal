@@ -42,9 +42,9 @@ export function Hero() {
   return (
     <section
       id="home"
-      className="relative pt-32 pb-20 lg:pt-44 lg:pb-32 overflow-hidden min-h-screen flex items-center bg-ntc-700"
+      className="relative pt-32 pb-20 lg:pt-44 lg:pb-32 overflow-hidden min-h-screen flex items-center bg-[#1d4ed8]"
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-ntc-700 via-ntc-800 to-ntc-950" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1d4ed8] via-[#1e40af] to-[#172554]" />
 
       <div className="absolute inset-0">
         <img
@@ -53,11 +53,11 @@ export function Hero() {
           aria-hidden="true"
           className="w-full h-full object-cover opacity-20"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-ntc-700/55 via-ntc-800/65 to-ntc-950/80" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1d4ed8]/55 via-[#1e40af]/65 to-[#172554]/80" />
       </div>
 
       {/* Animated glows */}
-      <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-ntc-500/30 rounded-full blur-[80px] transform-gpu" />
+      <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-[#3b82f6]/30 rounded-full blur-[80px] transform-gpu" />
       <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-sky-500/20 rounded-full blur-[100px] transform-gpu" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
@@ -73,7 +73,7 @@ export function Hero() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-semibold mb-6 border border-white/20"
             >
               <span className="relative flex h-2 w-2">
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-ntc-200"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#bfdbfe]"></span>
               </span>
               OJT & Internship Portal · HR Department
             </MotionDiv>
@@ -83,14 +83,14 @@ export function Hero() {
               className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6"
             >
               Start Your Internship Journey in{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-ntc-200 to-sky-200">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#bfdbfe] to-sky-200">
                 Public Service
               </span>
             </MotionH1>
 
             <MotionP
               variants={itemVariants}
-              className="text-lg lg:text-xl text-ntc-100 mb-10 leading-relaxed max-w-xl"
+              className="text-lg lg:text-xl text-[#dbeafe] mb-10 leading-relaxed max-w-xl"
             >
               Discover meaningful opportunities at the National
               Telecommunications Commission. Inquire first about our programs,
@@ -103,7 +103,7 @@ export function Hero() {
             >
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center gap-2 bg-white text-ntc-700 px-8 py-4 rounded-xl font-semibold hover:bg-ntc-50 hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#1d4ed8] px-8 py-4 rounded-xl font-semibold hover:bg-[#eff6ff] hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
               >
                 Send an Inquiry
                 <ArrowRightIcon className="w-5 h-5" />
@@ -138,7 +138,7 @@ export function Hero() {
                 alt="Professionals collaborating in a modern government office"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-ntc-950/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#172554]/60 via-transparent to-transparent" />
             </MotionDiv>
 
             <div className="absolute top-[8%] -right-4 bg-white/95 backdrop-blur-md p-4 rounded-2xl flex items-center gap-3 z-30 shadow-2xl shadow-ntc-950/40 border border-white/40 transform-gpu">
@@ -169,7 +169,7 @@ export function Hero() {
             </div>
 
             <div className="absolute bottom-[40%] -right-8 bg-white/95 backdrop-blur-md p-4 rounded-2xl flex items-center gap-3 z-30 shadow-2xl shadow-ntc-950/40 border border-white/40 transform-gpu">
-              <div className="bg-ntc-100 p-2 rounded-lg text-ntc-700">
+              <div className="bg-[#dbeafe] p-2 rounded-lg text-[#1d4ed8]">
                 <BuildingIcon className="w-5 h-5" />
               </div>
               <span className="font-semibold text-sm text-slate-800">

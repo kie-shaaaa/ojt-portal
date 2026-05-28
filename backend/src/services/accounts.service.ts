@@ -7,9 +7,6 @@ import { LogsService } from './logs.service';
 
 @Injectable()
 export class AccountsService {
-  resetPassword(id: number, newPassword: string) {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
@@ -50,7 +47,6 @@ export class AccountsService {
         .logUserCreated({
           userId: newAccount.id,
           details: `Account created for ${account.email} with type ${account.account_type}`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log user creation', err));
 
@@ -126,7 +122,6 @@ export class AccountsService {
           .logUserUpdated({
             userId: id,
             changes: changes.join(', '),
-            ipAddress: undefined,
           })
           .catch((err) => console.error('Failed to log user update', err));
       }
@@ -239,7 +234,6 @@ export class AccountsService {
         .logUserDeleted({
           userId: id,
           details: `User account deleted`,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log user deletion', err));
 
@@ -290,7 +284,6 @@ export class AccountsService {
         .logAccountLock({
           userId: id,
           reason: 'Account disabled',
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log account lock', err));
 
@@ -331,7 +324,6 @@ export class AccountsService {
         .logPasswordReset({
           userId: id,
           method: 'admin_reset',
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log password reset', err));
 

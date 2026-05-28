@@ -146,7 +146,6 @@ export class DashboardService {
           key: 'application_settings',
           oldValue: 'previous',
           newValue: settings.state,
-          ipAddress: undefined,
         })
         .catch((err) => console.error('Failed to log settings update', err));
 

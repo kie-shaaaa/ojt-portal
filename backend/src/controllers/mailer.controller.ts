@@ -51,5 +51,4 @@ export class MailerController {
       senderSent: result.senderSent,
     };
   }
-
 }

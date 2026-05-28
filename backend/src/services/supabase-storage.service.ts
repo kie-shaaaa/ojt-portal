@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Injectable, Logger } from '@nestjs/common';
+import { Readable } from 'stream';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY =
@@ -64,35 +65,18 @@ export class SupabaseStorage {
   ) {
     if (!bucket || !path) throw new Error('bucket and path are required');
 
-    // Supabase JS may accept streams in Node environments; cast to any
-    const { data, error } = await (this.client.storage as any)
-      .from(bucket)
-      .upload(path, stream as any, {
-        contentType,
-        upsert: true,
-      });
+    const chunks: Uint8Array[] = [];
 
-    if (error) {
-      this.logger.error(`Upload error: ${error.message}`, error);
-
-      if (/bucket not found/i.test(error.message)) {
-        this.logger.log(`Creating bucket: ${bucket}`);
-        await this.ensureBucketExists(bucket, true);
-        const { data: retryData, error: retryError } = await (
-          this.client.storage as any
-        )
-          .from(bucket)
-          .upload(path, stream as any, { contentType, upsert: true });
-
-        if (retryError) throw retryError;
-        this.logger.log(`File uploaded successfully: ${path}`);
-        return retryData;
-      }
-      throw error;
+    for await (const chunk of stream as Readable) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
     }
 
-    this.logger.log(`File uploaded successfully: ${path}`);
-    return data;
+    return await this.uploadBuffer(
+      bucket,
+      path,
+      Buffer.concat(chunks),
+      contentType,
+    );
   }
 
   // Ensure bucket exists

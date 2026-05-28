@@ -6,6 +6,28 @@ import { LogsService } from './logs.service';
 import { MailerService } from './mailer.service';
 import { SuccessHandler, throwAppError } from '../../utils/handlers';
 
+interface AppointmentCancellationRow {
+  application_id: number | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  status: string | null;
+  admin_notes: string | null;
+}
+
+interface AppointmentCompletionRow {
+  type: AppointmentType;
+  application_id: number | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  school_name: string | null;
+  hours_needed: number | null;
+  course: string | null;
+  deployment_date: string | null;
+  application_type: string | null;
+}
+
 @Injectable()
 export class AppointmentsService {
   constructor(
@@ -80,8 +102,7 @@ export class AppointmentsService {
           .logOther({
             userId: 0,
             action: 'Appointment Updated',
-            details: `Appointment updated for application ${applicationId} to ${appointmentDate}`,
-            ipAddress: undefined,
+            details: `Appointment updated for application ${applicationId} to ${appointmentDate.toISOString()}`,
           })
           .catch((err) =>
             console.error('Failed to log appointment update', err),
@@ -111,8 +132,7 @@ export class AppointmentsService {
         .logOther({
           userId: 0,
           action: 'Appointment Created',
-          details: `Appointment created for application ${applicationId} on ${appointmentDate}`,
-          ipAddress: undefined,
+          details: `Appointment created for application ${applicationId} on ${appointmentDate.toISOString()}`,
         })
         .catch((err) =>
           console.error('Failed to log appointment creation', err),
@@ -157,7 +177,8 @@ export class AppointmentsService {
         throwAppError('not_found', 'Appointment not found');
       }
 
-      const appointment = appointmentResult.rows[0];
+      const appointment = appointmentResult
+        .rows[0] as AppointmentCancellationRow;
 
       await client.query('BEGIN');
 
@@ -204,9 +225,8 @@ export class AppointmentsService {
       if (appointment.application_id) {
         await this.logsService
           .logApplicationStatusChange({
-            oldStatus: appointment.status,
+            oldStatus: appointment.status ?? undefined,
             newStatus: 'under_review',
-            ipAddress: undefined,
           })
           .catch((err) =>
             console.error('Failed to log application status change', err),
@@ -216,7 +236,6 @@ export class AppointmentsService {
           await this.logsService
             .logAdminNotesAdded({
               notes: trimmedReason,
-              ipAddress: undefined,
             })
             .catch((err) => console.error('Failed to log admin notes', err));
         }
@@ -224,8 +243,8 @@ export class AppointmentsService {
         if (appointment.email) {
           const mailSent = await this.mailerService.statusUpdateEmail({
             to: appointment.email,
-            firstName: appointment.first_name,
-            lastName: appointment.last_name,
+            firstName: appointment.first_name ?? '',
+            lastName: appointment.last_name ?? '',
             applicationId: appointment.application_id,
             status: 'under_review',
             adminNote: trimmedReason || undefined,
@@ -245,7 +264,6 @@ export class AppointmentsService {
           details: trimmedReason
             ? `Appointment ${id} cancelled. Message: ${trimmedReason}`
             : `Appointment ${id} cancelled`,
-          ipAddress: undefined,
         })
         .catch((err) =>
           console.error('Failed to log appointment cancellation', err),
@@ -284,8 +302,7 @@ export class AppointmentsService {
       await this.logsService
         .logOther({
           action: 'Appointment Updated',
-          details: `Appointment for application ${applicationId} updated to ${appointmentDate}`,
-          ipAddress: undefined,
+          details: `Appointment for application ${applicationId} updated to ${appointmentDate.toISOString()}`,
         })
         .catch((err) => console.error('Failed to log appointment update', err));
 
@@ -320,7 +337,7 @@ export class AppointmentsService {
         throwAppError('not_found', 'Appointment not found');
       }
 
-      const appointment = appointmentResult.rows[0];
+      const appointment = appointmentResult.rows[0] as AppointmentCompletionRow;
       isOrientationAppointment = appointment.type === 'orientation';
 
       // Begin transaction for orientation appointments
@@ -398,7 +415,6 @@ export class AppointmentsService {
         .logOther({
           action: 'Appointment Completed',
           details: `Appointment ${id} marked as completed`,
-          ipAddress: undefined,
         })
         .catch((err) =>
           console.error('Failed to log appointment completion', err),

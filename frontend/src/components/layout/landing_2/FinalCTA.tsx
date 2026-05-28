@@ -23,11 +23,11 @@ export function FinalCTA() {
           aria-hidden="true"
           className="w-full h-full object-cover opacity-18"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-ntc-950 via-slate-950/95 to-ntc-900/92" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#172554] via-slate-950/95 to-[#1e3a8a]/92" />
       </div>
 
       {/* Animated glow blobs - optimized for performance */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-ntc-600/40 rounded-full blur-[90px] -translate-x-1/2 transform-gpu" />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#2563eb]/40 rounded-full blur-[90px] -translate-x-1/2 transform-gpu" />
       <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-sky-500/30 rounded-full blur-[100px] translate-x-1/2 transform-gpu" />
 
       <div
@@ -58,10 +58,10 @@ export function FinalCTA() {
           }}
           className="relative rounded-3xl overflow-hidden border border-white/15 bg-white/[0.05] backdrop-blur-md shadow-2xl shadow-ntc-950/50 will-change-transform transform-gpu"
         >
-          <div className="h-1.5 bg-gradient-to-r from-ntc-500 via-sky-400 to-ntc-600" />
+          <div className="h-1.5 bg-gradient-to-r from-[#3b82f6] via-sky-400 to-[#2563eb]" />
 
           <div className="px-8 md:px-16 py-14 md:py-20 text-center">
-            <MotionDiv
+              <MotionDiv
               initial={{
                 opacity: 0,
                 scale: 0.9,
@@ -76,13 +76,13 @@ export function FinalCTA() {
               transition={{
                 delay: 0.15,
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ntc-500/15 text-ntc-200 text-sm font-semibold mb-6 border border-ntc-400/30"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#3b82f6]/15 text-[#bfdbfe] text-sm font-semibold mb-6 border border-[#60a5fa]/30"
             >
               <SparklesIcon className="w-4 h-4" />
               Ready when you are
             </MotionDiv>
 
-            <MotionDiv
+              <MotionDiv
               initial={{
                 opacity: 0,
                 y: 20,
@@ -95,12 +95,12 @@ export function FinalCTA() {
                 once: true,
               }}
               transition={{
-                delay: 0.2,
+                delay: 0.3,
               }}
               className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-[1.05] tracking-tight"
             >
               Take the first step toward{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-ntc-300 to-sky-300">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#93c5fd] to-sky-300">
                 public service
               </span>
               .
@@ -147,7 +147,7 @@ export function FinalCTA() {
             >
               <MotionA
                 href="#contact"
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-ntc-800 px-8 py-4 rounded-xl font-bold hover:bg-ntc-50 hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#1e40af] px-8 py-4 rounded-xl font-bold hover:bg-[#eff6ff] hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
               >
                 <SendIcon className="w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 Submit Application
@@ -200,7 +200,7 @@ export function FinalCTA() {
 function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex items-center justify-center gap-2 text-sm text-slate-100">
-      <span className="text-ntc-200">{icon}</span>
+      <span className="text-[#bfdbfe]">{icon}</span>
       <span className="font-medium">{label}</span>
     </div>
   )

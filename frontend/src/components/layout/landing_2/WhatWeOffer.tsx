@@ -44,14 +44,14 @@ export function WhatWeOffer() {
       title: 'Frequency Management',
       description:
         'Allocates and regulates the radio frequency spectrum used by telecom operators, broadcasters, and other licensed entities.',
-      accent: 'from-ntc-600 to-ntc-800',
+      accent: 'from-[#2563eb] to-[#1e40af]',
     },
     {
       icon: <ScaleIcon className="w-6 h-6" />,
       title: 'Regulation & Adjudication',
       description:
         'Issues licenses, sets quality standards, and resolves disputes between operators, consumers, and stakeholders.',
-      accent: 'from-sky-500 to-ntc-600',
+      accent: 'from-sky-500 to-[#2563eb]',
     },
     {
       icon: <ShieldCheckIcon className="w-6 h-6" />,
@@ -107,12 +107,12 @@ export function WhatWeOffer() {
                 alt="What we offer"
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-ntc-950/70 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#172554]/70 via-transparent to-transparent" />
 
               <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-white/40">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <div className="text-2xl font-extrabold text-ntc-700">
+                    <div className="text-2xl font-extrabold text-[#1d4ed8]">
                       45+
                     </div>
                     <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -120,7 +120,7 @@ export function WhatWeOffer() {
                     </div>
                   </div>
                   <div className="border-x border-slate-200">
-                    <div className="text-2xl font-extrabold text-ntc-700">
+                    <div className="text-2xl font-extrabold text-[#1d4ed8]">
                       15
                     </div>
                     <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -128,7 +128,7 @@ export function WhatWeOffer() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-2xl font-extrabold text-ntc-700">
+                    <div className="text-2xl font-extrabold text-[#1d4ed8]">
                       1M+
                     </div>
                     <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -142,7 +142,7 @@ export function WhatWeOffer() {
             <MotionDiv
               animate={{ y: [-6, 6, -6] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -top-4 -right-4 bg-ntc-700 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 will-change-transform transform-gpu"
+              className="absolute -top-4 -right-4 bg-[#1d4ed8] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 will-change-transform transform-gpu"
               style={{ backfaceVisibility: 'hidden' }}
             >
               <RadioTowerIcon className="w-5 h-5" />
@@ -156,12 +156,12 @@ export function WhatWeOffer() {
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ntc-50 text-ntc-700 text-sm font-semibold mb-5 border border-ntc-100">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#eff6ff] text-[#1d4ed8] text-sm font-semibold mb-5 border border-[#dbeafe]">
               About the Agency
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">
-              What is the <span className="text-ntc-700">NTC?</span>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">
+              What is the <span className="text-[#1d4ed8]">NTC?</span>
             </h2>
 
             <p className="text-lg text-slate-600 leading-relaxed mb-8">
@@ -182,7 +182,7 @@ export function WhatWeOffer() {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive ? 'bg-white text-ntc-700 shadow-md shadow-ntc-100' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive ? 'bg-white text-[#1d4ed8] shadow-md shadow-ntc-100' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     {tabs[key].icon}
                     <span className="hidden sm:inline">
@@ -200,9 +200,9 @@ export function WhatWeOffer() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.25 }}
-                className="bg-gradient-to-br from-ntc-50 to-white border border-ntc-100 rounded-2xl p-6"
+                className="bg-gradient-to-br from-[#eff6ff] to-white border border-[#dbeafe] rounded-2xl p-6"
               >
-                <h3 className="text-lg font-bold text-ntc-700 mb-2">
+                <h3 className="text-lg font-bold text-[#1d4ed8] mb-2">
                   {tabs[activeTab].title}
                 </h3>
                 <p className="text-slate-700 leading-relaxed">
@@ -222,7 +222,7 @@ export function WhatWeOffer() {
             transition={{ duration: 0.5 }}
             className="max-w-2xl"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ntc-50 text-ntc-700 text-sm font-semibold mb-4 border border-ntc-100">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#eff6ff] text-[#1d4ed8] text-sm font-semibold mb-4 border border-[#dbeafe]">
               Key Functions
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight">
@@ -234,14 +234,14 @@ export function WhatWeOffer() {
             <button
               onClick={() => scroll('left')}
               aria-label="Previous"
-              className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-ntc-700 hover:text-white hover:border-ntc-700 transition-all active:scale-95"
+              className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-[#1d4ed8] hover:text-white hover:border-[#1d4ed8] transition-all active:scale-95"
             >
               <ChevronLeftIcon className="w-5 h-5" />
             </button>
             <button
               onClick={() => scroll('right')}
               aria-label="Next"
-              className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-ntc-700 hover:text-white hover:border-ntc-700 transition-all active:scale-95"
+              className="w-12 h-12 rounded-full bg-white border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-[#1d4ed8] hover:text-white hover:border-[#1d4ed8] transition-all active:scale-95"
             >
               <ChevronRightIcon className="w-5 h-5" />
             </button>

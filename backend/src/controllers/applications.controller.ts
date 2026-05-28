@@ -25,7 +25,10 @@ import type {
   UpdateApplicationSettingsDto,
   SuccessResponse,
 } from '../data/types';
-import type { UpdateApplicationDto } from '../data/interfaces';
+import type {
+  AuthenticatedUser,
+  UpdateApplicationDto,
+} from '../data/interfaces';
 import * as tmp from 'tmp';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
@@ -122,7 +125,6 @@ export class ApplicationsController {
   @Get('settings')
   async getSettings() {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return this.applicationService.getSettings();
     } catch (error) {
       const message =
@@ -231,16 +233,25 @@ export class ApplicationsController {
             cleanup: () => {
               try {
                 tempFile.removeCallback();
-              } catch {}
+              } catch (cleanupError: unknown) {
+                console.error(
+                  'Failed to remove temporary upload file',
+                  cleanupError,
+                );
+              }
             },
           });
-        } catch (streamError: any) {
+        } catch (streamError: unknown) {
+          const message =
+            streamError instanceof Error
+              ? streamError.message
+              : 'Unknown stream error';
           throw new BadRequestException(
-            `File upload failed mid-stream: ${streamError.message}`,
+            `File upload failed mid-stream: ${message}`,
           );
         }
       } else {
-        fields[part.fieldname] = String(part.value ?? '');
+        fields[part.fieldname] = this.normalizeMultipartFieldValue(part.value);
       }
     }
 
@@ -356,7 +367,7 @@ export class ApplicationsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async updateStatus(
     @Body() body: UpdateApplicationDto,
-    @Req() req: FastifyRequest & { user?: any },
+    @Req() req: FastifyRequest & { user?: AuthenticatedUser },
   ) {
     try {
       const userId = req.user?.id;
@@ -490,9 +501,12 @@ export class ApplicationsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async rejectFile(
     @Body() body: { fileId: number },
-    @Req() req: FastifyRequest & { user?: any },
+    @Req() req: FastifyRequest & { user?: AuthenticatedUser },
   ) {
     const userId = req.user?.id;
+    if (userId == null) {
+      throw new BadRequestException('User ID is required');
+    }
     if (!body.fileId) throw new BadRequestException('FileId is missing');
     try {
       return this.fileUploadsService.deleteFile(body.fileId, userId);
@@ -507,9 +521,12 @@ export class ApplicationsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async rejectFiles(
     @Body() body: { fileIds: number[] },
-    @Req() req: FastifyRequest & { user?: any },
+    @Req() req: FastifyRequest & { user?: AuthenticatedUser },
   ) {
     const userId = req.user?.id;
+    if (userId == null) {
+      throw new BadRequestException('User ID is required');
+    }
     if (!Array.isArray(body.fileIds) || body.fileIds.length === 0) {
       throw new BadRequestException('At least one fileId is required');
     }
@@ -612,19 +629,41 @@ export class ApplicationsController {
             cleanup: () => {
               try {
                 tempFile.removeCallback();
-              } catch {}
+              } catch {
+                return;
+              }
             },
           });
-        } catch (streamError: any) {
+        } catch (streamError: unknown) {
+          const message =
+            streamError instanceof Error
+              ? streamError.message
+              : 'Unknown stream error';
           throw new BadRequestException(
-            `File upload failed mid-stream: ${streamError.message}`,
+            `File upload failed mid-stream: ${message}`,
           );
         }
       } else {
-        fields[part.fieldname] = String(part.value ?? '');
+        fields[part.fieldname] = this.normalizeMultipartFieldValue(part.value);
       }
     }
 
     return { fields, files };
+  }
+
+  private normalizeMultipartFieldValue(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      typeof value === 'bigint'
+    ) {
+      return String(value);
+    }
+
+    return '';
   }
 }

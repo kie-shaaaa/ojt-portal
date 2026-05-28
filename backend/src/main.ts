@@ -23,19 +23,19 @@ async function bootstrap() {
 
   // MUST register plugins BEFORE app.listen
 
-  await app.register(cookie as any);
+  await app.register(cookie);
 
-  await app.register(helmet as any, {
+  await app.register(helmet, {
     global: true,
     contentSecurityPolicy: false,
   });
 
-  await app.register(rateLimit as any, {
+  await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
   });
 
-  await app.register(multipart as any, {
+  await app.register(multipart, {
     attachFieldsToBody: false,
     limits: {
       fileSize: 6 * 1024 * 1024,
@@ -59,4 +59,4 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 5000);
 }
 
-bootstrap();
+void bootstrap();

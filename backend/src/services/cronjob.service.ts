@@ -152,7 +152,9 @@ export class CronjobService {
             continue;
           }
 
-          const expiredNote = `Interview appointment expired on ${new Date(appointment.appointment_date).toLocaleString('en-PH', {
+          const expiredNote = `Interview appointment expired on ${new Date(
+            appointment.appointment_date,
+          ).toLocaleString('en-PH', {
             dateStyle: 'long',
             timeStyle: 'short',
           })}. The application has been moved back to under review.`;

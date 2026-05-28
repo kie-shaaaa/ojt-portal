@@ -97,18 +97,6 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      // Log application submission (system operation)
-      await this.logsService
-        .logOther({
-          userId: 0,
-          action: 'Application Submitted',
-          details: `Application submitted by ${data.email} (${data.application_type})`,
-          ipAddress: undefined,
-        })
-        .catch((err) =>
-          console.error('Failed to log application submission', err),
-        );
-
       return SuccessHandler('Application submitted successfully', res.rows[0]);
     } catch (error) {
       console.error('[APPLICATION] Error submitting application', error);
@@ -197,19 +185,6 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      /* Log application submission (system operation)
-      await this.logsService
-        .logOther({
-          userId: 0,
-          action: 'Application Submitted with Files',
-          details: `Application submitted with ${files.length} file(s) by ${data.email} (${data.application_type})`,
-          ipAddress: undefined,
-        })
-        .catch((err) =>
-          console.error('Failed to log application submission', err),
-        );
-      */
-
       return SuccessHandler(
         'Application submitted successfully',
         createdApplication,
@@ -227,16 +202,9 @@ export class ApplicationsService {
       throw error;
     } finally {
       // Always attempt to cleanup temp files produced by controller
-      try {
-        await Promise.allSettled(
-          files.map(async (f) => {
-            try {
-              if (f.cleanup) return f.cleanup();
-              return;
-            } catch {}
-          }),
-        );
-      } catch {}
+      await Promise.allSettled(
+        files.map((f) => Promise.resolve().then(() => f.cleanup?.())),
+      );
     }
   }
 
@@ -284,7 +252,6 @@ export class ApplicationsService {
             userId: 0,
             action: 'Application Resubmitted with Files',
             details: `Application resubmitted with ${files.length} file(s) by ${application.email}`,
-            ipAddress: undefined,
           })
           .catch((err) =>
             console.error('Failed to log application resubmission', err),
@@ -305,16 +272,9 @@ export class ApplicationsService {
         throw error;
       } finally {
         // Always attempt to cleanup temp files
-        try {
-          await Promise.allSettled(
-            files.map(async (f) => {
-              try {
-                if (f.cleanup) return f.cleanup();
-                return;
-              } catch {}
-            }),
-          );
-        } catch {}
+        await Promise.allSettled(
+          files.map((f) => Promise.resolve().then(() => f.cleanup?.())),
+        );
       }
     } catch (error) {
       console.error('[APPLICATIONS] Error resubmitting files:', error);
@@ -514,7 +474,6 @@ export class ApplicationsService {
           userId: userId,
           oldStatus: oldStatus,
           newStatus: newStatus,
-          ipAddress: undefined,
         })
         .catch((err) =>
           console.error('Failed to log application status change', err),
@@ -526,7 +485,6 @@ export class ApplicationsService {
           .logAdminNotesAdded({
             userId: userId,
             notes: adminNote,
-            ipAddress: undefined,
           })
           .catch((err) => console.error('Failed to log admin notes', err));
       }
@@ -798,13 +756,15 @@ export class ApplicationsService {
           userId: 0,
           oldStatus: 'pending accept',
           newStatus: 'accepted',
-          ipAddress: undefined,
         })
         .catch((err) =>
           console.error('Failed to log acceptance confirmation', err),
         );
 
-      return SuccessHandler('Acceptance confirmed successfully', updated.rows[0]);
+      return SuccessHandler(
+        'Acceptance confirmed successfully',
+        updated.rows[0],
+      );
     } catch (error) {
       await client.query('ROLLBACK').catch(() => undefined);
       console.error('[APPLICATIONS] Error confirming acceptance:', error);
