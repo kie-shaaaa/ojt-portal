@@ -11,33 +11,24 @@ import { DataPrivacySection } from "./DataPrivacySection";
 import { FormActionsSection } from "./FormActionsSection";
 import { apiCall } from "@/lib/api";
 import ApplicationSubmittedModal from "../../modals/ApplicationSubmittedModal";
-import ConfirmationModal from "../../modals/ConfirmationModal";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import { useRouter } from "next/navigation";
 import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
+import type {
+  DataPrivacyData,
+  DocumentUploadData,
+  OjtInformationData,
+  PersonalDetailsData,
+} from "./formTypes";
 
 export type FormStep = 1 | 2 | 3 | 4;
 
-export interface PersonalDetailsData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}
-
-export interface OjtInformationData {
-  school: string;
-  course: string;
-  hours: string;
-  deploymentDate: string;
-}
-
-export interface DocumentUploadData {
-  [key: string]: File | null;
-}
-
-export interface DataPrivacyData {
-  agreed: boolean;
-}
+export type {
+  DataPrivacyData,
+  DocumentUploadData,
+  OjtInformationData,
+  PersonalDetailsData,
+} from "./formTypes";
 
 interface ValidationErrors {
   [key: string]: string;
@@ -391,6 +382,8 @@ export const ApplicationForm = (): JSX.Element => {
         onConfirm={handleConfirmSubmit}
         personalDetails={personalDetails}
         ojtInformation={ojtInformation}
+        uploadedDocuments={uploadedDocuments}
+        dataPrivacyAgreed={dataPrivacy.agreed}
       />
 
       <ApplicationSubmittedModal

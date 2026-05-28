@@ -84,9 +84,20 @@ const SearchableField = ({
       return mergedOptions;
     }
 
-    return mergedOptions.filter((option) =>
-      option.toLowerCase().includes(normalizedQuery),
-    );
+    return [...mergedOptions]
+      .filter((option) => option.toLowerCase().includes(normalizedQuery))
+      .sort((left, right) => {
+        const leftValue = left.toLowerCase();
+        const rightValue = right.toLowerCase();
+        const leftPrefixMatch = leftValue.startsWith(normalizedQuery) ? 0 : 1;
+        const rightPrefixMatch = rightValue.startsWith(normalizedQuery) ? 0 : 1;
+
+        if (leftPrefixMatch !== rightPrefixMatch) {
+          return leftPrefixMatch - rightPrefixMatch;
+        }
+
+        return leftValue.localeCompare(rightValue);
+      });
   }, [mergedOptions, query]);
 
   const exactMatch = mergedOptions.some(
