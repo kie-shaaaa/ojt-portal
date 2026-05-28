@@ -1,6 +1,6 @@
 "use client";
 
-import type { AccountRow } from "../../../app/(private)/accounts/page";
+import type { AccountRow } from "@/app/(private)/accounts/page";
 import type { FormEvent, JSX } from "react";
 import { useId, useMemo, useState } from "react";
 import { Check, X, ShieldCheck, Type, Hash, Lock, Eye, EyeOff } from "lucide-react";

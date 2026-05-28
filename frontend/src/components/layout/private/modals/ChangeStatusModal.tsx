@@ -9,8 +9,8 @@ import {
   CircleCheck,
   X,
 } from "lucide-react";
-import DatePicker from "../DatePicker";
-import TimePicker from "../TimePicker";
+import DatePicker from "../../DatePicker";
+import TimePicker from "../../TimePicker";
 import { apiCall } from "@/lib/api";
 import { toast } from "sonner";
 import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";

@@ -9,7 +9,7 @@ import { OjtDataHeaderSection } from "../../../components/layout/private/OJT-Dat
 import { VerifiedInternsTableSection } from "../../../components/layout/private/OJT-Data/VerifiedInternsTableSection";
 import InternDetailsModal, {
   ModalInternData,
-} from "../../../components/layout/private/InternDetailsModal";
+} from "../../../components/layout/private/modals/InternDetailsModal";
 
 type CompletedInternRecord = {
   id: number;

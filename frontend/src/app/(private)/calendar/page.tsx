@@ -7,7 +7,7 @@ import CalendarAppointmentModal from "@/components/layout/private/Calendar/Calen
 import { CalendarDatesGridSection } from "@/components/layout/private/Calendar/CalendarDatesGridSection";
 import { CalendarNavigationToolbarSection } from "@/components/layout/private/Calendar/CalendarNavigationToolbarSection";
 import { CalendarWeekdayHeaderSection } from "@/components/layout/private/Calendar/CalendarWeekdayHeaderSection";
-import ChangeStatusModal from "@/components/layout/private/ChangeStatusModal";
+import ChangeStatusModal from "@/components/layout/private/modals/ChangeStatusModal";
 import { CalendarAppointment } from "@/components/layout/private/Calendar/calendarTypes";
 import { apiCall } from "@/lib/api";
 

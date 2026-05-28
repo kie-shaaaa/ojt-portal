@@ -1,13 +1,13 @@
 "use client";
 
-import { AccountRow } from "../../../../app/(private)/accounts/page";
+import type { AccountRow } from "@/app/(private)/accounts/page";
 import { JSX, useId, useState } from "react";
 import { KeyRound, Search, SquarePen, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { EditAccountModal } from "../EditAccountModal";
-import { ResetPasswordModal } from "../ResetPasswordModal";
-import ConfirmDeleteModal from "../ConfirmDeleteModal";
-import { CreateAccountModal } from "../CreateAccountModal";
+import { EditAccountModal } from "../modals/EditAccountModal";
+import { ResetPasswordModal } from "../modals/ResetPasswordModal";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import { CreateAccountModal } from "../modals/CreateAccountModal";
 import { apiCall } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
