@@ -3,9 +3,6 @@ import { motion } from 'framer-motion'
 import {
   SendIcon,
   SearchIcon,
-  SparklesIcon,
-  ShieldCheckIcon,
-  ClockIcon,
 } from 'lucide-react'
 export function FinalCTA() {
   const MotionDiv = motion.div as any
@@ -143,14 +140,14 @@ export function FinalCTA() {
               className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
             >
               <MotionA
-                href="#contact"
+                href="/apply"
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#1e40af] px-8 py-4 rounded-xl font-bold hover:bg-[#eff6ff] hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
               >
                 <SendIcon className="w-5 h-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 Submit Application
               </MotionA>
               <MotionA
-                href="#process"
+                href="/track"
                 className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/5 text-white border border-white/25 backdrop-blur-md px-8 py-4 rounded-xl font-semibold hover:bg-white/15 hover:border-white/40 transition-all active:scale-95 text-lg"
               >
                 <SearchIcon className="w-5 h-5 transition-transform group-hover:scale-110" />

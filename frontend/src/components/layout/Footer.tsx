@@ -6,6 +6,7 @@ import { Home, HelpCircle, Mail, MapPin, Phone, FileText, BookOpen } from "lucid
 
 const quickLinks = [
   { label: "Home", icon: Home, iconClassName: "w-4 h-4 text-slate-200", href: "#top" },
+  { label: "How to Apply", icon: FileText, iconClassName: "w-4 h-4 text-slate-200", href: "#process" },
   { label: "FAQs", icon: HelpCircle, iconClassName: "w-4 h-4 text-slate-200", href: "#faqs" },
   { label: "Contact", icon: Mail, iconClassName: "w-4 h-4 text-slate-200", href: "#contact" },
 ];

@@ -6,6 +6,7 @@ import {
   ShieldCheckIcon,
   GraduationCapIcon,
   BuildingIcon,
+  Send,
 } from 'lucide-react'
 export function Hero() {
   const MotionDiv = motion.div as any
@@ -105,14 +106,16 @@ export function Hero() {
                 href="#contact"
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#1d4ed8] px-8 py-4 rounded-xl font-semibold hover:bg-[#eff6ff] hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
               >
-                Send an Inquiry
-                <ArrowRightIcon className="w-5 h-5" />
+                <Send className = "w-5 h-5"/>
+                Submit Application
+                
               </a>
               <a
                 href="#process"
                 className="inline-flex items-center justify-center gap-2 bg-white/10 text-white border border-white/30 backdrop-blur-md px-8 py-4 rounded-xl font-semibold hover:bg-white/20 transition-all active:scale-95 text-lg"
               >
-                Learn About the Process
+                Track Application
+                <ArrowRightIcon className="w-5 h-5" />
               </a>
             </MotionDiv>
           </MotionDiv>
