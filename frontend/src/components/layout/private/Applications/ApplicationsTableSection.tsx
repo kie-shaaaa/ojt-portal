@@ -19,9 +19,9 @@ import { useSearchParams } from "next/navigation";
 
 import { apiCall } from "@/lib/api";
 
-import ConfirmDeleteModal from "../ConfirmDeleteModal";
-import ApplicationDetails from "../ApplicationDetailsModal";
-import ChangeStatusModal from "../ChangeStatusModal";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import ApplicationDetails from "../modals/ApplicationDetailsModal";
+import ChangeStatusModal from "../modals/ChangeStatusModal";
 import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 
 type ApplicationRow = {

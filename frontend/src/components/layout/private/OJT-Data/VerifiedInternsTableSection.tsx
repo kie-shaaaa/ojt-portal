@@ -1,7 +1,8 @@
 "use client";
-import InternDetailsModal, { ModalInternData } from "../InternDetailsModal";
-import ChangeInterDetailsModal from "../ChangeInterDetailsModal";
-import ConfirmDeleteModal from "../ConfirmDeleteModal";
+import InternDetailsModal, { ModalInternData } from "../modals/InternDetailsModal";
+import ChangeInterDetailsModal from "../modals/ChangeInterDetailsModal";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import CertificateModal from "../modals/CertificateModal";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { apiCall } from "@/lib/api";
@@ -217,6 +218,7 @@ export const VerifiedInternsTableSection = ({
   const [editedInterns, setEditedInterns] = useState<
     Record<number, Partial<Intern>>
   >({});
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
 
   const rows = useMemo(
     () =>
@@ -1064,6 +1066,14 @@ export const VerifiedInternsTableSection = ({
               >
                 Delete Selected
               </button>
+
+              <button
+                 onClick={() => setIsCertificateModalOpen(true)}
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 border border-blue-700 transition-all shadow-sm hover:shadow-md"
+                type = "button"
+            >
+                Generate Certificate
+              </button>
             </div>
           </div>
         )}
@@ -1206,6 +1216,18 @@ export const VerifiedInternsTableSection = ({
           }}
         />
       )}
+      <CertificateModal
+        isOpen={isCertificateModalOpen}
+        onClose={() => setIsCertificateModalOpen(false)}
+        interns={selectedInterns.map((id) => {
+          const intern = rows.find((r) => r.id === id) || null;
+          return {
+            id: String(id),
+            name: intern ? getInternName(intern) : "Unknown",
+            ojtNumber: intern ? getOjtId(intern) : "",
+          };
+        })}
+      />
     </>
   );
 };
