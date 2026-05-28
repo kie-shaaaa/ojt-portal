@@ -3,7 +3,7 @@
 import { JSX, useEffect, useMemo, useState } from "react";
 import { CalendarAppointment } from "./calendarTypes";
 import { X } from "lucide-react";
-import ChangeStatusModal from "../ChangeStatusModal";
+import ChangeStatusModal from "../modals/ChangeStatusModal";
 import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
 type Props = {

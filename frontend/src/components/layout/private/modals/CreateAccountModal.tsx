@@ -3,7 +3,7 @@
 import type { FormEvent, JSX } from "react";
 import { useId, useMemo, useState } from "react";
 import { X, Check, ChevronDown, UserPlus, ShieldCheck, Eye, EyeOff } from "lucide-react";
-import type { AccountRow } from "../../../app/(private)/accounts/page";
+import type { AccountRow } from "@/app/(private)/accounts/page";
 
 type AccountTypeOption = {
   value: string;

@@ -23,7 +23,7 @@ import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 import ApplicationDetails from "../modals/ApplicationDetailsModal";
 import ChangeStatusModal from "../modals/ChangeStatusModal";
 import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
-
+ 
 type ApplicationRow = {
   applicationId: string;
   id: string;
