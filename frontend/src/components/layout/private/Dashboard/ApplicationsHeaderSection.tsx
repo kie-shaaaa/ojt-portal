@@ -4,7 +4,7 @@ import { JSX } from "react";
 
 export const ApplicationsHeaderSection = (): JSX.Element => {
   return (
-    <header className="flex w-full items-center justify-between gap-4 max-[767px]:flex-col max-[767px]:items-start">
+    <header className="flex w-full flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <div className="flex flex-col">
         <h1 className="text-2xl font-bold leading-8 text-[#003366]">
           Dashboard Analytics
@@ -14,7 +14,7 @@ export const ApplicationsHeaderSection = (): JSX.Element => {
         </h3>
       </div>
 
-      <div className="w-72 max-[767px]:w-full">
+      <div className="w-full sm:w-72 hidden sm:block">
         <div className="h-[42px] invisible" />
       </div>
     </header>

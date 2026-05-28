@@ -133,12 +133,12 @@ export const ApplicationDetailsSection = (): JSX.Element => {
   return (
     <section
       aria-label="Application details"
-      className="grid grid-cols-1 gap-6 xl:grid-cols-3"
+      className="grid grid-cols-1 gap-6 lg:grid-cols-3"
     >
-      <div className="grid gap-6 xl:col-span-2 xl:grid-cols-2">
+      <div className="grid gap-6 lg:col-span-2 lg:grid-cols-2">
         <section
           aria-labelledby="application-control-heading"
-          className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -195,25 +195,25 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
           <div className="mt-6 space-y-6">
             {isLoading ? (
-              <div className="flex items-center">
-                <label className="w-16 text-sm font-semibold text-slate-600">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+                <label className="w-full sm:w-16 text-sm font-semibold text-slate-600">
                   Status:
                 </label>
-                <div className="flex items-center gap-3 pl-6">
+                <div className="flex items-center gap-3 sm:pl-6">
                   <div className="h-6 w-12 animate-pulse rounded-full bg-slate-200" />
                   <div className="h-5 w-16 animate-pulse rounded bg-slate-200" />
                 </div>
               </div>
             ) : (
-              <div className="flex items-center">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
                 <label
                   htmlFor="portal-status-toggle"
-                  className="w-16 text-sm font-semibold text-slate-600"
+                  className="w-full sm:w-16 text-sm font-semibold text-slate-600"
                 >
                   Status:
                 </label>
 
-                <div className="flex items-center gap-3 pl-6">
+                <div className="flex items-center gap-3 sm:pl-6">
                   <button
                     id="portal-status-toggle"
                     type="button"
@@ -306,7 +306,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
         <section
           aria-labelledby="recent-activity-heading"
-          className="min-h-[300px] rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="min-h-[300px] rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
         >
           <div className="flex items-center gap-2 border-b border-slate-100 pb-6">
             <Activity className="h-5 w-5 text-slate-600" />
@@ -331,9 +331,9 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
       <section
         aria-labelledby="applicant-schools-heading"
-        className="rounded-xl border border-slate-200 bg-white shadow-sm xl:col-start-3 xl:self-start"
+        className="rounded-xl border border-slate-200 bg-white shadow-sm lg:col-start-3 lg:self-start"
       >
-        <div className="border-b border-slate-100 p-6">
+        <div className="border-b border-slate-100 p-4 sm:p-6">
           <h2
             id="applicant-schools-heading"
             className="text-sm font-semibold text-slate-700"
