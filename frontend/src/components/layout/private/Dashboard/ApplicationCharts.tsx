@@ -169,7 +169,7 @@ export const ApplicationChartsSection = (): JSX.Element => {
 
   return (
     <section aria-label="Application charts" className="w-full pb-6">
-      <div className="grid grid-cols-1 gap-6 w-full xl:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
         <article className="rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 p-6">
             <h2 className="text-sm font-semibold text-slate-700">
@@ -190,7 +190,7 @@ export const ApplicationChartsSection = (): JSX.Element => {
                   viewBox="0 0 640 220"
                   role="img"
                   aria-label="Daily applications line chart"
-                  className="h-55 w-full"
+                  className="h-44 sm:h-55 w-full"
                 >
                   {[0, 1, 2, 3].map((tick) => {
                     const y = 180 - (tick / 3) * 180;
@@ -303,16 +303,16 @@ export const ApplicationChartsSection = (): JSX.Element => {
             </h2>
           </div>
 
-          <div className="grid gap-6 p-6 md:grid-cols-[180px,1fr] md:items-center">
+          <div className="grid gap-6 p-6 md:grid-cols-[180px,1fr] md:items-center lg:grid-cols-[200px,1fr]">
             <div className="flex items-center justify-center">
               {isLoading ? (
                 <div className="h-45 w-45 animate-pulse rounded-full bg-slate-100" />
               ) : (
                 <div
-                  className="relative flex h-45 w-45 items-center justify-center rounded-full"
+                  className="relative flex h-36 sm:h-45 w-36 sm:w-45 items-center justify-center rounded-full"
                   style={{ background: donutBackground }}
                 >
-                  <div className="flex h-27 w-27 flex-col items-center justify-center rounded-full bg-white text-center shadow-sm">
+                  <div className="flex h-20 sm:h-27 w-20 sm:w-27 flex-col items-center justify-center rounded-full bg-white text-center shadow-sm">
                     <div className="text-2xl font-bold text-slate-800">
                       {statusTotal}
                     </div>

@@ -60,7 +60,8 @@ export default function PrivateLayout({
   return (
     <div className="min-h-screen bg-white">
       <AsideSidebar account_type={currentUser?.account_type} email={currentUser?.email}/>
-      <main className="ml-64">{children}</main>
+      <main className="md:ml-64 pb-16 md:pb-0">{children}</main>
     </div>
   );
 }
+ 
