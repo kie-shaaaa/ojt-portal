@@ -1,33 +1,20 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Send, Search } from "lucide-react";
+import { Send, ArrowRightIcon, SignalIcon, ShieldCheckIcon, GraduationCapIcon, BuildingIcon } from "lucide-react";
 import { JSX, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from 'framer-motion'
 import { ApplicationPortalClosedModal } from "@/components/modals/ApplicationPortalClosedModal";
-
-const actions = [
-  {
-    label: "Submit Application",
-    icon: Send,
-    variant: "primary" as const,
-    type: "button" as const,
-    href: "/apply",
-  },
-  {
-    label: "Track Application",
-    icon: Search,
-    variant: "secondary" as const,
-    type: "button" as const,
-    href: "/track",
-  },
-];
 
 export const HeroSection = (): JSX.Element => {
   const router = useRouter();
   const [isPortalOpen, setIsPortalOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const MotionDiv = motion.div as any
+  const MotionH1 = motion.h1 as any
+  const MotionP = motion.p as any
 
   // Load portal status on mount
   useEffect(() => {
@@ -50,126 +37,179 @@ export const HeroSection = (): JSX.Element => {
       router.push("/apply");
     }
   };
+
+  const containerVariants = {
+    hidden: {
+      opacity: 0,
+    },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.2,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: 20,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        ease: 'easeOut',
+      },
+    },
+  }
+
   return (
     <section
       id="home"
-      className="flex flex-1 relative flex-col w-full min-h-screen md:min-h-[700px] items-center justify-center px-4 md:px-6 py-12 md:py-20 bg-[url('/landing/portal-bg.png')] bg-cover bg-center bg-no-repeat"
+      className="relative pt-32 pb-20 lg:pt-44 lg:pb-32 overflow-hidden min-h-screen flex items-center bg-[#1d4ed8]"
       aria-labelledby="hero-banner-title"
     >
-      <div className="absolute inset-0 bg-black/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1d4ed8] via-[#1e40af] to-[#172554]" />
 
-      <div className="items-start pt-0 pb-4 md:pb-6 px-0 inline-flex flex-col relative flex-[0_0_auto]">
-        <div className="inline-flex flex-col items-center gap-3 md:gap-4 relative flex-[0_0_auto]">
-          <div className="relative w-20 md:w-28 h-20 md:h-28 rounded-full overflow-hidden shadow-[0_0_24px_rgba(59,130,246,0.16)]">
-            <Image
-              src="/ntc-logo.png"
-              alt="National Telecommunications Commission seal"
-              fill
-              className="object-cover object-center"
-              sizes="112px"
-            />
-          </div>
-          <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-            <div className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-100 text-sm md:text-base text-center tracking-[0.35px] leading-5 relative w-fit">
-              HR Department
+      <div className="absolute inset-0">
+        <img
+          src="/landing/portal-bg.png"
+          alt=""
+          aria-hidden="true"
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1d4ed8]/55 via-[#1e40af]/65 to-[#172554]/80" />
+      </div>
+
+      {/* Animated glows */}
+      <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-[#3b82f6]/30 rounded-full blur-[80px] transform-gpu" />
+      <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-sky-500/20 rounded-full blur-[100px] transform-gpu" />
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <MotionDiv
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="max-w-2xl"
+          >
+            <MotionDiv
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white text-sm font-semibold mb-6 border border-white/20"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#bfdbfe]"></span>
+              </span>
+              OJT & Internship Portal · HR Department
+            </MotionDiv>
+
+            <MotionH1
+              variants={itemVariants}
+              id="hero-banner-title"
+              className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6"
+            >
+              Start Your Internship Journey in{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#bfdbfe] to-sky-200">
+                Public Service
+              </span>
+            </MotionH1>
+
+            <MotionP
+              variants={itemVariants}
+              className="text-lg lg:text-xl text-[#dbeafe] mb-10 leading-relaxed max-w-xl"
+            >
+              Discover meaningful opportunities at the National
+              Telecommunications Commission. Inquire first about our programs,
+              requirements, and processes — no pressure to apply right away.
+            </MotionP>
+
+            <MotionDiv
+              variants={itemVariants}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <button
+                onClick={handleSubmitApplication}
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#1d4ed8] px-8 py-4 rounded-xl font-semibold hover:bg-[#eff6ff] hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
+                aria-label="Submit Application"
+              >
+                <Send className="w-5 h-5"/>
+                Submit Application
+              </button>
+              <Link
+                href="/track"
+                className="inline-flex items-center justify-center gap-2 bg-white/10 text-white border border-white/30 backdrop-blur-md px-8 py-4 rounded-xl font-semibold hover:bg-white/20 transition-all active:scale-95 text-lg"
+                aria-label="Track Application"
+              >
+                Track Application
+                <ArrowRightIcon className="w-5 h-5" />
+              </Link>
+            </MotionDiv>
+          </MotionDiv>
+
+          <div className="relative hidden lg:block h-[560px]">
+            <MotionDiv
+              initial={{
+                opacity: 0,
+                scale: 0.95,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+              }}
+              transition={{
+                duration: 0.8,
+                delay: 0.3,
+              }}
+              className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl shadow-ntc-950/60 border border-white/15"
+            >
+              <img
+                src="/landing_2/Hero_2.png"
+                alt="Professionals collaborating in a modern government office"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#172554]/60 via-transparent to-transparent" />
+            </MotionDiv>
+
+            <div className="absolute top-[8%] -right-4 bg-white/95 backdrop-blur-md p-4 rounded-2xl flex items-center gap-3 z-30 shadow-2xl shadow-ntc-950/40 border border-white/40 transform-gpu">
+              <div className="bg-sky-100 p-2 rounded-lg text-sky-600">
+                <SignalIcon className="w-5 h-5" />
+              </div>
+              <span className="font-semibold text-sm text-slate-800">
+                Telecom Tech
+              </span>
+            </div>
+
+            <div className="absolute bottom-[12%] -left-6 bg-white/95 backdrop-blur-md p-4 rounded-2xl flex items-center gap-3 z-30 shadow-2xl shadow-ntc-950/40 border border-white/40 transform-gpu">
+              <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
+                <GraduationCapIcon className="w-5 h-5" />
+              </div>
+              <span className="font-semibold text-sm text-slate-800">
+                Student Learning
+              </span>
+            </div>
+
+            <div className="absolute top-[42%] -left-8 bg-white/95 backdrop-blur-md p-4 rounded-2xl flex items-center gap-3 z-30 shadow-2xl shadow-ntc-950/40 border border-white/40 transform-gpu">
+              <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600">
+                <ShieldCheckIcon className="w-5 h-5" />
+              </div>
+              <span className="font-semibold text-sm text-slate-800">
+                Public Service
+              </span>
+            </div>
+
+            <div className="absolute bottom-[40%] -right-8 bg-white/95 backdrop-blur-md p-4 rounded-2xl flex items-center gap-3 z-30 shadow-2xl shadow-ntc-950/40 border border-white/40 transform-gpu">
+              <div className="bg-[#dbeafe] p-2 rounded-lg text-[#1d4ed8]">
+                <BuildingIcon className="w-5 h-5" />
+              </div>
+              <span className="font-semibold text-sm text-slate-800">
+                Gov Agency
+              </span>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="inline-flex items-start pt-0 pb-3 md:pb-4 px-0 flex-col relative flex-[0_0_auto]">
-        <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-          <h1
-            id="hero-banner-title"
-            className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-3xl md:text-4xl lg:text-5xl text-center tracking-[-0.6px] md:tracking-[-1.20px] leading-tight md:leading-[1.05] relative"
-          >
-            NTC OJT Application Portal
-          </h1>
-        </div>
-      </div>
-
-      <div className="items-center px-4 md:px-6 lg:px-10 pt-0 pb-6 md:pb-10 inline-flex flex-col relative flex-[0_0_auto] max-w-3xl text-center">
-        <p className="mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-200 text-sm md:text-base lg:text-lg tracking-[0] leading-6 md:leading-8 relative">
-          Submit your applications for internship opportunities or on-the-job
-          training programs at the National Telecommunications Commission
-          of the Philippines
-        </p>
-      </div>
-
-      <div
-        className="inline-flex items-center justify-center gap-3 md:gap-5 flex-wrap relative flex-[0_0_auto]"
-        role="group"
-        aria-label="Application actions"
-      >
-        {actions.map((action) => {
-          const isPrimary = action.variant === "primary";
-          const className = isPrimary
-            ? "group all-[unset] box-border inline-flex items-center justify-center gap-2 md:gap-3 px-6 md:px-12 py-3 md:py-4 bg-[#2668ff] rounded-full md:rounded-[28px] shadow-[0_16px_40px_-24px_rgba(0,0,0,0.8)] text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white hover:bg-[#1e52e0] hover:-translate-y-0.5 hover:shadow-[0_20px_45px_-22px_rgba(0,0,0,0.9)] transition-all duration-300 ease-out"
-            : "group all-[unset] box-border inline-flex items-center justify-center gap-2 md:gap-3 px-6 md:px-12 py-3 md:py-4 rounded-full md:rounded-[28px] border border-white/70 bg-transparent text-white relative flex-[0_0_auto] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white hover:bg-white/10 hover:-translate-y-0.5 hover:border-white/90 hover:shadow-[0_18px_40px_-26px_rgba(0,0,0,0.7)] transition-all duration-300 ease-out";
-
-          if (action.label === "Submit Application") {
-            return (
-              <button
-                key={action.label}
-                type="button"
-                className={className}
-                aria-label={action.label}
-                onClick={handleSubmitApplication}
-              >
-                <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                  {action.icon && (
-                    <action.icon
-                      className="relative w-4 md:w-5 h-4 md:h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-                <div className="flex items-center justify-center [font-family:'Inter-SemiBold',Helvetica] font-semibold text-white text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative w-fit">
-                  {action.label}
-                </div>
-              </button>
-            );
-          }
-
-          if (action.href) {
-            return (
-              <Link key={action.label} href={action.href} className={className} aria-label={action.label}>
-                <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                  {action.icon && (
-                    <action.icon
-                      className="relative w-4 md:w-5 h-4 md:h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-                <div className="flex items-center justify-center [font-family:'Inter-SemiBold',Helvetica] font-semibold text-white text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative w-fit">
-                  {action.label}
-                </div>
-              </Link>
-            );
-          }
-
-          return (
-            <button
-              key={action.label}
-              type={action.type}
-              className={className}
-              aria-label={action.label}
-            >
-              <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                {action.icon && (
-                  <action.icon
-                    className="relative w-4 md:w-5 h-4 md:h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                )}
-              </div>
-              <div className="flex items-center justify-center [font-family:'Inter-SemiBold',Helvetica] font-semibold text-white text-sm md:text-base text-center tracking-[0] leading-5 md:leading-6 relative w-fit">
-                {action.label}
-              </div>
-            </button>
-          );
-        })}
       </div>
 
       <ApplicationPortalClosedModal

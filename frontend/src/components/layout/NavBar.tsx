@@ -7,8 +7,11 @@ import { UserRound, Menu, X } from "lucide-react";
 import { JSX, useState } from "react";
 
 const navLinks = [
+  { label: "Home", targetId: "home" },
+  { label: "How to Apply", targetId: "process" },
   { label: "FAQs", targetId: "faqs" },
   { label: "Contact", targetId: "contact" },
+  
 ];
 
 export const NavBar = (): JSX.Element => {
