@@ -29,6 +29,13 @@ type ApplicationLookup = {
   id: number;
 };
 
+type ApiSuccessResponse<T> = {
+  ok?: boolean;
+  status?: string;
+  message?: string;
+  data?: T;
+};
+
 const normalizeApplicationId = (
   value: number | string | undefined,
 ): number | undefined => {
@@ -93,9 +100,17 @@ export function useApplicationFiles(
         }
 
         if (applicantEmail) {
-          const lookupData: ApplicationLookup[] = await apiCall(
+          const lookupResponse:
+            | ApplicationLookup[]
+            | ApiSuccessResponse<ApplicationLookup[]> = await apiCall(
             `/applications/fetch?email=${encodeURIComponent(applicantEmail)}`,
           );
+
+          const lookupData = Array.isArray(lookupResponse)
+            ? lookupResponse
+            : Array.isArray(lookupResponse.data)
+              ? lookupResponse.data
+              : [];
 
           if (Array.isArray(lookupData)) {
             const sortedByNewest = [...lookupData]
@@ -114,9 +129,17 @@ export function useApplicationFiles(
         let resolvedFiles: ApplicationFile[] = [];
 
         for (const candidateId of candidateIds) {
-          const data: ApplicationFile[] = await apiCall(
+          const fileResponse:
+            | ApplicationFile[]
+            | ApiSuccessResponse<ApplicationFile[]> = await apiCall(
             `/applications/${candidateId}/files`,
           );
+
+          const data = Array.isArray(fileResponse)
+            ? fileResponse
+            : Array.isArray(fileResponse.data)
+              ? fileResponse.data
+              : [];
 
           if (!Array.isArray(data)) {
             continue;

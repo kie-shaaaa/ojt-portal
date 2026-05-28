@@ -19,6 +19,18 @@ export type ModalInternData = {
   hoursNeeded?: string;
   deploymentDate?: string;
   endDate?: string;
+  fileUploads?: Array<{
+    id: number;
+    application_id: number;
+    file_type: string;
+    document_key: string | null;
+    file_name: string;
+    file_extension: string;
+    file_path: string;
+    file_size: number;
+    uploaded_at: string;
+    signedUrl: string;
+  }>;
   requirementFiles?: Array<{
     id?: string;
     title: string;
@@ -124,6 +136,7 @@ export default function InternDetailsModal({
   intern,
 }: InternDetailsModalProps): JSX.Element {
   const [isVisible, setIsVisible] = useState(false);
+  const preloadedFiles = intern?.fileUploads ?? [];
   const {
     files,
     loading: filesLoading,
@@ -159,7 +172,7 @@ export default function InternDetailsModal({
     { label: "End Date:", value: intern?.endDate ?? "May 12, 2026" },
   ];
 
-  const fileUploads = files.length > 0 ? files : [];
+  const fileUploads = preloadedFiles.length > 0 ? preloadedFiles : files;
   return (
     <div
       className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
@@ -225,9 +238,9 @@ export default function InternDetailsModal({
             </div>
 
             <div className="flex w-2/3 flex-col gap-4">
-              {filesLoading ? (
+              {preloadedFiles.length === 0 && filesLoading ? (
                 <div className="text-sm text-gray-500">Loading files...</div>
-              ) : filesError ? (
+              ) : preloadedFiles.length === 0 && filesError ? (
                 <div className="text-sm text-red-600">
                   Failed to load files: {filesError}
                 </div>
