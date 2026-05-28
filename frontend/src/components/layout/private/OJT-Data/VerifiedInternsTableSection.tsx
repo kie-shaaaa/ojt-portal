@@ -5,6 +5,7 @@ import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { apiCall } from "@/lib/api";
+import { PDFDocument } from "pdf-lib";
 import {
   ChevronLeft,
   ChevronRight,
@@ -45,6 +46,137 @@ interface Intern {
   admin_notes: string | null;
 }
 
+interface ApplicationFile {
+  id: number;
+  application_id: number;
+  file_type: string;
+  document_key: string | null;
+  file_name: string;
+  file_extension: string;
+  file_path: string;
+  file_size: number;
+  uploaded_at: string;
+  signedUrl: string;
+}
+
+const sanitizeApplicantName = (name: string) => {
+  return (
+    name
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^A-Za-z0-9_]/g, "")
+      .replace(/^_+|_+$/g, "")
+      .replace(/__+/g, "_") || "intern"
+  );
+};
+
+const isPdfMagic = (buffer: ArrayBuffer) => {
+  const header = new Uint8Array(buffer.slice(0, 5));
+  const text = String.fromCharCode(...header);
+  return text === "%PDF-";
+};
+
+const convertImageBufferToPng = async (
+  arrayBuffer: ArrayBuffer,
+  mimeType: string,
+): Promise<ArrayBuffer> => {
+  const blob = new Blob([arrayBuffer], { type: mimeType });
+  const imageBitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = imageBitmap.width;
+  canvas.height = imageBitmap.height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Unable to create canvas context for image conversion.");
+  }
+
+  context.drawImage(imageBitmap, 0, 0);
+
+  return await new Promise((resolve, reject) => {
+    canvas.toBlob((output) => {
+      if (!output) {
+        reject(new Error("Failed to convert image to PNG."));
+        return;
+      }
+      output.arrayBuffer().then(resolve).catch(reject);
+    }, "image/png");
+  });
+};
+
+const addFileToPdf = async (
+  outputPdf: PDFDocument,
+  file: ApplicationFile,
+  arrayBuffer: ArrayBuffer,
+  contentType: string | null,
+) => {
+  const mimeType = contentType?.split(";")[0].trim().toLowerCase() || "";
+  const extension = file.file_extension?.toLowerCase().replace(/^\./, "") || "";
+
+  const isPdf =
+    mimeType === "application/pdf" ||
+    extension === "pdf" ||
+    isPdfMagic(arrayBuffer);
+
+  if (isPdf) {
+    const sourcePdf = await PDFDocument.load(arrayBuffer);
+    const pages = await outputPdf.copyPages(
+      sourcePdf,
+      sourcePdf.getPageIndices(),
+    );
+    pages.forEach((page) => outputPdf.addPage(page));
+    return;
+  }
+
+  const isPng = mimeType === "image/png" || extension === "png";
+  const isJpeg =
+    mimeType === "image/jpeg" ||
+    mimeType === "image/jpg" ||
+    extension === "jpg" ||
+    extension === "jpeg";
+  const isWebp = mimeType === "image/webp" || extension === "webp";
+
+  if (isPng || isJpeg || isWebp) {
+    let imageBuffer = arrayBuffer;
+    let embeddedImage;
+
+    if (isWebp) {
+      imageBuffer = await convertImageBufferToPng(arrayBuffer, "image/webp");
+      embeddedImage = await outputPdf.embedPng(imageBuffer);
+    } else if (isPng) {
+      embeddedImage = await outputPdf.embedPng(imageBuffer);
+    } else {
+      embeddedImage = await outputPdf.embedJpg(imageBuffer);
+    }
+
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const maxWidth = 540;
+    const maxHeight = 792;
+    const scale = Math.min(
+      maxWidth / embeddedImage.width,
+      maxHeight / embeddedImage.height,
+      1,
+    );
+    const displayWidth = embeddedImage.width * scale;
+    const displayHeight = embeddedImage.height * scale;
+
+    const page = outputPdf.addPage([pageWidth, pageHeight]);
+    page.drawImage(embeddedImage, {
+      x: (pageWidth - displayWidth) / 2,
+      y: (pageHeight - displayHeight) / 2,
+      width: displayWidth,
+      height: displayHeight,
+    });
+
+    return;
+  }
+
+  throw new Error(
+    `Unsupported file format for ${file.file_name || file.file_extension || "uploaded file"}`,
+  );
+};
+
 interface VerifiedInternsTableSectionProps {
   interns: Intern[];
   searchTerm: string;
@@ -70,6 +202,9 @@ export const VerifiedInternsTableSection = ({
 }: VerifiedInternsTableSectionProps): JSX.Element => {
   const [selectedInterns, setSelectedInterns] = useState<number[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isDownloadingInternId, setIsDownloadingInternId] = useState<
+    number | null
+  >(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [viewingIntern, setViewingIntern] = useState<ModalInternData | null>(
     null,
@@ -409,6 +544,94 @@ export const VerifiedInternsTableSection = ({
     setEditingIntern(intern);
   };
 
+  const handleDownloadInternFiles = async (intern: Intern) => {
+    if (isDownloadingInternId !== null) {
+      return;
+    }
+
+    if (!intern.application_id) {
+      toast.info("No application ID available for download.");
+      return;
+    }
+
+    setIsDownloadingInternId(intern.id);
+
+    try {
+      const files = await apiCall(
+        `/applications/${intern.application_id}/files`,
+      );
+
+      if (!Array.isArray(files) || files.length === 0) {
+        toast.info("No submitted files available for download.");
+        return;
+      }
+
+      const outputPdf = await PDFDocument.create();
+      const skippedFiles: string[] = [];
+      let mergedPages = 0;
+
+      for (const file of files as ApplicationFile[]) {
+        if (!file?.signedUrl) {
+          skippedFiles.push(file.file_name || "Unnamed file");
+          continue;
+        }
+
+        try {
+          const response = await fetch(file.signedUrl);
+
+          if (!response.ok) {
+            skippedFiles.push(file.file_name || "Unnamed file");
+            continue;
+          }
+
+          const buffer = await response.arrayBuffer();
+          const contentType = response.headers
+            .get("content-type")
+            ?.split(";")[0]
+            .trim();
+
+          await addFileToPdf(outputPdf, file, buffer, contentType || null);
+          mergedPages += 1;
+        } catch (error) {
+          console.warn("Skipping file due to merge issue:", error);
+          skippedFiles.push(file.file_name || "Unnamed file");
+        }
+      }
+
+      if (mergedPages === 0) {
+        toast.error(
+          "Unable to compile intern files. No supported documents were available.",
+        );
+        return;
+      }
+
+      const finalPdfBytes = await outputPdf.save();
+      const pdfBlob = new Blob([new Uint8Array(finalPdfBytes)], {
+        type: "application/pdf",
+      });
+      const outputName = `${sanitizeApplicantName(getInternName(intern))}.pdf`;
+
+      saveAs(pdfBlob, outputName);
+
+      if (skippedFiles.length > 0) {
+        toast.success(
+          `Compiled PDF created. ${skippedFiles.length} unsupported or unavailable file(s) were skipped.`,
+        );
+      } else {
+        toast.success("Intern files compiled and downloaded successfully.");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to compile intern files.";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    } finally {
+      setIsDownloadingInternId(null);
+    }
+  };
+
   const handleDelete = (intern: Intern) => {
     // open confirm modal instead of native confirm()
     setInternToDelete(intern);
@@ -517,6 +740,20 @@ export const VerifiedInternsTableSection = ({
                   <SquarePen size={16} />
                 </button>
                 <button
+                  onClick={() => handleDownloadInternFiles(intern)}
+                  title="Download files"
+                  disabled={isDownloadingInternId === intern.id}
+                  aria-busy={isDownloadingInternId === intern.id}
+                  className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Download
+                    size={16}
+                    className={
+                      isDownloadingInternId === intern.id ? "animate-spin" : ""
+                    }
+                  />
+                </button>
+                <button
                   onClick={() => handleDelete(intern)}
                   title="Delete intern"
                   className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
@@ -587,7 +824,7 @@ export const VerifiedInternsTableSection = ({
                 <ChevronLeft size={18} />
               </button>
               <span className="px-3 py-2 text-sm font-semibold text-slate-600">
-                {currentPage} / {totalPages }
+                {currentPage} / {totalPages}
               </span>
               <button
                 onClick={onNextPage}
@@ -697,7 +934,8 @@ export const VerifiedInternsTableSection = ({
                       </h3>
 
                       <p className="max-w-xs text-sm text-slate-500">
-                        We couldn&apos;t find any interns matching your current search or filter criteria.
+                        We couldn&apos;t find any interns matching your current
+                        search or filter criteria.
                       </p>
 
                       <button

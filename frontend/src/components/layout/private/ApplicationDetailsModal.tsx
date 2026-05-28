@@ -7,6 +7,7 @@ import { useApplicationFiles } from "@/hooks/useApplicationFiles";
 
 import { useEscapeKey } from "@/hooks/useDismissableEvents";
 import { apiCall } from "@/lib/api";
+import { RejectionReasons } from "./RejectionReasonsModal";
 
 type DetailRow = {
   label: string;
@@ -508,7 +509,8 @@ const RejectFilesConfirmModal = memo(
             <div className="space-y-3">
               {files.map((file) => {
                 const title =
-                  file.document_key?.toUpperCase() || file.file_name.toUpperCase();
+                  file.document_key?.toUpperCase() ||
+                  file.file_name.toUpperCase();
                 const selected = selectedRejectFileIds.includes(file.id);
 
                 return (
@@ -624,6 +626,7 @@ export const ApplicationDetails = ({
   );
   const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [isRejectingFiles, setIsRejectingFiles] = useState(false);
+  const [showRejectionReasons, setShowRejectionReasons] = useState(false);
   const applicationId = (() => {
     if (!application?.id) return undefined;
     const match = application.id.match(/(\d+)$/);
@@ -792,6 +795,7 @@ export const ApplicationDetails = ({
   );
 
   const handleConfirmRejectFiles = useCallback(async () => {
+    // legacy direct reject (kept for backward compatibility)
     if (selectedRejectFileIds.length === 0) {
       toast.error("Please select at least one file to reject.");
       return;
@@ -824,6 +828,76 @@ export const ApplicationDetails = ({
       setIsRejectingFiles(false);
     }
   }, [selectedRejectFileIds]);
+
+  const handleOpenRejectionReasons = useCallback(() => {
+    if (selectedRejectFileIds.length === 0) {
+      toast.error("Please select at least one file to reject.");
+      return;
+    }
+
+    setShowRejectConfirm(false);
+    setShowRejectionReasons(true);
+  }, [selectedRejectFileIds]);
+
+  const handleSubmitRejectionReasons = useCallback(
+    async (payload: {
+      items: Array<{
+        id: string;
+        title: string;
+        reasons: string[];
+        comment: string;
+      }>;
+    }) => {
+      if (selectedRejectFileIds.length === 0) {
+        toast.error("Please select at least one file to reject.");
+        return;
+      }
+
+      // Combine reasons/comments into a single string
+      const parts: string[] = [];
+      for (const item of payload.items) {
+        const r = (item.reasons || []).slice();
+        const c = (item.comment || "").trim();
+        if (r.length > 0 || c) {
+          parts.push(`- ${item.title}: ${r.join("; ")}${c ? ` — ${c}` : ""}`);
+        }
+      }
+
+      const combinedReason = parts.join("\n") || "Rejected by admin";
+
+      try {
+        setIsRejectingFiles(true);
+
+        const result = await apiCall("/applications/reject-files", {
+          method: "POST",
+          body: JSON.stringify({
+            fileIds: selectedRejectFileIds,
+            rejectionReason: combinedReason,
+          }),
+        });
+
+        if (!result.ok) throw new Error("Rejecting files has failed");
+
+        toast.success(
+          selectedRejectFileIds.length === 1
+            ? "File rejected successfully."
+            : "Files rejected successfully.",
+        );
+
+        setShowRejectionReasons(false);
+        setSelectedRejectFileIds([]);
+        window.location.reload();
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to reject files";
+        console.error(message, error);
+        toast.error(message);
+      } finally {
+        setIsRejectingFiles(false);
+      }
+    },
+    [selectedRejectFileIds],
+  );
 
   return (
     <div
@@ -959,9 +1033,24 @@ export const ApplicationDetails = ({
           setShowRejectConfirm(false);
           setSelectedRejectFileIds([]);
         }}
-        onConfirm={handleConfirmRejectFiles}
+        onConfirm={handleOpenRejectionReasons}
         isSubmitting={isRejectingFiles}
       />
+
+      {showRejectionReasons && (
+        <div
+          className={`fixed inset-0 z-[100002] flex items-center justify-center bg-black/60 p-4`}
+          onClick={() => setShowRejectionReasons(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <RejectionReasons
+              selectedCount={selectedRejectFileIds.length}
+              onClose={() => setShowRejectionReasons(false)}
+              onSubmit={handleSubmitRejectionReasons}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { JSX, useMemo, useState } from "react";
+import { PDFDocument } from "pdf-lib";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
@@ -54,6 +55,19 @@ type Application = {
   submission_date: string;
 
   status: string;
+};
+
+type ApplicationFile = {
+  id: number;
+  application_id: number;
+  file_type: string;
+  document_key: string | null;
+  file_name: string;
+  file_extension: string;
+  file_path: string;
+  file_size: number;
+  uploaded_at: string;
+  signedUrl: string;
 };
 
 type Props = {
@@ -113,6 +127,124 @@ const getStatusStyles = (status: string) => {
   }
 
   return "bg-slate-50 text-slate-700 border-slate-100";
+};
+
+const sanitizeApplicantName = (name: string) => {
+  return (
+    name
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^A-Za-z0-9_]/g, "")
+      .replace(/^_+|_+$/g, "")
+      .replace(/__+/g, "_") || "applicant"
+  );
+};
+
+const isPdfMagic = (buffer: ArrayBuffer) => {
+  const header = new Uint8Array(buffer.slice(0, 5));
+  const text = String.fromCharCode(...header);
+  return text === "%PDF-";
+};
+
+const convertImageBufferToPng = async (
+  arrayBuffer: ArrayBuffer,
+  mimeType: string,
+): Promise<ArrayBuffer> => {
+  const blob = new Blob([arrayBuffer], { type: mimeType });
+  const imageBitmap = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = imageBitmap.width;
+  canvas.height = imageBitmap.height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Unable to create canvas context for image conversion.");
+  }
+
+  context.drawImage(imageBitmap, 0, 0);
+
+  return await new Promise((resolve, reject) => {
+    canvas.toBlob((output) => {
+      if (!output) {
+        reject(new Error("Failed to convert image to PNG."));
+        return;
+      }
+      output.arrayBuffer().then(resolve).catch(reject);
+    }, "image/png");
+  });
+};
+
+const addFileToPdf = async (
+  outputPdf: PDFDocument,
+  file: ApplicationFile,
+  arrayBuffer: ArrayBuffer,
+  contentType: string | null,
+) => {
+  const mimeType = contentType?.split(";")[0].trim().toLowerCase() || "";
+  const extension = file.file_extension?.toLowerCase().replace(/^\./, "") || "";
+
+  const isPdf =
+    mimeType === "application/pdf" ||
+    extension === "pdf" ||
+    isPdfMagic(arrayBuffer);
+
+  if (isPdf) {
+    const sourcePdf = await PDFDocument.load(arrayBuffer);
+    const pages = await outputPdf.copyPages(
+      sourcePdf,
+      sourcePdf.getPageIndices(),
+    );
+    pages.forEach((page) => outputPdf.addPage(page));
+    return;
+  }
+
+  const isPng = mimeType === "image/png" || extension === "png";
+  const isJpeg =
+    mimeType === "image/jpeg" ||
+    mimeType === "image/jpg" ||
+    extension === "jpg" ||
+    extension === "jpeg";
+  const isWebp = mimeType === "image/webp" || extension === "webp";
+
+  if (isPng || isJpeg || isWebp) {
+    let imageBuffer = arrayBuffer;
+    let embeddedImage;
+
+    if (isWebp) {
+      imageBuffer = await convertImageBufferToPng(arrayBuffer, "image/webp");
+      embeddedImage = await outputPdf.embedPng(imageBuffer);
+    } else if (isPng) {
+      embeddedImage = await outputPdf.embedPng(imageBuffer);
+    } else {
+      embeddedImage = await outputPdf.embedJpg(imageBuffer);
+    }
+
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const maxWidth = 540;
+    const maxHeight = 792;
+    const scale = Math.min(
+      maxWidth / embeddedImage.width,
+      maxHeight / embeddedImage.height,
+      1,
+    );
+    const displayWidth = embeddedImage.width * scale;
+    const displayHeight = embeddedImage.height * scale;
+
+    const page = outputPdf.addPage([pageWidth, pageHeight]);
+    page.drawImage(embeddedImage, {
+      x: (pageWidth - displayWidth) / 2,
+      y: (pageHeight - displayHeight) / 2,
+      width: displayWidth,
+      height: displayHeight,
+    });
+
+    return;
+  }
+
+  throw new Error(
+    `Unsupported file format for ${file.file_name || file.file_extension || "uploaded file"}`,
+  );
 };
 
 const normalizeFilterText = (value: string) =>
@@ -198,8 +330,10 @@ export const ApplicationsTableSection = ({
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] =
-    useState(false);
+  const [isDownloadingApplicationId, setIsDownloadingApplicationId] = useState<
+    string | null
+  >(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
   const searchInputId = "applications-table-search";
   const currentPage = 1;
@@ -215,7 +349,9 @@ export const ApplicationsTableSection = ({
   // Sort applications by `id` descending on the client so the newest (highest id)
   // appear first in the table without changing backend behavior.
   const applicationsState = useMemo(() => {
-    const sorted = [...applications].sort((a, b) => Number(b.id) - Number(a.id));
+    const sorted = [...applications].sort(
+      (a, b) => Number(b.id) - Number(a.id),
+    );
     return mapApplications(sorted);
   }, [applications]);
 
@@ -303,6 +439,90 @@ export const ApplicationsTableSection = ({
     setSelectedRows(updated);
   };
 
+  const handleDownloadApplicationFiles = async (
+    applicationId: string,
+    applicantName: string,
+  ) => {
+    if (isDownloadingApplicationId) {
+      return;
+    }
+
+    setIsDownloadingApplicationId(applicationId);
+
+    try {
+      const files = await apiCall(`/applications/${applicationId}/files`);
+
+      if (!Array.isArray(files) || files.length === 0) {
+        toast.info("No submitted files available for download.");
+        return;
+      }
+
+      const outputPdf = await PDFDocument.create();
+      const skippedFiles: string[] = [];
+      let mergedPages = 0;
+
+      for (const file of files as ApplicationFile[]) {
+        if (!file?.signedUrl) {
+          skippedFiles.push(file.file_name || "Unnamed file");
+          continue;
+        }
+
+        try {
+          const response = await fetch(file.signedUrl);
+
+          if (!response.ok) {
+            skippedFiles.push(file.file_name || "Unnamed file");
+            continue;
+          }
+
+          const buffer = await response.arrayBuffer();
+          const contentType = response.headers
+            .get("content-type")
+            ?.split(";")[0]
+            .trim();
+
+          await addFileToPdf(outputPdf, file, buffer, contentType || null);
+          mergedPages += 1;
+        } catch (error) {
+          console.warn("Skipping file due to merge issue:", error);
+          skippedFiles.push(file.file_name || "Unnamed file");
+        }
+      }
+
+      if (mergedPages === 0) {
+        toast.error(
+          "Unable to compile applicant files. No supported documents were available.",
+        );
+        return;
+      }
+
+      const finalPdfBytes = await outputPdf.save();
+      const pdfBlob = new Blob([new Uint8Array(finalPdfBytes)], {
+        type: "application/pdf",
+      });
+      const outputName = `${sanitizeApplicantName(applicantName)}.pdf`;
+
+      saveAs(pdfBlob, outputName);
+
+      if (skippedFiles.length > 0) {
+        toast.success(
+          `Compiled PDF created. ${skippedFiles.length} unsupported or unavailable file(s) were skipped.`,
+        );
+      } else {
+        toast.success("Applicant files compiled and downloaded successfully.");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to compile applicant files.";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    } finally {
+      setIsDownloadingApplicationId(null);
+    }
+  };
+
   const handleDeleteApplication = async () => {
     if (!applicationToDelete || isDeleting) return;
 
@@ -374,7 +594,10 @@ export const ApplicationsTableSection = ({
   const handleExportApplications = async () => {
     try {
       const applicationLookup = new Map(
-        applications.map((application) => [String(application.id), application]),
+        applications.map((application) => [
+          String(application.id),
+          application,
+        ]),
       );
 
       const exportRows =
@@ -386,7 +609,9 @@ export const ApplicationsTableSection = ({
 
       const applicationsToExport = exportRows
         .map((row) => applicationLookup.get(row.applicationId))
-        .filter((application): application is Application => Boolean(application));
+        .filter((application): application is Application =>
+          Boolean(application),
+        );
 
       if (applicationsToExport.length === 0) {
         toast.info("No applications to export");
@@ -669,7 +894,9 @@ export const ApplicationsTableSection = ({
       toast.success("Applications exported successfully");
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to export applications";
+        error instanceof Error
+          ? error.message
+          : "Failed to export applications";
       console.error(errorMessage, error);
       toast.error(errorMessage);
     }
@@ -734,7 +961,7 @@ export const ApplicationsTableSection = ({
               </button>
 
               <span className="px-3 py-2 text-sm font-semibold text-slate-600">
-                 {currentPage} / {totalPages}
+                {currentPage} / {totalPages}
               </span>
 
               <button
@@ -918,8 +1145,8 @@ export const ApplicationsTableSection = ({
                 </td>
 
                 {/* Actions */}
-                <td className="px-6 py-6 align-top">
-                  <div className="flex items-center gap-2">
+                <td className="px-6 py-6 align-middle">
+                  <div className="flex items-center justify-center gap-2">
                     <button
                       title="View Profile"
                       onClick={() => setSelectedApplication(application)}
@@ -934,6 +1161,33 @@ export const ApplicationsTableSection = ({
                       className="rounded-xl border border-slate-200 bg-white p-2.5 text-amber-600 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 active:scale-90"
                     >
                       <Pencil size={18} />
+                    </button>
+
+                    <button
+                      title="Download files"
+                      onClick={() =>
+                        handleDownloadApplicationFiles(
+                          application.applicationId,
+                          application.applicantName,
+                        )
+                      }
+                      disabled={
+                        isDownloadingApplicationId === application.applicationId
+                      }
+                      className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      aria-busy={
+                        isDownloadingApplicationId === application.applicationId
+                      }
+                    >
+                      <Download
+                        size={18}
+                        className={
+                          isDownloadingApplicationId ===
+                          application.applicationId
+                            ? "animate-spin"
+                            : ""
+                        }
+                      />
                     </button>
 
                     <button
