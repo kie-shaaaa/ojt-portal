@@ -1,13 +1,12 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CalendarHeaderSection } from "@/components/layout/private/Calendar/CalendarHeaderSection";
 import CalendarAppointmentModal from "@/components/layout/private/Calendar/CalendarAppointmentModal";
 import { CalendarDatesGridSection } from "@/components/layout/private/Calendar/CalendarDatesGridSection";
 import { CalendarNavigationToolbarSection } from "@/components/layout/private/Calendar/CalendarNavigationToolbarSection";
 import { CalendarWeekdayHeaderSection } from "@/components/layout/private/Calendar/CalendarWeekdayHeaderSection";
-import ChangeStatusModal from "@/components/layout/private/modals/ChangeStatusModal";
 import { CalendarAppointment } from "@/components/layout/private/Calendar/calendarTypes";
 import { apiCall } from "@/lib/api";
 
@@ -62,7 +61,7 @@ const mapAppointmentRowToCalendarAppointment = (
     row.type === "interview" ? "Interview" : "Orientation";
   const status = row.is_done
     ? "Completed"
-    : row.type === "interview"
+    : row.application_status === "for_interview"
       ? "For interview"
       : row.application_status === "accepted"
         ? "Accepted"
@@ -135,8 +134,8 @@ export default function Page() {
     string | null
   >(null);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-  const [changeStatusAppointment, setChangeStatusAppointment] =
-    useState<CalendarAppointment | null>(null);
+  const lastAppointmentsSnapshotRef = useRef("");
+  const hasLoadedAppointmentsRef = useRef(false);
 
   const year = current.getFullYear();
   const month = current.getMonth();
@@ -156,7 +155,7 @@ export default function Page() {
     setCurrent(new Date(now.getFullYear(), now.getMonth(), 1));
   };
 
-  const refreshAppointments = async () => {
+  const syncAppointments = async (notifyOnChange = false) => {
     try {
       const response = (await apiCall(
         `/appointments/fetch-calendar?month=${month + 1}&year=${year}`,
@@ -165,7 +164,26 @@ export default function Page() {
         },
       )) as CalendarAppointmentsResponse;
 
-      setAppointments(await hydrateAppointments(response));
+      const nextAppointments = await hydrateAppointments(response);
+      const nextSnapshot = JSON.stringify(
+        nextAppointments.map((appointment) => [
+          appointment.id,
+          appointment.appointmentDate,
+          appointment.status,
+        ]),
+      );
+
+      if (
+        notifyOnChange &&
+        hasLoadedAppointmentsRef.current &&
+        nextSnapshot !== lastAppointmentsSnapshotRef.current
+      ) {
+        toast.info('Calendar updated with a new appointment change.');
+      }
+
+      lastAppointmentsSnapshotRef.current = nextSnapshot;
+      hasLoadedAppointmentsRef.current = true;
+      setAppointments(nextAppointments);
     } catch (error) {
       console.error("Failed to fetch appointments", error);
       setAppointments([]);
@@ -175,34 +193,15 @@ export default function Page() {
   useEffect(() => {
     let isActive = true;
 
-    const loadAppointments = async () => {
-      try {
-        const response = (await apiCall(
-          `/appointments/fetch-calendar?month=${month + 1}&year=${year}`,
-          {
-            method: "GET",
-          },
-        )) as CalendarAppointmentsResponse;
+    void syncAppointments(false);
 
-        if (!isActive) {
-          return;
-        }
-
-        setAppointments(await hydrateAppointments(response));
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-
-        console.error("Failed to fetch appointments", error);
-        setAppointments([]);
-      }
-    };
-
-    void loadAppointments();
+    const intervalId = window.setInterval(() => {
+      void syncAppointments(true);
+    }, 45000);
 
     return () => {
       isActive = false;
+      window.clearInterval(intervalId);
     };
   }, [month, year]);
 
@@ -270,7 +269,8 @@ export default function Page() {
         currentSelectedId === appointment.id ? null : currentSelectedId,
       );
 
-      await refreshAppointments();
+      await syncAppointments(true);
+      window.dispatchEvent(new Event("applications:refresh"));
       setShowAppointmentModal(false);
     } catch (error) {
       const errorMessage =
@@ -291,7 +291,8 @@ export default function Page() {
         body: JSON.stringify({ appointmentId }),
       });
 
-      await refreshAppointments();
+      await syncAppointments(true);
+      window.dispatchEvent(new Event("applications:refresh"));
       setShowAppointmentModal(false);
     } catch (error) {
       const errorMessage =
@@ -301,58 +302,6 @@ export default function Page() {
       console.error(errorMessage, error);
       toast.error(errorMessage);
     }
-  };
-
-  const handleConfirmStatusChange = (
-    newStatus: string,
-    id: string,
-    scheduleDate?: string,
-    scheduleTime?: string,
-  ) => {
-    setAppointments((prev) =>
-      prev.map((item) => {
-        if (item.applicationId !== id) {
-          return item;
-        }
-
-        const nextAppointmentType =
-          newStatus === "Pending Accept" || newStatus === "Accepted"
-            ? "Orientation"
-            : newStatus === "For interview"
-              ? "Interview"
-              : item.appointmentType;
-
-        const next: CalendarAppointment = {
-          ...item,
-          status: newStatus as CalendarAppointment["status"],
-          appointmentType: nextAppointmentType,
-          dateKey:
-            newStatus === "Pending Accept" || newStatus === "Accepted" || newStatus === "For interview"
-              ? (scheduleDate ?? item.dateKey)
-              : "",
-          appointmentTime:
-            newStatus === "Pending Accept" || newStatus === "Accepted" || newStatus === "For interview"
-              ? (scheduleTime ?? item.appointmentTime)
-              : "",
-          title:
-            newStatus === "Pending Accept" || newStatus === "Accepted"
-              ? `Orientation - ${item.applicantName}`
-              : newStatus === "For interview"
-                ? `Interview - ${item.applicantName}`
-                : `${newStatus} - ${item.applicantName}`,
-          tag:
-            newStatus === "Pending Accept" || newStatus === "Accepted"
-              ? "Orientation"
-              : newStatus === "For interview"
-                ? "For Interview"
-                : newStatus,
-        };
-
-        return next;
-      }),
-    );
-
-    setChangeStatusAppointment(null);
   };
 
   return (
@@ -393,21 +342,9 @@ export default function Page() {
         appointments={selectedAppointments}
         selectedAppointmentId={selectedAppointmentId}
         onClose={() => setShowAppointmentModal(false)}
-        onChangeStatus={(appointment) =>
-          setChangeStatusAppointment(appointment)
-        }
         onClearAppointment={handleClearAppointment}
         onComplete={handleCompleteAppointment}
       />
-
-      {changeStatusAppointment && (
-        <ChangeStatusModal
-          open={!!changeStatusAppointment}
-          application={changeStatusAppointment}
-          onClose={() => setChangeStatusAppointment(null)}
-          onConfirm={handleConfirmStatusChange}
-        />
-      )}
     </>
   );
 }

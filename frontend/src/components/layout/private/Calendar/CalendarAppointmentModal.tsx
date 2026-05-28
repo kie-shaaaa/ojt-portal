@@ -3,7 +3,6 @@
 import { JSX, useEffect, useMemo, useState } from "react";
 import { CalendarAppointment } from "./calendarTypes";
 import { X } from "lucide-react";
-import ChangeStatusModal from "../modals/ChangeStatusModal";
 import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 
 type Props = {
@@ -11,7 +10,6 @@ type Props = {
   appointments: CalendarAppointment[];
   selectedAppointmentId?: string | null;
   onClose: () => void;
-  onChangeStatus: (appointment: CalendarAppointment) => void;
   onClearAppointment: (
     appointment: CalendarAppointment,
     reason?: string,
@@ -90,7 +88,6 @@ export default function CalendarAppointmentModal({
   appointments,
   selectedAppointmentId,
   onClose,
-  onChangeStatus,
   onClearAppointment,
   onComplete,
 }: Props): JSX.Element | null {
@@ -98,7 +95,6 @@ export default function CalendarAppointmentModal({
   const [activeAppointmentId, setActiveAppointmentId] = useState<string | null>(
     null,
   );
-  const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [isClearing, setIsClearing] = useState(false);
@@ -314,14 +310,6 @@ export default function CalendarAppointmentModal({
         <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 shrink-0">
           <button
             type="button"
-            className="rounded-lg border border-blue-600 px-4 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
-            onClick={() => setIsChangeStatusModalOpen(true)}
-          >
-            Change Date
-          </button>
-
-          <button
-            type="button"
             className="rounded-lg border border-green-600 px-4 py-2.5 text-sm font-semibold text-green-600 transition hover:bg-green-50"
             onClick={() => onComplete(activeAppointment)}
           >
@@ -349,23 +337,6 @@ export default function CalendarAppointmentModal({
         </footer>
 
       </section>
-
-      <ChangeStatusModal
-        open={isChangeStatusModalOpen}
-        mode="appointment-date"
-        application={{
-          id: activeAppointment.applicationId,
-          applicationId: activeAppointment.applicationId,
-          applicantName: activeAppointment.applicantName,
-          status: activeAppointment.status,
-          appointmentDate: activeAppointment.appointmentDate,
-          appointmentTime: activeAppointment.appointmentTime,
-        }}
-        onClose={() => setIsChangeStatusModalOpen(false)}
-        onConfirm={() => {
-          setIsChangeStatusModalOpen(false);
-        }}
-      />
       {/* Clear appointment modal with optional cancellation reason */}
       {isClearModalOpen && (
         <div

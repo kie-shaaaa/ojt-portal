@@ -16,6 +16,7 @@ interface DatePickerProps {
   disabled?: boolean;
   placeholder?: string;
   minDate?: string;
+  dropdownPlacement?: "up" | "down";
 }
 
 export default function DatePicker({
@@ -29,6 +30,7 @@ export default function DatePicker({
   disabled = false,
   minDate,
   placeholder = "yyyy/mm/dd",
+  dropdownPlacement = "up",
 }: DatePickerProps): JSX.Element {
   const pickerRootRef = useRef<HTMLDivElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -156,7 +158,7 @@ export default function DatePicker({
         {showPicker && (
           <div
             ref={pickerRef}
-            className="absolute bottom-full left-0 z-50 mb-2 w-80 rounded-lg border border-gray-200 bg-white p-4 shadow-lg"
+            className={`absolute left-0 z-50 w-80 rounded-lg border border-gray-200 bg-white p-4 shadow-lg ${dropdownPlacement === "down" ? "top-full mt-2" : "bottom-full mb-2"}`}
           >
             {/* Header */}
             <div className="mb-4 flex items-center justify-between">

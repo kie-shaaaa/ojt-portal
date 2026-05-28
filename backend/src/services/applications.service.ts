@@ -449,6 +449,8 @@ export class ApplicationsService {
 
       await client.query('BEGIN');
 
+      const persistedStatus = status === 'for_interview' ? 'pending accept' : status;
+
       // 1. Update application and return updated row
       const res = await client.query<Application>(
         `
@@ -457,7 +459,7 @@ export class ApplicationsService {
         WHERE id = $2
         RETURNING *;
       `,
-        [status, id],
+        [persistedStatus, id],
       );
 
       const application = res.rows[0];
@@ -468,7 +470,7 @@ export class ApplicationsService {
 
       // Log application status change
       const oldStatus = data.status;
-      const newStatus = status;
+      const newStatus = persistedStatus;
       await this.logsService
         .logApplicationStatusChange({
           userId: userId,
@@ -568,6 +570,11 @@ export class ApplicationsService {
       }
 
       if (status === 'for_interview') {
+        const frontendBaseUrl =
+          process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+        const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=interview&id=${id}&email=${encodeURIComponent(data.email)}`;
+        const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=interview&id=${id}&email=${encodeURIComponent(data.email)}`;
+
         // If interview date/time provided, create an interview appointment
         try {
           if (interviewDate) {
@@ -594,6 +601,8 @@ export class ApplicationsService {
           interviewDate,
           interviewTime,
           interviewLocation,
+          confirmUrl,
+          rescheduleUrl,
           adminNote,
         });
         if (!mailSent)
@@ -619,6 +628,7 @@ export class ApplicationsService {
         const frontendBaseUrl =
           process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
         const confirmUrl = `${frontendBaseUrl}/track?confirm=1&id=${id}&email=${encodeURIComponent(data.email)}`;
+        const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${id}&email=${encodeURIComponent(data.email)}`;
 
         const mailSent = await this.mailerService.acceptanceConfirmationEmail({
           to: data.email,
@@ -628,6 +638,7 @@ export class ApplicationsService {
           orientationDate: acceptedDate,
           orientationTime: acceptedTime,
           confirmUrl,
+          rescheduleUrl,
         });
         if (!mailSent)
           throwAppError('server_error', 'Interview mailing failed');

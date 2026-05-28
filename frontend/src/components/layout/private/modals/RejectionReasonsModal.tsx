@@ -152,7 +152,7 @@ export const RejectionReasons = ({
   });
 
   return (
-    <section className="flex flex-col max-w-2xl w-[672px] max-h-[920px] bg-white rounded-2xl overflow-hidden shadow-2xl">
+    <section className="flex max-h-[calc(100vh-2rem)] w-[672px] max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
       {/* Header */}
       <header className="flex items-start justify-between px-6 py-5 border-b border-gray-200">
         <div className="flex items-start gap-4">
@@ -193,8 +193,8 @@ export const RejectionReasons = ({
       </div>
 
       {/* Body */}
-      <div className="overflow-y-auto max-h-[700px] bg-white">
-        <div className="flex flex-col gap-5 p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-white">
+        <div className="flex flex-col gap-5 p-4 sm:p-6">
           {requirementsData.map((requirement) => {
             const isExpanded = expandedItems[requirement.id];
 
@@ -329,7 +329,7 @@ export const RejectionReasons = ({
       </div>
 
       {/* Footer */}
-      <footer className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-gray-200">
+      <footer className="flex shrink-0 items-center justify-between border-t border-gray-200 bg-slate-50 px-4 py-4 sm:px-6">
         <button
           type="button"
           className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"

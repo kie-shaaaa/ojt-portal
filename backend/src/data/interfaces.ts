@@ -25,6 +25,7 @@ export interface AcceptanceConfirmationEmailDto {
   orientationDate?: string;
   orientationTime?: string;
   confirmUrl: string;
+  rescheduleUrl?: string;
 }
 
 export interface ResponseEmailDto {
@@ -39,6 +40,8 @@ export interface ResponseEmailDto {
   acceptedTime?: string;
   interviewLocation?: string;
   adminNote?: string;
+  confirmUrl?: string;
+  rescheduleUrl?: string;
 }
 
 export interface StatusUpdateEmailDto {
