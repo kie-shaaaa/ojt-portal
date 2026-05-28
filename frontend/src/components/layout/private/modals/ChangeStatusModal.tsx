@@ -237,6 +237,9 @@ const ChangeStatusModal = ({
 
       if (!applicationId) throw new Error("Invalid application ID");
 
+      const appointmentType =
+        getAppointmentType(idToBackendStatus(selectedStatus)) ?? "orientation";
+
       const appointmentDateISO = new Date(
         `${appointmentDate}T${appointmentTime}`,
       ).toISOString();
@@ -246,6 +249,7 @@ const ChangeStatusModal = ({
         body: JSON.stringify({
           applicationId,
           appointmentDate: appointmentDateISO,
+          type: appointmentType,
         }),
       });
 
@@ -346,7 +350,10 @@ const ChangeStatusModal = ({
       }
 
       // 4. UI update
-      const mappedStatus = idToStatus(selectedStatus);
+      const mappedStatus =
+        selectedStatus === "for-interview"
+          ? "Pending Accept"
+          : idToStatus(selectedStatus);
 
       onConfirm(mappedStatus, application?.id ?? "", appointmentDateISO);
 

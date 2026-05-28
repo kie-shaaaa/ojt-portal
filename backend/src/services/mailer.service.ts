@@ -319,11 +319,24 @@ export class MailerService {
   async acceptanceConfirmationEmail(
     dto: AcceptanceConfirmationEmailDto,
   ): Promise<boolean> {
-    const { to, firstName, lastName, applicationId, confirmUrl } = dto;
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      confirmUrl,
+      rescheduleUrl,
+    } = dto;
 
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const safeConfirmUrl = escapeHtml(confirmUrl);
+    const safeRescheduleUrl = rescheduleUrl ? escapeHtml(rescheduleUrl) : '';
+    const actionButtons = `
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Confirm Acceptance</a>
+        ${safeRescheduleUrl ? `<a href="${safeRescheduleUrl}" style="display:inline-block;background:#fff;color:#0038A8;padding:12px 28px;text-decoration:none;border:1px solid #0038A8;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Request Reschedule</a>` : ''}
+      </div>`;
 
     const html = wrapEmail(
       ntcHeader('OJT Application Portal'),
@@ -343,9 +356,7 @@ export class MailerService {
         '#d97706',
       )}
 
-      <div style="text-align:center;margin:32px 0;">
-        <a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;">Confirm Acceptance</a>
-      </div>
+      ${actionButtons}
 
       <p>If the button does not work, copy and paste this link into your browser:</p>
       <p style="word-break:break-all;"><a href="${safeConfirmUrl}" style="color:#0038A8;">${safeConfirmUrl}</a></p>
@@ -403,6 +414,8 @@ export class MailerService {
       acceptedTime,
       interviewLocation,
       adminNote,
+      confirmUrl,
+      rescheduleUrl,
     } = dto;
 
     const fullName = `${firstName} ${lastName}`;
@@ -474,6 +487,14 @@ export class MailerService {
     const closing = isApproved
       ? `<p>We look forward to meeting you. Good luck!</p>`
       : `<p>We encourage you to apply again in future application periods.</p>`;
+    const safeConfirmUrl = confirmUrl ? escapeHtml(confirmUrl) : '';
+    const safeRescheduleUrl = rescheduleUrl ? escapeHtml(rescheduleUrl) : '';
+    const actionButtons = isApproved && (safeConfirmUrl || safeRescheduleUrl)
+      ? `<div style="text-align:center;margin:32px 0;">
+          ${safeConfirmUrl ? `<a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Confirm Appointment</a>` : ''}
+          ${safeRescheduleUrl ? `<a href="${safeRescheduleUrl}" style="display:inline-block;background:#fff;color:#0038A8;padding:12px 28px;text-decoration:none;border:1px solid #0038A8;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Request Reschedule</a>` : ''}
+        </div>`
+      : '';
 
     const bodyContent = `
     <p>Dear <strong>${fullName}</strong>,</p>
@@ -482,6 +503,7 @@ export class MailerService {
     <p style="margin:16px 0 6px;">${statusBadge}</p>
     ${detailsBlock}
     ${noteBlock}
+    ${actionButtons}
     ${reminders}
     ${closing}
     <p style="margin-top:28px;">
@@ -820,6 +842,87 @@ export class MailerService {
     return this.send({
       to,
       subject: `NTC Application – Appointment Expired [${ref}]`,
+      html,
+      text,
+    });
+  }
+
+  async appointmentActionNotificationEmail(dto: {
+    action: 'confirmed' | 'rescheduled';
+    appointmentType: 'interview' | 'orientation';
+    applicationId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    appointmentDate?: string;
+    appointmentTime?: string;
+  }): Promise<boolean> {
+    if (!contactAdminAddress) {
+      return false;
+    }
+
+    const {
+      action,
+      appointmentType,
+      applicationId,
+      firstName,
+      lastName,
+      email,
+      appointmentDate,
+      appointmentTime,
+    } = dto;
+
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const typeLabel = appointmentType === 'interview' ? 'Interview' : 'Orientation';
+    const actionLabel = action === 'confirmed' ? 'Confirmed' : 'Rescheduled';
+
+    const details = [
+      `<strong>Applicant:</strong> ${escapeHtml(fullName)}<br/>`,
+      `<strong>Email:</strong> ${escapeHtml(email)}<br/>`,
+      `<strong>Reference No.:</strong> ${ref}<br/>`,
+      `<strong>Appointment Type:</strong> ${typeLabel}`,
+    ];
+
+    if (appointmentDate) {
+      details.push(`<br/><strong>Date:</strong> ${escapeHtml(appointmentDate)}`);
+    }
+
+    if (appointmentTime) {
+      details.push(`<br/><strong>Time:</strong> ${escapeHtml(appointmentTime)}`);
+    }
+
+    const html = wrapEmail(
+      ntcHeader('OJT Appointment Notice'),
+      `<p>Hello Human Resource Team,</p>
+      <p>An applicant has <strong>${actionLabel.toLowerCase()}</strong> their ${typeLabel.toLowerCase()} appointment.</p>
+
+      ${infoBox(details.join(''))}
+
+      <p style="margin-top:28px;">This message was generated automatically by the portal.</p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      `${typeLabel.toUpperCase()} APPOINTMENT ${actionLabel.toUpperCase()}`,
+      '='.repeat(60),
+      '',
+      `Applicant : ${fullName}`,
+      `Email     : ${email}`,
+      `Ref       : ${ref}`,
+      `Type      : ${typeLabel}`,
+      appointmentDate ? `Date      : ${appointmentDate}` : '',
+      appointmentTime ? `Time      : ${appointmentTime}` : '',
+      '',
+      '(Automated message — do not reply.)',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    return this.send({
+      to: contactAdminAddress,
+      subject: `NTC Portal – ${typeLabel} Appointment ${actionLabel} [${ref}]`,
       html,
       text,
     });

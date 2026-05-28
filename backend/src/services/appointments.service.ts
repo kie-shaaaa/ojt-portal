@@ -21,6 +21,7 @@ interface AppointmentCompletionRow {
   first_name: string | null;
   last_name: string | null;
   email: string | null;
+  appointment_date: Date;
   school_name: string | null;
   hours_needed: number | null;
   course: string | null;
@@ -280,18 +281,43 @@ export class AppointmentsService {
     }
   }
 
-  async updateAppointment(applicationId: number, appointmentDate: Date) {
+  async updateAppointment(
+    applicationId: number,
+    appointmentDate: Date,
+    appointmentType: AppointmentType,
+  ) {
     const client = this.databaseService.getClient();
     console.log(applicationId, appointmentDate);
     try {
+      const appointmentInfo = await client.query<{
+        type: AppointmentType;
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+      }>(
+        `
+          SELECT a.type, ap.first_name, ap.last_name, ap.email
+          FROM appointments a
+          LEFT JOIN applications ap ON ap.id = a.application_id
+          WHERE a.application_id = $1
+            AND a.type = $2
+          ORDER BY a.appointment_date DESC
+          LIMIT 1
+        `,
+        [applicationId, appointmentType],
+      );
+
+      const appointmentRecord = appointmentInfo.rows[0] ?? null;
+
       const result = await client.query(
         `
           UPDATE appointments
           SET appointment_date = $1
           WHERE application_id = $2
+            AND type = $3
           RETURNING *
         `,
-        [appointmentDate, applicationId],
+        [appointmentDate, applicationId, appointmentType],
       );
 
       if (result.rowCount === 0) {
@@ -305,6 +331,28 @@ export class AppointmentsService {
           details: `Appointment for application ${applicationId} updated to ${appointmentDate.toISOString()}`,
         })
         .catch((err) => console.error('Failed to log appointment update', err));
+
+      if (appointmentRecord?.email) {
+        await this.mailerService
+          .appointmentActionNotificationEmail({
+            action: 'rescheduled',
+            appointmentType: appointmentRecord.type,
+            applicationId,
+            firstName: appointmentRecord.first_name ?? '',
+            lastName: appointmentRecord.last_name ?? '',
+            email: appointmentRecord.email,
+            appointmentDate: appointmentDate.toLocaleDateString('en-PH', {
+              dateStyle: 'long',
+            }),
+            appointmentTime: appointmentDate.toLocaleTimeString('en-PH', {
+              hour: 'numeric',
+              minute: '2-digit',
+            }),
+          })
+          .catch((err) =>
+            console.error('Failed to send appointment update notification', err),
+          );
+      }
 
       return SuccessHandler(
         'Appointment date updated successfully',
@@ -427,6 +475,91 @@ export class AppointmentsService {
       }
       console.error('[APPOINTMENT] Error completing appointment:', error);
       throwAppError('server_error', 'Failed to complete appointment');
+    }
+  }
+
+  async confirmAppointment(applicationId: number) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const appointmentResult = await client.query<AppointmentCompletionRow>(
+        `
+          SELECT a.type, a.application_id, ap.first_name, ap.last_name, ap.email,
+                 ap.school_name, ap.hours_needed, ap.course, ap.deployment_date, ap.application_type,
+                 a.appointment_date
+          FROM appointments a
+          LEFT JOIN applications ap ON ap.id = a.application_id
+          WHERE a.application_id = $1
+            AND a.type = 'interview'
+            AND a.is_cancelled = FALSE
+          ORDER BY a.appointment_date DESC
+          LIMIT 1
+        `,
+        [applicationId],
+      );
+
+      if (appointmentResult.rowCount === 0) {
+        throwAppError('not_found', 'Appointment not found');
+      }
+
+      const appointment = appointmentResult.rows[0];
+
+      if (!appointment.email) {
+        throwAppError('not_found', 'Applicant not found');
+      }
+
+      await this.logsService
+        .logOther({
+          action: 'Appointment Updated',
+          details: `Appointment for application ${applicationId} confirmed by applicant`,
+        })
+        .catch((err) =>
+          console.error('Failed to log appointment confirmation', err),
+        );
+
+      await client.query(
+        `
+          UPDATE applications
+          SET status = 'for_interview'
+          WHERE id = $1
+            AND status = 'pending accept'
+        `,
+        [applicationId],
+      );
+
+      await this.mailerService
+        .appointmentActionNotificationEmail({
+          action: 'confirmed',
+          appointmentType: appointment.type,
+          applicationId,
+          firstName: appointment.first_name ?? '',
+          lastName: appointment.last_name ?? '',
+          email: appointment.email,
+          appointmentDate: appointment.appointment_date.toLocaleDateString(
+            'en-PH',
+            { dateStyle: 'long' },
+          ),
+          appointmentTime: appointment.appointment_date.toLocaleTimeString(
+            'en-PH',
+            {
+              hour: 'numeric',
+              minute: '2-digit',
+            },
+          ),
+        })
+        .catch((err) =>
+          console.error('Failed to send appointment confirmation notification', err),
+        );
+
+      return SuccessHandler('Appointment confirmation recorded successfully', {
+        applicationId,
+      });
+    } catch (error) {
+      console.error('[APPOINTMENT] Error confirming appointment:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throwAppError('server_error', 'Failed to confirm appointment');
     }
   }
 

@@ -38,14 +38,15 @@ export class AppointmentsController {
     body: {
       applicationId: number;
       appointmentDate: string;
+      type: AppointmentType;
     },
   ) {
     try {
-      const { applicationId, appointmentDate } = body;
+      const { applicationId, appointmentDate, type } = body;
 
-      if (!applicationId || !appointmentDate) {
+      if (!applicationId || !appointmentDate || !type) {
         throw new BadRequestException(
-          'applicationId and appointmentDate are required',
+          'applicationId, appointmentDate, and type are required',
         );
       }
 
@@ -58,6 +59,7 @@ export class AppointmentsController {
       return await this.appointmentService.updateAppointment(
         applicationId,
         parsedDate,
+        type,
       );
     } catch (error) {
       throw new BadRequestException(
@@ -148,6 +150,33 @@ export class AppointmentsController {
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to create appointment',
+      );
+    }
+  }
+
+  @Post('confirm')
+  async confirmAppointment(
+    @Body()
+    body: {
+      applicationId: number;
+      type?: AppointmentType;
+    },
+  ) {
+    try {
+      const { applicationId, type } = body;
+
+      if (!applicationId) {
+        throw new BadRequestException('applicationId is required');
+      }
+
+      if (type && type !== 'interview') {
+        throw new BadRequestException('Invalid appointment type');
+      }
+
+      return await this.appointmentService.confirmAppointment(applicationId);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to confirm appointment',
       );
     }
   }

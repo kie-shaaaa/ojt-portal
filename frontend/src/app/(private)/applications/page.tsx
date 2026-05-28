@@ -72,6 +72,33 @@ export default function ApplicationPage(): JSX.Element {
     return status;
   };
 
+  const refreshApplications = async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await apiCall("/applications/fetch-all?count=50");
+
+      let data: Application[] = [];
+
+      if (Array.isArray(response)) {
+        data = response;
+      } else if (response?.data) {
+        data = response.data;
+      }
+
+      setApplications(data);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch applications";
+      console.error(errorMessage, error);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeleteApplication = (applicationId: number) => {
     setApplications((currentApplications) => {
       const nextApplications = currentApplications.filter(
@@ -98,34 +125,17 @@ export default function ApplicationPage(): JSX.Element {
 
   // FETCH APPLICATIONS
   useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        setIsLoading(true);
+    void refreshApplications();
 
-        const response = await apiCall("/applications/fetch-all?count=50");
-
-        let data: Application[] = [];
-
-        if (Array.isArray(response)) {
-          data = response;
-        } else if (response?.data) {
-          data = response.data;
-        }
-
-        setApplications(data);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch applications";
-        console.error(errorMessage, error);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
+    const handleRefreshEvent = () => {
+      void refreshApplications();
     };
 
-    fetchApplications();
+    window.addEventListener("applications:refresh", handleRefreshEvent);
+
+    return () => {
+      window.removeEventListener("applications:refresh", handleRefreshEvent);
+    };
   }, []);
 
   // FETCH SCHOOLS
