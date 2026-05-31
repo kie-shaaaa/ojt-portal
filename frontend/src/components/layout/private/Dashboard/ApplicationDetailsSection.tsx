@@ -14,21 +14,10 @@ import {
 import DatePicker from "@/components/layout/DatePicker";
 import { apiCall } from "@/lib/api";
 import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
-
-function getUserIdFromToken(): number | undefined {
-  const token =
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token");
-  if (!token) return undefined;
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.id ?? payload.sub ?? payload.userId;
-  } catch {
-    return undefined;
-  }
-}
+import { useAuth } from "@/hooks/useAuth";
 
 export const ApplicationDetailsSection = (): JSX.Element => {
+  const { user } = useAuth();
   const lastSavedDate = useRef<string>("");
   const lastSavedClosingDate = useRef<string>("");
   const [closingDate, setClosingDate] = useState("");
@@ -85,7 +74,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      const userId = getUserIdFromToken();
+      const userId = user?.id;
 
       const response = await apiCall("/applications/settings", {
         method: "POST",
@@ -294,7 +283,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                 onClick={handleSaveSettings}
                 disabled={isSaving || !hasChanges}
                 aria-label="Update portal settings"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#0038a8] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-50 hover:bg-[#002f8c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0038a8]"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#0038a8] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-50 hover:bg-[#002f8c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0038a8]"
               >
                 <Save className="h-4 w-4" />
 
@@ -306,7 +295,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
 
         <section
           aria-labelledby="recent-activity-heading"
-          className="min-h-[300px] rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
+          className="min-h-75 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
         >
           <div className="flex items-center gap-2 border-b border-slate-100 pb-6">
             <Activity className="h-5 w-5 text-slate-600" />
@@ -342,7 +331,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
           </h2>
         </div>
 
-        <div className="min-h-[240px] xl:min-h-[260px]" />
+        <div className="min-h-60 xl:min-h-65" />
       </section>
 
       {/* Saving Modal */}

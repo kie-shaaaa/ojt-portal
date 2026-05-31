@@ -2,6 +2,7 @@ export type AccountRegister = {
   email: string;
   password: string;
   ipAddress?: string;
+  rememberMe?: boolean;
 };
 
 export type ApplicationStatus =
@@ -141,7 +142,7 @@ export type AccountType = 'admin' | 'employee';
 export type Token = {
   sub: number;
   email: string;
-  account_type: AccountType;
+  account_type: AccountType | 'user';
 };
 
 export type DashboardData = {

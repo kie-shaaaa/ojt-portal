@@ -6,7 +6,7 @@ import { AccountsTableSection } from "../../../components/layout/private/Account
 import { JSX, useState, useMemo, useEffect } from "react";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { apiCall } from "@/lib/api";
-import { fetchToken } from "@/lib/token";
+import { useAuth } from "@/hooks/useAuth";
 
 export type AccountRow = {
   id: number;
@@ -24,18 +24,10 @@ type AccountsResponse = {
   data: AccountRow[];
 };
 
-interface StoredUser {
-  id: number;
-  email: string;
-  account_type: string;
-}
-
 export const MainContentArea = (): JSX.Element => {
-  const [currentUser, setCurrentUser] = useState<StoredUser | undefined>(
-    undefined,
-  );
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user: currentUser } = useAuth();
 
   const [filters, setFilters] = useState({
     accountType: "all",
@@ -43,24 +35,6 @@ export const MainContentArea = (): JSX.Element => {
   });
 
   const [searchTerm, setSearchTerm] = useState<string>("");
-
-  useEffect(() => {
-    const data = fetchToken();
-    if (!data?.user) {
-      requestAnimationFrame(() => setCurrentUser(undefined));
-      return;
-    }
-
-    try {
-      // fetchToken returns user as a raw JSON string — parse it
-      const parsed: StoredUser =
-        typeof data.user === "string" ? JSON.parse(data.user) : data.user;
-      requestAnimationFrame(() => setCurrentUser(parsed));
-    } catch {
-      // Ignore malformed data
-      requestAnimationFrame(() => setCurrentUser(undefined));
-    }
-  }, []);
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -128,8 +102,7 @@ export const MainContentArea = (): JSX.Element => {
       className="relative flex flex-col items-start gap-6 p-8"
       aria-label="Accounts main content"
     >
-      <AccountsHeaderSection
-      />
+      <AccountsHeaderSection />
 
       <AccountsStatsSection accounts={accounts} />
 
@@ -141,7 +114,7 @@ export const MainContentArea = (): JSX.Element => {
         <AccountsTableSection
           accounts={filteredAccounts}
           onAccountsChange={handleAccountsChange}
-          user={currentUser}
+          user={currentUser ?? undefined}
           searchTerm={searchTerm}
           onSearchChange={(value: string) => setSearchTerm(value)}
         />

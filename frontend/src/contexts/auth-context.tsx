@@ -11,10 +11,9 @@ import React, {
 } from "react";
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  username: string;
-  userRole: string;
+  account_type: "admin" | "employee" | "user";
 }
 
 export interface AuthContextType {
@@ -42,22 +41,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken =
-      localStorage.getItem("access_token") ||
-      sessionStorage.getItem("access_token");
-    const storedUser =
-      localStorage.getItem("user") || sessionStorage.getItem("user");
-
-    if (storedToken) requestAnimationFrame(() => setToken(storedToken));
-    if (storedUser) {
+    const syncSession = async () => {
       try {
-        requestAnimationFrame(() => setUser(JSON.parse(storedUser)));
+        const response = await apiCall("/auth/me", { method: "GET" });
+        const sessionUser = response.user ?? response;
+
+        if (sessionUser) {
+          setUser(sessionUser);
+        } else {
+          setUser(null);
+        }
       } catch {
-        localStorage.removeItem("user");
-        sessionStorage.removeItem("user");
+        setUser(null);
+        setToken(null);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    requestAnimationFrame(() => setIsLoading(false));
+    };
+
+    void syncSession();
   }, []);
 
   const login = useCallback(
@@ -67,19 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const data = await apiCall("/auth/signin", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, rememberMe }),
         });
 
-        const storage = rememberMe ? localStorage : sessionStorage;
-        data;
-
         if (data.access_token) {
-          storage.setItem("access_token", data.access_token);
           setToken(data.access_token);
         }
 
         if (data.user) {
-          storage.setItem("user", JSON.stringify(data.user));
           setUser(data.user);
         }
       } catch (err: unknown) {
@@ -93,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+  void apiCall("/auth/logout", { method: "POST" }).catch(() => undefined);
 
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
@@ -112,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       login,
       logout,
-      isAuthenticated: !!token,
+      isAuthenticated: !!user,
     }),
     [user, token, isLoading, error, login, logout],
   );

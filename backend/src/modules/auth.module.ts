@@ -7,15 +7,28 @@ import { AccountsModule } from './accounts.module';
 import { JwtStrategy } from '../data/strategy/jwt.strategy';
 import { LogsModule } from './logs.module';
 
+function requireJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT_SECRET is missing');
+  }
+
+  return secret;
+}
+
 @Module({
   imports: [
     DatabaseModule,
     forwardRef(() => AccountsModule),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: {
-        expiresIn: '5d',
-      },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: requireJwtSecret(),
+        signOptions: {
+          issuer: 'ntc-ojt-auth',
+          audience: 'ntc-ojt-web',
+        },
+      }),
     }),
     LogsModule,
   ],

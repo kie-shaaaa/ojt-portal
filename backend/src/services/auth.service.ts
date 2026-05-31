@@ -27,7 +27,12 @@ export class AuthService {
    * @throws UnauthorizedException if credentials are invalid
    */
 
-  async signInAccount(email: string, password: string, ipAddress?: string) {
+  async signInAccount(
+    email: string,
+    password: string,
+    ipAddress?: string,
+    rememberMe = false,
+  ) {
     const user = await this.findActiveUser(email);
 
     if (!user) throw new UnauthorizedException('Invalid email or password');
@@ -58,7 +63,9 @@ export class AuthService {
       ipAddress: ipAddress,
     };
 
-    const access_token = this.jwtService.sign(payload);
+    const access_token = this.jwtService.sign(payload, {
+      expiresIn: rememberMe ? '5d' : '1d',
+    });
 
     await this.recordSignInLog(log);
 

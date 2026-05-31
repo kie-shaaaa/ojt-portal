@@ -98,30 +98,8 @@ export const AccountsTableSection = ({
         throw new Error("Updating account data failed");
       }
 
-      const localUser = localStorage.getItem("user");
-      const sessionUser = sessionStorage.getItem("user");
-      const raw = localUser || sessionUser;
-
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-
-          if (parsed?.id === updatedAccount.id) {
-            parsed.account_type = updatedAccount.account_type;
-            parsed.username = updatedAccount.username;
-
-            if (localUser) {
-              localStorage.setItem("user", JSON.stringify(parsed));
-            }
-            if (sessionUser) {
-              sessionStorage.setItem("user", JSON.stringify(parsed));
-            }
-
-            window.location.reload();
-          }
-        } catch {
-          // Ignore malformed data
-        }
+      if (updatedAccount.id === user?.id) {
+        window.location.reload();
       }
     } catch (error) {
       const errorMessage =
@@ -243,7 +221,7 @@ export const AccountsTableSection = ({
           </div>
 
           <div className="ml-auto flex items-center gap-4 max-[767px]:ml-0 max-[767px]:w-full max-[767px]:flex-col max-[767px]:items-stretch">
-            <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
+            <div className="relative w-full sm:w-md lg:w-136">
               <Search
                 size={18}
                 aria-hidden="true"
@@ -317,7 +295,10 @@ export const AccountsTableSection = ({
               <tbody className="bg-white">
                 {accounts.length === 0 && (
                   <tr>
-                    <td colSpan={user?.account_type == "admin" ? 6 : 5} className="px-6 py-14 text-center">
+                    <td
+                      colSpan={user?.account_type == "admin" ? 6 : 5}
+                      className="px-6 py-14 text-center"
+                    >
                       <div className="flex flex-col items-center gap-2">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                           <Search size={32} />
@@ -328,7 +309,8 @@ export const AccountsTableSection = ({
                         </h3>
 
                         <p className="max-w-xs text-sm text-slate-500">
-                          We couldn&apos;t find any accounts matching your current search.
+                          We couldn&apos;t find any accounts matching your
+                          current search.
                         </p>
 
                         <button

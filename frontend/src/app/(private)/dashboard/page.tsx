@@ -3,6 +3,7 @@
 import { useEffect, ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 import { ApplicationsHeaderSection } from "@/components/layout/private/Dashboard/ApplicationsHeaderSection";
 import { ApplicationChartsSection } from "@/components/layout/private/Dashboard/ApplicationCharts";
@@ -12,13 +13,10 @@ import { ApplicationStatsSection } from "@/components/layout/private/Dashboard/A
 export default function DashboardPage(): ReactNode {
   const router = useRouter();
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    const accessToken =
-      localStorage.getItem("access_token") ||
-      sessionStorage.getItem("access_token");
-
-    if (!accessToken) {
+    if (!isLoading && !isAuthenticated) {
       router.replace("/login");
       return;
     }
@@ -30,7 +28,7 @@ export default function DashboardPage(): ReactNode {
       sessionStorage.removeItem("login_success_toast");
       toast.success(successMessage);
     }
-  }, [router]);
+  }, [isAuthenticated, isLoading, router]);
 
   if (isCheckingAccess) {
     return null;
