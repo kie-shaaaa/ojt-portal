@@ -1,5 +1,7 @@
 "use client";
-import InternDetailsModal, { ModalInternData } from "../modals/InternDetailsModal";
+import InternDetailsModal, {
+  ModalInternData,
+} from "../modals/InternDetailsModal";
 import ChangeInterDetailsModal from "../modals/ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 import CertificateModal from "../modals/CertificateModal";
@@ -551,17 +553,67 @@ export const VerifiedInternsTableSection = ({
       return;
     }
 
-    if (!intern.application_id) {
-      toast.info("No application ID available for download.");
+    const getApplicationIdsFromEmail = async () => {
+      if (!intern.email) return [] as number[];
+
+      const lookupResponse = await apiCall(
+        `/applications/fetch?email=${encodeURIComponent(intern.email)}`,
+      );
+
+      const lookupData = Array.isArray(lookupResponse)
+        ? lookupResponse
+        : Array.isArray((lookupResponse as any)?.data)
+          ? (lookupResponse as any).data
+          : [];
+
+      if (!Array.isArray(lookupData)) return [] as number[];
+
+      return lookupData
+        .filter(
+          (item): item is { id: number } =>
+            item && typeof item.id === "number" && item.id > 0,
+        )
+        .map((item) => item.id)
+        .sort((a, b) => b - a);
+    };
+
+    const candidateApplicationIds = new Set<number>();
+
+    if (intern.application_id && Number.isFinite(intern.application_id)) {
+      candidateApplicationIds.add(intern.application_id);
+    }
+
+    const emailApplicationIds = await getApplicationIdsFromEmail();
+    emailApplicationIds.forEach((id) => candidateApplicationIds.add(id));
+
+    if (candidateApplicationIds.size === 0) {
+      toast.info(
+        "No application ID or matching applicant email available for download.",
+      );
       return;
     }
+
+    const applicationIds = [...candidateApplicationIds].sort((a, b) => b - a);
 
     setIsDownloadingInternId(intern.id);
 
     try {
-      const files = await apiCall(
-        `/applications/${intern.application_id}/files`,
-      );
+      let files: ApplicationFile[] = [];
+
+      for (const applicationId of applicationIds) {
+        const response = await apiCall(`/applications/${applicationId}/files`);
+
+        const fileData = Array.isArray(response)
+          ? response
+          : Array.isArray((response as any)?.data)
+            ? (response as any).data
+            : [];
+
+        if (Array.isArray(fileData) && fileData.length > 0) {
+          files = fileData;
+          break;
+        }
+      }
 
       if (!Array.isArray(files) || files.length === 0) {
         toast.info("No submitted files available for download.");
@@ -602,7 +654,7 @@ export const VerifiedInternsTableSection = ({
 
       if (mergedPages === 0) {
         toast.error(
-          "Unable to compile intern files. No supported documents were available.",
+          "Unable to compile applicant files. No supported documents were available.",
         );
         return;
       }
@@ -620,13 +672,13 @@ export const VerifiedInternsTableSection = ({
           `Compiled PDF created. ${skippedFiles.length} unsupported or unavailable file(s) were skipped.`,
         );
       } else {
-        toast.success("Intern files compiled and downloaded successfully.");
+        toast.success("Applicant files compiled and downloaded successfully.");
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to compile intern files.";
+          : "Failed to compile applicant files.";
       console.error(errorMessage, error);
       toast.error(errorMessage);
     } finally {
@@ -746,12 +798,18 @@ export const VerifiedInternsTableSection = ({
                   title="Download files"
                   disabled={isDownloadingInternId === intern.id}
                   aria-busy={isDownloadingInternId === intern.id}
-                  className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={`rounded-lg p-2 text-slate-600 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    isDownloadingInternId === intern.id
+                      ? "bg-slate-100 shadow-inner ring-2 ring-slate-300 animate-pulse"
+                      : "bg-slate-50 hover:bg-slate-100 hover:scale-105"
+                  }`}
                 >
                   <Download
                     size={16}
                     className={
-                      isDownloadingInternId === intern.id ? "animate-spin" : ""
+                      isDownloadingInternId === intern.id
+                        ? "animate-spin text-slate-700"
+                        : "text-slate-600"
                     }
                   />
                 </button>
@@ -951,84 +1009,7 @@ export const VerifiedInternsTableSection = ({
                   </td>
                 </tr>
               )}
-              {visibleRows.map((intern, idx) => (
-                <tr
-                  key={`intern-${
-                    shouldVirtualize
-                      ? windowedRange.startIndex + idx
-                      : intern.id
-                  }`}
-                  className={`border-b border-slate-100 transition-all ${
-                    selectedInterns.includes(intern.id)
-                      ? "bg-blue-50"
-                      : idx % 2 === 0
-                        ? "bg-white hover:bg-slate-50"
-                        : "bg-slate-50 hover:bg-slate-100"
-                  }`}
-                >
-                  <td className="px-6 py-4">
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedInterns.includes(intern.id)}
-                        onChange={() => handleSelectIntern(intern.id)}
-                        className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
-                        aria-label={`Select intern ${getInternName(intern)}`}
-                      />
-                    </label>
-                  </td>
-                  <td className="px-6 py-4 font-mono font-semibold text-blue-600">
-                    {getOjtId(intern)}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-slate-900">
-                    {getInternName(intern)}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700">
-                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
-                      {intern.gender || "Not set"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 text-sm">
-                    {intern.school_name}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
-                    {intern.course || (
-                      <span className="text-slate-400 italic">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                    {formatDate(intern.deployment_date)}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                    {formatDate(intern.end_date)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleViewDetails(intern)}
-                        title="View details"
-                        className="rounded-lg bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100 hover:scale-105 active:scale-95"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(intern)}
-                        title="Edit intern"
-                        className="rounded-lg bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95"
-                      >
-                        <SquarePen size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(intern)}
-                        title="Delete intern"
-                        className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {renderedRows}
 
               {shouldVirtualize && windowedRange.bottomSpacerHeight > 0 && (
                 <tr aria-hidden="true">
@@ -1068,10 +1049,10 @@ export const VerifiedInternsTableSection = ({
               </button>
 
               <button
-                 onClick={() => setIsCertificateModalOpen(true)}
+                onClick={() => setIsCertificateModalOpen(true)}
                 className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 border border-blue-700 transition-all shadow-sm hover:shadow-md"
-                type = "button"
-            >
+                type="button"
+              >
                 Generate Certificate
               </button>
             </div>
