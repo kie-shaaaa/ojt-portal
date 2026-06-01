@@ -28,8 +28,8 @@ COPY --from=builder /app/dist ./dist
 RUN find /app/dist -type f
 
 # Declare a port
-ENV PORT=8080
-EXPOSE 8080
+ENV PORT=4000
+EXPOSE 4000
 
 # Start the application
 CMD [ "npm", "run", "start:prod"]
