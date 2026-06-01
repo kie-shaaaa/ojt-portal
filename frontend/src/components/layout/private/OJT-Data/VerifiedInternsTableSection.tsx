@@ -24,7 +24,7 @@ import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 interface Intern {
   id: number;
   ojt_id: string;
-  application_id: number;
+  application_id?: number | null;
   application_type: string;
   first_name: string;
   last_name: string;
@@ -103,6 +103,59 @@ const convertImageBufferToPng = async (
       output.arrayBuffer().then(resolve).catch(reject);
     }, "image/png");
   });
+};
+
+const normalizeNumericId = (
+  value: number | string | undefined | null,
+): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (/^\d+$/.test(trimmed)) {
+    const parsed = Number(trimmed);
+    return parsed > 0 ? parsed : undefined;
+  }
+
+  return undefined;
+};
+
+const resolveApplicationId = async (
+  intern: Intern,
+): Promise<number | undefined> => {
+  const directId = normalizeNumericId(intern.application_id);
+  if (directId) return directId;
+
+  const email = intern.email?.trim();
+  if (!email) return undefined;
+
+  try {
+    const lookupResponse = await apiCall(
+      `/applications/fetch?email=${encodeURIComponent(email)}`,
+    );
+
+    const lookupData = Array.isArray(lookupResponse)
+      ? lookupResponse
+      : Array.isArray((lookupResponse as any)?.data)
+        ? (lookupResponse as any).data
+        : [];
+
+    const ids = (lookupData as Array<{ id?: number }>)
+      .filter((item) => typeof item?.id === "number" && item.id > 0)
+      .map((item) => item.id as number)
+      .sort((a, b) => b - a);
+
+    return ids.length > 0 ? ids[0] : undefined;
+  } catch (error) {
+    console.warn("Failed to resolve application ID by email:", error);
+    return undefined;
+  }
 };
 
 const addFileToPdf = async (
@@ -517,7 +570,7 @@ export const VerifiedInternsTableSection = ({
   const handleViewDetails = (intern: Intern) => {
     const internName = getInternName(intern);
     const modalData: ModalInternData = {
-      applicationId: intern.application_id,
+      applicationId: intern.application_id ?? undefined,
       ojtId: getOjtId(intern),
       portalId: getOjtId(intern).replace("OJT-", "OJT-"),
       name: internName,
@@ -551,16 +604,17 @@ export const VerifiedInternsTableSection = ({
       return;
     }
 
-    if (!intern.application_id) {
-      toast.info("No application ID available for download.");
-      return;
-    }
-
     setIsDownloadingInternId(intern.id);
 
     try {
+      const applicationId = await resolveApplicationId(intern);
+      if (!applicationId) {
+        toast.info("No application ID available for download.");
+        return;
+      }
+
       const files = await apiCall(
-        `/applications/${intern.application_id}/files`,
+        `/applications/${applicationId}/files`,
       );
 
       if (!Array.isArray(files) || files.length === 0) {
@@ -746,7 +800,7 @@ export const VerifiedInternsTableSection = ({
                   title="Download files"
                   disabled={isDownloadingInternId === intern.id}
                   aria-busy={isDownloadingInternId === intern.id}
-                  className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg bg-green-50 p-2 text-green-600 transition-all hover:bg-green-100 hover:scale-105 active:scale-95"
                 >
                   <Download
                     size={16}
@@ -951,84 +1005,7 @@ export const VerifiedInternsTableSection = ({
                   </td>
                 </tr>
               )}
-              {visibleRows.map((intern, idx) => (
-                <tr
-                  key={`intern-${
-                    shouldVirtualize
-                      ? windowedRange.startIndex + idx
-                      : intern.id
-                  }`}
-                  className={`border-b border-slate-100 transition-all ${
-                    selectedInterns.includes(intern.id)
-                      ? "bg-blue-50"
-                      : idx % 2 === 0
-                        ? "bg-white hover:bg-slate-50"
-                        : "bg-slate-50 hover:bg-slate-100"
-                  }`}
-                >
-                  <td className="px-6 py-4">
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedInterns.includes(intern.id)}
-                        onChange={() => handleSelectIntern(intern.id)}
-                        className="w-4 h-4 rounded border-2 border-slate-300 bg-white accent-blue-600 focus:ring-blue-500 cursor-pointer"
-                        aria-label={`Select intern ${getInternName(intern)}`}
-                      />
-                    </label>
-                  </td>
-                  <td className="px-6 py-4 font-mono font-semibold text-blue-600">
-                    {getOjtId(intern)}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-slate-900">
-                    {getInternName(intern)}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700">
-                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
-                      {intern.gender || "Not set"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 text-sm">
-                    {intern.school_name}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
-                    {intern.course || (
-                      <span className="text-slate-400 italic">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                    {formatDate(intern.deployment_date)}
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
-                    {formatDate(intern.end_date)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleViewDetails(intern)}
-                        title="View details"
-                        className="rounded-lg bg-blue-50 p-2 text-blue-600 transition-all hover:bg-blue-100 hover:scale-105 active:scale-95"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(intern)}
-                        title="Edit intern"
-                        className="rounded-lg bg-amber-50 p-2 text-amber-600 transition-all hover:bg-amber-100 hover:scale-105 active:scale-95"
-                      >
-                        <SquarePen size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(intern)}
-                        title="Delete intern"
-                        className="rounded-lg bg-red-50 p-2 text-red-600 transition-all hover:bg-red-100 hover:scale-105 active:scale-95"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {renderedRows}
 
               {shouldVirtualize && windowedRange.bottomSpacerHeight > 0 && (
                 <tr aria-hidden="true">
