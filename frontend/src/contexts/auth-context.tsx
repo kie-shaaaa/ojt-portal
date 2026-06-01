@@ -90,13 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
-  void apiCall("/auth/logout", { method: "POST" }).catch(() => undefined);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("access_token");
-    sessionStorage.removeItem("user");
+    void apiCall("/auth/logout", { method: "POST" }).catch(() => undefined);
     setToken(null);
     setUser(null);
     setError(null);

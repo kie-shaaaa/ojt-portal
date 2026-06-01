@@ -14,11 +14,26 @@ import { AuthService } from '../services/auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AuthenticatedUser } from '../data/interfaces';
+import { randomBytes } from 'crypto';
 
 const ACCESS_TOKEN_COOKIE = 'access_token';
+const CSRF_TOKEN_COOKIE = 'csrf_token';
 
 function getCookieMaxAge(rememberMe?: boolean): number | undefined {
   return rememberMe ? 5 * 24 * 60 * 60 : undefined;
+}
+
+function generateCsrfToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+function setCsrfCookie(reply: FastifyReply, csrfToken: string): void {
+  reply.setCookie(CSRF_TOKEN_COOKIE, csrfToken, {
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+  });
 }
 
 function extractClientIp(request: FastifyRequest): string | undefined {
@@ -77,6 +92,8 @@ export class AuthController {
         maxAge: getCookieMaxAge(body.rememberMe),
       });
 
+      setCsrfCookie(reply, generateCsrfToken());
+
       return {
         access_token: result.access_token,
         user: {
@@ -94,9 +111,16 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  me(@Req() request: FastifyRequest & { user?: AuthenticatedUser }) {
+  me(
+    @Req() request: FastifyRequest & { user?: AuthenticatedUser },
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
     if (!request.user) {
       throw new UnauthorizedException('Not authenticated');
+    }
+
+    if (!request.cookies?.[CSRF_TOKEN_COOKIE]) {
+      setCsrfCookie(reply, generateCsrfToken());
     }
 
     return {
@@ -109,6 +133,13 @@ export class AuthController {
     reply.clearCookie(ACCESS_TOKEN_COOKIE, {
       path: '/',
       httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    reply.clearCookie(CSRF_TOKEN_COOKIE, {
+      path: '/',
+      httpOnly: false,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
