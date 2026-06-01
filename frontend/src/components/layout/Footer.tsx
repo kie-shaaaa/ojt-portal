@@ -52,6 +52,7 @@ const legalLinks = [
   { label: "Terms of Service", href: "#" },
   { label: "Privacy Policy", href: "#" },
   { label: "Developer", href: "#" },
+  { label: "Admin Login", href: "/login" },
 ];
 
 export const Footer = (): JSX.Element => {
@@ -206,9 +207,8 @@ export const Footer = (): JSX.Element => {
           </ul>
         </nav>
       </div>
-      <div className="w-full max-w-7xl mx-auto flex flex-col gap-4 md:gap-6 text-center md:text-left">
-        {/* Left Side */}
-        <div className="flex flex-col gap-1">
+      <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6 text-center md:text-left">
+        <div className="flex flex-col gap-1 md:max-w-2xl">
           <p className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-300 text-[10px] md:text-[11px] tracking-[0] leading-4 md:leading-[15px]">
             © 2026 National Telecommunications Commission - Philippines. All rights reserved.
           </p>
@@ -217,13 +217,12 @@ export const Footer = (): JSX.Element => {
           </p>
         </div>
 
-        {/* Right Side */}
-        <nav aria-label="Legal" className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-4">
+        <nav aria-label="Legal" className="flex flex-nowrap items-center justify-center md:justify-end gap-2 md:gap-4 overflow-x-auto pb-1 whitespace-nowrap">
           {legalLinks.map((item, index) => (
             <div key={item.label} className="flex items-center gap-2 md:gap-4">
               <a
                 href={item.href}
-                className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] hover:underline focus:outline-none focus:underline"
+                className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] whitespace-nowrap hover:underline focus:outline-none focus:underline"
               >
                 {item.label}
               </a>

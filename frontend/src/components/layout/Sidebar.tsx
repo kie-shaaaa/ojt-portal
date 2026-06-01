@@ -40,8 +40,8 @@ export const AsideSidebar = ({
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/");
   };
 
@@ -182,7 +182,7 @@ export const AsideSidebar = ({
                 type="button"
                 onClick={() => {
                   setShowLogoutModal(false);
-                  handleLogout();
+                  void handleLogout();
                 }}
                 className="rounded-lg bg-[#e74c3c] px-4 py-2 text-sm font-semibold text-white hover:bg-[#cf3f31] transition"
               >
