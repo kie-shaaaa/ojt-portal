@@ -273,20 +273,6 @@ export const DocumentUploadSection = ({
         accept: ".pdf,application/pdf",
       },
       {
-        id: "draft-moa",
-        number: "5",
-        title: "Draft Memorandum of Agreement",
-        required: false,
-        description: "PDF only • Max 5 MB",
-        areaClassName: "relative w-full h-fit",
-        contentClassName:
-          "flex flex-col items-start gap-1 p-6 rounded-xl border-2 border-dashed border-blue-200 bg-white",
-        iconWrapperClassName:
-          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-        icon: "agreement",
-        accept: ".pdf,application/pdf",
-      },
-      {
         id: "resume-cv",
         number: "1",
         title: "Resume / CV",
@@ -322,12 +308,11 @@ export const DocumentUploadSection = ({
 
   const orderedCards = useMemo(
     () => [
-      uploadCards[4],
+      uploadCards[3],
       uploadCards[0],
       uploadCards[1],
       uploadCards[2],
-      uploadCards[3],
-      uploadCards[5],
+      uploadCards[4],
     ],
     [uploadCards],
   );
