@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserRound, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { JSX, useState } from "react";
 
 const navLinks = [
@@ -104,22 +104,6 @@ export const NavBar = (): JSX.Element => {
               </button>
             ))}
 
-            <Link
-              href="/login"
-              className="group all-[unset] box-border inline-flex gap-3 px-5 py-2.5 rounded-full border border-white/90 bg-transparent text-white items-center relative flex-[0_0_auto] cursor-pointer hover:bg-white/10 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-26px_rgba(0,0,0,0.7)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                <UserRound
-                  className="relative w-5 h-5 text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="inline-flex flex-col items-center relative flex-[0_0_auto]">
-                <div className="flex items-center justify-center mt-[-1.00px] [font-family:'Inter-Medium',Helvetica] font-medium text-white text-sm text-center tracking-[0] leading-5 whitespace-nowrap relative w-fit">
-                  Login
-                </div>
-              </div>
-            </Link>
           </nav>
 
           {/* Mobile Hamburger Button */}
@@ -159,13 +143,6 @@ export const NavBar = (): JSX.Element => {
                 </span>
               </button>
             ))}
-            <Link
-              href="/login"
-              className="group mx-3 mb-3 mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white px-4 py-3 text-[#0b49d4] shadow-[0_10px_20px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 hover:shadow-[0_18px_32px_rgba(0,0,0,0.24)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [font-family:'Inter-SemiBold',Helvetica] font-semibold text-sm"
-            >
-              <UserRound className="w-4 h-4 transition-transform duration-300 ease-out group-hover:translate-x-0.5" />
-              Login
-            </Link>
           </nav>
         </div>
       )}
