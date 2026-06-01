@@ -1,5 +1,7 @@
 "use client";
-import InternDetailsModal, { ModalInternData } from "../modals/InternDetailsModal";
+import InternDetailsModal, {
+  ModalInternData,
+} from "../modals/InternDetailsModal";
 import ChangeInterDetailsModal from "../modals/ChangeInterDetailsModal";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 import CertificateModal from "../modals/CertificateModal";
@@ -604,18 +606,67 @@ export const VerifiedInternsTableSection = ({
       return;
     }
 
+    const getApplicationIdsFromEmail = async () => {
+      if (!intern.email) return [] as number[];
+
+      const lookupResponse = await apiCall(
+        `/applications/fetch?email=${encodeURIComponent(intern.email)}`,
+      );
+
+      const lookupData = Array.isArray(lookupResponse)
+        ? lookupResponse
+        : Array.isArray((lookupResponse as any)?.data)
+          ? (lookupResponse as any).data
+          : [];
+
+      if (!Array.isArray(lookupData)) return [] as number[];
+
+      return lookupData
+        .filter(
+          (item): item is { id: number } =>
+            item && typeof item.id === "number" && item.id > 0,
+        )
+        .map((item) => item.id)
+        .sort((a, b) => b - a);
+    };
+
+    const candidateApplicationIds = new Set<number>();
+
+    if (intern.application_id && Number.isFinite(intern.application_id)) {
+      candidateApplicationIds.add(intern.application_id);
+    }
+
+    const emailApplicationIds = await getApplicationIdsFromEmail();
+    emailApplicationIds.forEach((id) => candidateApplicationIds.add(id));
+
+    if (candidateApplicationIds.size === 0) {
+      toast.info(
+        "No application ID or matching applicant email available for download.",
+      );
+      return;
+    }
+
+    const applicationIds = [...candidateApplicationIds].sort((a, b) => b - a);
+
     setIsDownloadingInternId(intern.id);
 
     try {
-      const applicationId = await resolveApplicationId(intern);
-      if (!applicationId) {
-        toast.info("No application ID available for download.");
-        return;
-      }
+      let files: ApplicationFile[] = [];
 
-      const files = await apiCall(
-        `/applications/${applicationId}/files`,
-      );
+      for (const applicationId of applicationIds) {
+        const response = await apiCall(`/applications/${applicationId}/files`);
+
+        const fileData = Array.isArray(response)
+          ? response
+          : Array.isArray((response as any)?.data)
+            ? (response as any).data
+            : [];
+
+        if (Array.isArray(fileData) && fileData.length > 0) {
+          files = fileData;
+          break;
+        }
+      }
 
       if (!Array.isArray(files) || files.length === 0) {
         toast.info("No submitted files available for download.");
@@ -656,7 +707,7 @@ export const VerifiedInternsTableSection = ({
 
       if (mergedPages === 0) {
         toast.error(
-          "Unable to compile intern files. No supported documents were available.",
+          "Unable to compile applicant files. No supported documents were available.",
         );
         return;
       }
@@ -674,13 +725,13 @@ export const VerifiedInternsTableSection = ({
           `Compiled PDF created. ${skippedFiles.length} unsupported or unavailable file(s) were skipped.`,
         );
       } else {
-        toast.success("Intern files compiled and downloaded successfully.");
+        toast.success("Applicant files compiled and downloaded successfully.");
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to compile intern files.";
+          : "Failed to compile applicant files.";
       console.error(errorMessage, error);
       toast.error(errorMessage);
     } finally {
@@ -800,12 +851,18 @@ export const VerifiedInternsTableSection = ({
                   title="Download files"
                   disabled={isDownloadingInternId === intern.id}
                   aria-busy={isDownloadingInternId === intern.id}
-                  className="rounded-lg bg-green-50 p-2 text-green-600 transition-all hover:bg-green-100 hover:scale-105 active:scale-95"
+                  className={`rounded-lg p-2 text-slate-600 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    isDownloadingInternId === intern.id
+                      ? "bg-slate-100 shadow-inner ring-2 ring-slate-300 animate-pulse"
+                      : "bg-slate-50 hover:bg-slate-100 hover:scale-105"
+                  }`}
                 >
                   <Download
                     size={16}
                     className={
-                      isDownloadingInternId === intern.id ? "animate-spin" : ""
+                      isDownloadingInternId === intern.id
+                        ? "animate-spin text-slate-700"
+                        : "text-slate-600"
                     }
                   />
                 </button>
@@ -1045,10 +1102,10 @@ export const VerifiedInternsTableSection = ({
               </button>
 
               <button
-                 onClick={() => setIsCertificateModalOpen(true)}
+                onClick={() => setIsCertificateModalOpen(true)}
                 className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 border border-blue-700 transition-all shadow-sm hover:shadow-md"
-                type = "button"
-            >
+                type="button"
+              >
                 Generate Certificate
               </button>
             </div>
