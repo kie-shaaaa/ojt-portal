@@ -40,9 +40,11 @@ export default function DashboardPage(): ReactNode {
       data-id="main-content"
     >
       <ApplicationsHeaderSection />
-      <ApplicationStatsSection />
+      <div className=" grid grid-cols-1 items-stretch gap-5 lg:grid-cols-[1fr_1.25fr]">
+        <ApplicationStatsSection />
+        <ApplicationDetailsSection />
+      </div>
       <ApplicationChartsSection />
-      <ApplicationDetailsSection />
     </main>
   );
 }

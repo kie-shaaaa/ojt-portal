@@ -100,13 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const logout = useCallback(async () => {
-    sessionVersionRef.current += 1;
-    await apiCall("/auth/logout", { method: "POST" }).catch(() => undefined);
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("access_token");
-    sessionStorage.removeItem("user");
+  const logout = useCallback(async (): Promise<void> => {
+    try {
+      await apiCall("/auth/logout", { method: "POST" });
+    } catch {
+      // ignore network/logout errors
+    }
     setToken(null);
     setUser(null);
     setError(null);

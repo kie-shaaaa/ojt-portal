@@ -395,6 +395,7 @@ export class ApplicationsController {
     body: {
       id: number;
       email: string;
+      decision?: 'accept' | 'reject';
     },
   ) {
     try {
@@ -412,6 +413,7 @@ export class ApplicationsController {
       return await this.applicationService.confirmAcceptance(
         applicationId,
         email,
+        body.decision,
       );
     } catch (error) {
       const message =

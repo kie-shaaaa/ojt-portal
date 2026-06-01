@@ -325,16 +325,19 @@ export class MailerService {
       lastName,
       applicationId,
       confirmUrl,
+      rejectUrl,
       rescheduleUrl,
     } = dto;
 
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const safeConfirmUrl = escapeHtml(confirmUrl);
+    const safeRejectUrl = rejectUrl ? escapeHtml(rejectUrl) : '';
     const safeRescheduleUrl = rescheduleUrl ? escapeHtml(rescheduleUrl) : '';
     const actionButtons = `
       <div style="text-align:center;margin:32px 0;">
         <a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Confirm Acceptance</a>
+        ${safeRejectUrl ? `<a href="${safeRejectUrl}" style="display:inline-block;background:#fff;color:#cf222e;padding:12px 28px;text-decoration:none;border:1px solid #cf222e;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Reject Application</a>` : ''}
         ${safeRescheduleUrl ? `<a href="${safeRescheduleUrl}" style="display:inline-block;background:#fff;color:#0038A8;padding:12px 28px;text-decoration:none;border:1px solid #0038A8;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Request Reschedule</a>` : ''}
       </div>`;
 
@@ -348,6 +351,13 @@ export class MailerService {
         <strong>Reference No.:</strong> ${ref}<br/>
         <strong>Status:</strong> Pending Acceptance
       `)}
+
+      ${alertBox(
+        `
+        <strong>Choice required:</strong> Use the buttons below to either confirm your acceptance or reject the offer.
+      `,
+        '#cf222e',
+      )}
 
       ${alertBox(
         `

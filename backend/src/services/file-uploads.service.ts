@@ -290,6 +290,37 @@ export class FileUploadsService {
     }
   }
 
+  async deleteApplicationFiles(applicationId: number): Promise<void> {
+    try {
+      const dbClient = this.dbService.getClient();
+      const result = await dbClient.query<FileUploadRow>(
+        'SELECT id, file_path FROM file_uploads WHERE application_id = $1 ORDER BY id',
+        [applicationId],
+      );
+
+      for (const fileRow of result.rows) {
+        await this.supabaseService.remove(
+          this.SUPABASE_BUCKET,
+          fileRow.file_path,
+        );
+      }
+
+      if (result.rows.length > 0) {
+        await dbClient.query(
+          'DELETE FROM file_uploads WHERE application_id = $1',
+          [applicationId],
+        );
+      }
+
+      this.logger.log(
+        `Deleted ${result.rows.length} file(s) for application ${applicationId}`,
+      );
+    } catch (error) {
+      this.logger.error(`Application file deletion failed: ${error}`, error);
+      throw error;
+    }
+  }
+
   /**
    * Delete file from Supabase and database
    */
