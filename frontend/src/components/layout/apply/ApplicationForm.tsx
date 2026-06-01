@@ -126,7 +126,6 @@ export const ApplicationForm = (): JSX.Element => {
       "proof-of-enrollment",
       "draft-endorsement",
       "vaccine-card",
-      "draft-moa",
     ];
     requiredDocs.forEach((docId) => {
       if (!uploadedDocuments[docId]) {

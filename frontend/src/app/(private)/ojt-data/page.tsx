@@ -14,7 +14,7 @@ import InternDetailsModal, {
 type CompletedInternRecord = {
   id: number;
   ojt_id: string;
-  application_id: number;
+  application_id?: number | null;
   application_type: string;
   first_name: string;
   last_name: string;

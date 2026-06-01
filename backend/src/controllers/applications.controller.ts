@@ -520,7 +520,7 @@ export class ApplicationsController {
   @Post('reject-files')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async rejectFiles(
-    @Body() body: { fileIds: number[] },
+    @Body() body: { fileIds: number[]; rejectionReason?: string },
     @Req() req: FastifyRequest & { user?: AuthenticatedUser },
   ) {
     const userId = req.user?.id;
@@ -532,7 +532,11 @@ export class ApplicationsController {
     }
 
     try {
-      return this.fileUploadsService.deleteFiles(body.fileIds, userId);
+      return this.fileUploadsService.deleteFiles(
+        body.fileIds,
+        userId,
+        body.rejectionReason,
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to reject files';

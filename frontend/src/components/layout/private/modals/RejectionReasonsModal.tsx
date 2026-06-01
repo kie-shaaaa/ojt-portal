@@ -70,11 +70,13 @@ const MAX_COMMENT_LENGTH = 200;
 
 export const RejectionReasons = ({
   onClose,
+  onBack,
   onSubmit,
   selectedCount = 0,
   selectedRequirementIds = [],
 }: {
   onClose?: () => void;
+  onBack?: () => void;
   onSubmit?: (payload: {
     items: Array<{
       id: string;
@@ -351,7 +353,13 @@ export const RejectionReasons = ({
       <footer className="flex shrink-0 items-center justify-between border-t border-gray-200 bg-slate-50 px-4 py-4 sm:px-6">
         <button
           type="button"
-          onClick={() => onClose?.()}
+          onClick={() => {
+            if (onBack) {
+              onBack();
+              return;
+            }
+            onClose?.();
+          }}
           className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
         >
           <ArrowLeft size={16} />

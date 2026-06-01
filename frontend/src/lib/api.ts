@@ -29,6 +29,7 @@ function shouldAttachCsrfHeader(method?: string): boolean {
 }
 
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const API_URL = getBaseUrl();
   const isFormData = options.body instanceof FormData;
   const headers = new Headers(options.headers);
 

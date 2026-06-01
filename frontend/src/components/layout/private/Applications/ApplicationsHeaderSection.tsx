@@ -10,9 +10,6 @@ export const ApplicationsHeaderSection = (): JSX.Element => {
         <h1 className="text-2xl font-bold leading-8 text-[#003366]">
           Applications
         </h1>
-        <h3>
-          Manage all of the applicants
-        </h3>
       </div>
 
     </header>

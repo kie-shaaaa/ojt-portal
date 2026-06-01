@@ -26,7 +26,7 @@ import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
 interface Intern {
   id: number;
   ojt_id: string;
-  application_id: number;
+  application_id?: number | null;
   application_type: string;
   first_name: string;
   last_name: string;
@@ -105,6 +105,59 @@ const convertImageBufferToPng = async (
       output.arrayBuffer().then(resolve).catch(reject);
     }, "image/png");
   });
+};
+
+const normalizeNumericId = (
+  value: number | string | undefined | null,
+): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (/^\d+$/.test(trimmed)) {
+    const parsed = Number(trimmed);
+    return parsed > 0 ? parsed : undefined;
+  }
+
+  return undefined;
+};
+
+const resolveApplicationId = async (
+  intern: Intern,
+): Promise<number | undefined> => {
+  const directId = normalizeNumericId(intern.application_id);
+  if (directId) return directId;
+
+  const email = intern.email?.trim();
+  if (!email) return undefined;
+
+  try {
+    const lookupResponse = await apiCall(
+      `/applications/fetch?email=${encodeURIComponent(email)}`,
+    );
+
+    const lookupData = Array.isArray(lookupResponse)
+      ? lookupResponse
+      : Array.isArray((lookupResponse as any)?.data)
+        ? (lookupResponse as any).data
+        : [];
+
+    const ids = (lookupData as Array<{ id?: number }>)
+      .filter((item) => typeof item?.id === "number" && item.id > 0)
+      .map((item) => item.id as number)
+      .sort((a, b) => b - a);
+
+    return ids.length > 0 ? ids[0] : undefined;
+  } catch (error) {
+    console.warn("Failed to resolve application ID by email:", error);
+    return undefined;
+  }
 };
 
 const addFileToPdf = async (
@@ -519,7 +572,7 @@ export const VerifiedInternsTableSection = ({
   const handleViewDetails = (intern: Intern) => {
     const internName = getInternName(intern);
     const modalData: ModalInternData = {
-      applicationId: intern.application_id,
+      applicationId: intern.application_id ?? undefined,
       ojtId: getOjtId(intern),
       portalId: getOjtId(intern).replace("OJT-", "OJT-"),
       name: internName,
@@ -553,6 +606,11 @@ export const VerifiedInternsTableSection = ({
       return;
     }
 
+    const normalizedApplicationId =
+      intern.application_id && Number.isFinite(intern.application_id)
+        ? intern.application_id
+        : undefined;
+
     const getApplicationIdsFromEmail = async () => {
       if (!intern.email) return [] as number[];
 
@@ -579,8 +637,8 @@ export const VerifiedInternsTableSection = ({
 
     const candidateApplicationIds = new Set<number>();
 
-    if (intern.application_id && Number.isFinite(intern.application_id)) {
-      candidateApplicationIds.add(intern.application_id);
+    if (normalizedApplicationId) {
+      candidateApplicationIds.add(normalizedApplicationId);
     }
 
     const emailApplicationIds = await getApplicationIdsFromEmail();
@@ -594,6 +652,7 @@ export const VerifiedInternsTableSection = ({
     }
 
     const applicationIds = [...candidateApplicationIds].sort((a, b) => b - a);
+    const applicantName = getInternName(intern);
 
     setIsDownloadingInternId(intern.id);
 
@@ -663,7 +722,7 @@ export const VerifiedInternsTableSection = ({
       const pdfBlob = new Blob([new Uint8Array(finalPdfBytes)], {
         type: "application/pdf",
       });
-      const outputName = `${sanitizeApplicantName(getInternName(intern))}.pdf`;
+      const outputName = `${sanitizeApplicantName(applicantName)}.pdf`;
 
       saveAs(pdfBlob, outputName);
 
@@ -794,15 +853,12 @@ export const VerifiedInternsTableSection = ({
                   <SquarePen size={16} />
                 </button>
                 <button
-                  onClick={() => handleDownloadInternFiles(intern)}
+                  type="button"
                   title="Download files"
+                  onClick={() => handleDownloadInternFiles(intern)}
                   disabled={isDownloadingInternId === intern.id}
+                  className="rounded-lg bg-slate-50 p-2 text-slate-600 transition hover:bg-slate-100 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-busy={isDownloadingInternId === intern.id}
-                  className={`rounded-lg p-2 text-slate-600 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
-                    isDownloadingInternId === intern.id
-                      ? "bg-slate-100 shadow-inner ring-2 ring-slate-300 animate-pulse"
-                      : "bg-slate-50 hover:bg-slate-100 hover:scale-105"
-                  }`}
                 >
                   <Download
                     size={16}
