@@ -6,6 +6,7 @@ import { JSX, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from 'framer-motion'
 import { ApplicationPortalClosedModal } from "@/components/modals/ApplicationPortalClosedModal";
+import { apiCall } from "@/lib/api";
 
 export const HeroSection = (): JSX.Element => {
   const router = useRouter();
@@ -16,17 +17,34 @@ export const HeroSection = (): JSX.Element => {
   const MotionH1 = motion.h1 as any
   const MotionP = motion.p as any
 
-  // Load portal status on mount
   useEffect(() => {
-    const saved = localStorage.getItem("portalSettings");
-    if (saved) {
+    const loadPortalStatus = async () => {
       try {
-        const { isOpen } = JSON.parse(saved);
-        requestAnimationFrame(() => setIsPortalOpen(isOpen));
+        const response = await apiCall("/applications/settings", {
+          method: "GET",
+        });
+        const settings = response.data ?? response;
+
+        if (typeof settings.portal_status === "boolean") {
+          setIsPortalOpen(settings.portal_status);
+        }
       } catch (error) {
-        console.error("Failed to load portal settings:", error);
+        const saved = localStorage.getItem("portalSettings");
+
+        if (saved) {
+          try {
+            const { isOpen } = JSON.parse(saved);
+            setIsPortalOpen(Boolean(isOpen));
+          } catch (parseError) {
+            console.error("Failed to load portal settings:", parseError);
+          }
+        } else {
+          console.error("Failed to fetch portal status:", error);
+        }
       }
-    }
+    };
+
+    void loadPortalStatus();
   }, []);
 
   const handleSubmitApplication = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -69,7 +87,7 @@ export const HeroSection = (): JSX.Element => {
   return (
     <section
       id="home"
-      className="relative pt-32 pb-20 lg:pt-44 lg:pb-32 overflow-hidden min-h-screen flex items-center bg-[#1d4ed8]"
+      className="relative pt-20 pb-18 lg:pt-28 lg:pb-24 overflow-hidden min-h-screen flex items-center bg-[#1d4ed8]"
       aria-labelledby="hero-banner-title"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-[#1d4ed8] via-[#1e40af] to-[#172554]" />
@@ -89,7 +107,25 @@ export const HeroSection = (): JSX.Element => {
       <div className="absolute bottom-0 -right-20 w-[600px] h-[600px] bg-sky-500/20 rounded-full blur-[100px] transform-gpu" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        {!isPortalOpen && (
+          <div className="mb-1.5 rounded-2xl border border-red-200 bg-white/95 px-4 py-2 text-red-700 shadow-lg shadow-red-950/10 backdrop-blur-md">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.16em] text-red-600">
+                  Applications temporarily closed
+                </p>
+                <p className="text-sm text-red-700/90">
+                  The NTC is not accepting applicants right now. Please check back when the portal reopens.
+                </p>
+              </div>
+              <span className="inline-flex w-fit items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                Closed
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
           <MotionDiv
             variants={containerVariants}
             initial="hidden"
@@ -133,10 +169,10 @@ export const HeroSection = (): JSX.Element => {
               <button
                 onClick={handleSubmitApplication}
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#1d4ed8] px-8 py-4 rounded-xl font-semibold hover:bg-[#eff6ff] hover:shadow-2xl hover:shadow-white/20 transition-all active:scale-95 text-lg"
-                aria-label="Submit Application"
+                aria-label={isPortalOpen ? "Submit Application" : "Portal closed"}
               >
                 <Send className="w-5 h-5"/>
-                Submit Application
+                {isPortalOpen ? "Submit Application" : "Portal Closed"}
               </button>
               <Link
                 href="/track"
@@ -147,6 +183,12 @@ export const HeroSection = (): JSX.Element => {
                 <ArrowRightIcon className="w-5 h-5" />
               </Link>
             </MotionDiv>
+
+            {!isPortalOpen && (
+              <p className="mt-4 inline-flex w-fit rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm">
+                NTC is not accepting applicants at the moment.
+              </p>
+            )}
           </MotionDiv>
 
           <div className="relative hidden lg:block h-[560px]">
