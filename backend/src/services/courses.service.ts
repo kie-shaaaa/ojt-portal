@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from './database/database.service';
 import { Courses } from '../data/types';
 import { LogsService } from './logs.service';
-import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { SuccessHandler, throwAppError } from '../utils/handlers';
 
 @Injectable()
 export class CourseService {

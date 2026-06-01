@@ -22,7 +22,7 @@ import {
   FetchAllLogs,
   Logs,
 } from '../data/types';
-import { throwAppError } from '../../utils/handlers';
+import { throwAppError } from '../utils/handlers';
 
 @Injectable()
 export class LogsService {

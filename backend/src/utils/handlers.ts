@@ -7,7 +7,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { SuccessResponse } from '../src/data/types';
+import { SuccessResponse } from '../data/types';
 
 export type ErrorType =
   | 'bad_request'

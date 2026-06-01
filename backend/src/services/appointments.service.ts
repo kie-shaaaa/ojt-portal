@@ -4,7 +4,7 @@ import { DatabaseService } from './database/database.service';
 import { AppointmentType } from '../data/types';
 import { LogsService } from './logs.service';
 import { MailerService } from './mailer.service';
-import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { SuccessHandler, throwAppError } from '../utils/handlers';
 
 interface AppointmentCancellationRow {
   application_id: number | null;
@@ -350,7 +350,10 @@ export class AppointmentsService {
             }),
           })
           .catch((err) =>
-            console.error('Failed to send appointment update notification', err),
+            console.error(
+              'Failed to send appointment update notification',
+              err,
+            ),
           );
       }
 
@@ -548,7 +551,10 @@ export class AppointmentsService {
           ),
         })
         .catch((err) =>
-          console.error('Failed to send appointment confirmation notification', err),
+          console.error(
+            'Failed to send appointment confirmation notification',
+            err,
+          ),
         );
 
       return SuccessHandler('Appointment confirmation recorded successfully', {

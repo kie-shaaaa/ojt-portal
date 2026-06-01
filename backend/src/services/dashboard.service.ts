@@ -6,7 +6,7 @@ import type {
   DashboardData,
   DashboardSeriesPoint,
 } from '../data/types';
-import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { SuccessHandler, throwAppError } from '../utils/handlers';
 
 type DashboardSummaryRow = {
   totalApplications: number;

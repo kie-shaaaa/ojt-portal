@@ -10,7 +10,7 @@ import {
 } from '../data/types';
 import { CreateApplicationDto } from '../data/dto/create-application.dto';
 import { UploadedFile } from '../data/types/file-upload.types';
-import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { SuccessHandler, throwAppError } from '../utils/handlers';
 import { MailerService } from './mailer.service';
 import { LogsService } from './logs.service';
 import { AppointmentsService } from './appointments.service';

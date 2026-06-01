@@ -8,7 +8,7 @@ import * as argon2 from 'argon2';
 import type { Account, LogSignIn, SuccessResponse } from '../data/types';
 import { DatabaseService } from './database/database.service';
 import { JwtService } from '@nestjs/jwt';
-import { SuccessHandler } from '../../utils/handlers';
+import { SuccessHandler } from '../utils/handlers';
 import { LogsService } from './logs.service';
 
 @Injectable()

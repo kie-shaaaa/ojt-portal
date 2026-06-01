@@ -2,7 +2,7 @@ import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import type { Account, AccountCreate, SuccessResponse } from '../data/types';
 import { AuthService } from './auth.service';
 import { DatabaseService } from './database/database.service';
-import { SuccessHandler, throwAppError } from '../../utils/handlers';
+import { SuccessHandler, throwAppError } from '../utils/handlers';
 import { LogsService } from './logs.service';
 
 @Injectable()

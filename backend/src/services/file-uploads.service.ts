@@ -11,7 +11,7 @@ import { createReadStream } from 'fs';
 import { unlink } from 'fs/promises';
 import { DatabaseService } from './database/database.service';
 import { LogsService } from './logs.service';
-import { SuccessHandler } from '../../utils/handlers';
+import { SuccessHandler } from '../utils/handlers';
 import { MailerService } from './mailer.service';
 import { ApplicationsService } from './applications.service';
 
