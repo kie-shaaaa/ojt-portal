@@ -397,8 +397,8 @@ function AppointmentActionModal({
 }: {
   open: boolean;
   application: ApplicationRecord | null;
-  kind: 'orientation' | 'interview';
-  action: 'confirm' | 'reschedule';
+  kind: "orientation" | "interview";
+  action: "confirm" | "reschedule";
   onClose: () => void;
   onConfirm: () => void;
   onReschedule: () => void;
@@ -413,22 +413,22 @@ function AppointmentActionModal({
     return null;
   }
 
-  const isOrientation = kind === 'orientation';
-  const isConfirmAction = action === 'confirm';
+  const isOrientation = kind === "orientation";
+  const isConfirmAction = action === "confirm";
   const title = isConfirmAction
     ? isOrientation
-      ? 'Confirm Internship Acceptance'
-      : 'Confirm Interview Schedule'
+      ? "Confirm Internship Acceptance"
+      : "Confirm Interview Schedule"
     : isOrientation
-      ? 'Reschedule Orientation'
-      : 'Reschedule Interview';
+      ? "Reschedule Orientation"
+      : "Reschedule Interview";
   const description = isConfirmAction
     ? isOrientation
-      ? 'Please confirm that you are accepting the internship. This will mark your application as accepted and send your orientation email.'
-      : 'Please confirm that you received the interview schedule.'
+      ? "Please confirm that you are accepting the internship. This will mark your application as accepted and send your orientation email."
+      : "Please confirm that you received the interview schedule."
     : isOrientation
-      ? 'Choose a new orientation date and time below.'
-      : 'Choose a new interview date and time below.';
+      ? "Choose a new orientation date and time below."
+      : "Choose a new interview date and time below.";
 
   return (
     <div
@@ -469,7 +469,7 @@ function AppointmentActionModal({
           </p>
           <p>Email: {application.email}</p>
           <p className="mt-1 text-amber-700">
-            Status: {isOrientation ? 'Pending Accept' : 'Pending Accept'}
+            Status: {isOrientation ? "Pending Accept" : "Pending Accept"}
           </p>
         </div>
 
@@ -495,7 +495,9 @@ function AppointmentActionModal({
               disabled={isRescheduling}
               className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-linear-to-r from-blue-800 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-[0px_10px_20px_-8px_rgba(37,99,235,0.7)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isRescheduling ? 'Submitting reschedule...' : 'Request Reschedule'}
+              {isRescheduling
+                ? "Submitting reschedule..."
+                : "Request Reschedule"}
             </button>
             <p className="mt-2 text-xs leading-5 text-slate-500">
               This will update your appointment request for admin review.
@@ -519,10 +521,10 @@ function AppointmentActionModal({
               className="inline-flex items-center justify-center rounded-xl bg-linear-to-r from-blue-800 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-[0px_10px_20px_-8px_rgba(37,99,235,0.7)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting
-                ? 'Confirming...'
+                ? "Confirming..."
                 : isOrientation
-                  ? 'Yes, confirm acceptance'
-                  : 'Yes, confirm interview'}
+                  ? "Yes, confirm acceptance"
+                  : "Yes, confirm interview"}
             </button>
           ) : null}
         </div>
@@ -688,11 +690,68 @@ function TrackPageContent(): JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [isAcceptanceModalOpen, setIsAcceptanceModalOpen] = useState(false);
   const [isConfirmingAcceptance, setIsConfirmingAcceptance] = useState(false);
-  const [appointmentAction, setAppointmentAction] = useState<'confirm' | 'reschedule'>('confirm');
-  const [appointmentKind, setAppointmentKind] = useState<'orientation' | 'interview'>('orientation');
-  const [rescheduleDate, setRescheduleDate] = useState('');
-  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [appointmentAction, setAppointmentAction] = useState<
+    "confirm" | "reschedule"
+  >("confirm");
+  const [appointmentKind, setAppointmentKind] = useState<
+    "orientation" | "interview"
+  >("orientation");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
   const [isRescheduling, setIsRescheduling] = useState(false);
+
+  const submitAcceptanceDecision = async (
+    decision: "accept" | "reject",
+    rawApplicationId: string,
+    rawEmail: string,
+  ) => {
+    const numericId = normalizeApplicationId(rawApplicationId);
+    const trimmedEmail = rawEmail.trim();
+
+    if (!numericId || !trimmedEmail) {
+      showTrackError("Please load your application before continuing.");
+      return;
+    }
+
+    setIsConfirmingAcceptance(true);
+
+    try {
+      await apiCall("/applications/confirm-acceptance", {
+        method: "POST",
+        body: JSON.stringify({
+          id: Number(numericId),
+          email: trimmedEmail,
+          decision,
+        }),
+      });
+
+      if (decision === "accept") {
+        setResult((current) =>
+          current ? { ...current, status: "accepted" } : current,
+        );
+        toast.success(
+          "Acceptance confirmed. Your orientation email has been sent.",
+        );
+      } else {
+        setResult((current) =>
+          current ? { ...current, status: "rejected" } : current,
+        );
+        toast.success("Your application has been marked as rejected.");
+      }
+
+      setIsAcceptanceModalOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : decision === "accept"
+            ? "Failed to confirm acceptance"
+            : "Failed to reject application";
+      toast.error(message);
+    } finally {
+      setIsConfirmingAcceptance(false);
+    }
+  };
 
   const loadApplicationRecord = async (
     rawApplicationId: string,
@@ -745,7 +804,10 @@ function TrackPageContent(): JSX.Element {
         setIsAcceptanceModalOpen(true);
       }
 
-      if (openConfirmationModal && matchedApplication.status === 'for_interview') {
+      if (
+        openConfirmationModal &&
+        matchedApplication.status === "for_interview"
+      ) {
         setIsAcceptanceModalOpen(true);
       }
     } catch (fetchError) {
@@ -781,40 +843,7 @@ function TrackPageContent(): JSX.Element {
       return;
     }
 
-    const numericId = normalizeApplicationId(applicationId);
-
-    if (!numericId || !email.trim()) {
-      showTrackError(
-        "Please load your application before confirming acceptance.",
-      );
-      return;
-    }
-
-    setIsConfirmingAcceptance(true);
-
-    try {
-      await apiCall("/applications/confirm-acceptance", {
-        method: "POST",
-        body: JSON.stringify({
-          id: Number(numericId),
-          email: email.trim(),
-        }),
-      });
-
-      setResult((current) =>
-        current ? { ...current, status: "accepted" } : current,
-      );
-      setIsAcceptanceModalOpen(false);
-      toast.success(
-        "Acceptance confirmed. Your orientation email has been sent.",
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to confirm acceptance";
-      toast.error(message);
-    } finally {
-      setIsConfirmingAcceptance(false);
-    }
+    await submitAcceptanceDecision("accept", applicationId, email);
   };
 
   const handleConfirmInterview = async () => {
@@ -825,29 +854,29 @@ function TrackPageContent(): JSX.Element {
     const numericId = normalizeApplicationId(applicationId);
 
     if (!numericId || !email.trim()) {
-      showTrackError('Please load your application before confirming.');
+      showTrackError("Please load your application before confirming.");
       return;
     }
 
     setIsConfirmingAcceptance(true);
 
     try {
-      await apiCall('/appointments/confirm', {
-        method: 'POST',
+      await apiCall("/appointments/confirm", {
+        method: "POST",
         body: JSON.stringify({
           applicationId: Number(numericId),
-          type: 'interview',
+          type: "interview",
         }),
       });
 
       setResult((current) =>
-        current ? { ...current, status: 'for_interview' } : current,
+        current ? { ...current, status: "for_interview" } : current,
       );
       setIsAcceptanceModalOpen(false);
-      toast.success('Interview confirmed. The admin has been notified.');
+      toast.success("Interview confirmed. The admin has been notified.");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to confirm interview';
+        error instanceof Error ? error.message : "Failed to confirm interview";
       toast.error(message);
     } finally {
       setIsConfirmingAcceptance(false);
@@ -862,12 +891,12 @@ function TrackPageContent(): JSX.Element {
     const numericId = normalizeApplicationId(applicationId);
 
     if (!numericId || !email.trim()) {
-      showTrackError('Please load your application before rescheduling.');
+      showTrackError("Please load your application before rescheduling.");
       return;
     }
 
     if (!rescheduleDate || !rescheduleTime) {
-      showTrackError('Please choose a new date and time.');
+      showTrackError("Please choose a new date and time.");
       return;
     }
 
@@ -877,37 +906,37 @@ function TrackPageContent(): JSX.Element {
       const appointmentDate = new Date(`${rescheduleDate}T${rescheduleTime}`);
 
       if (Number.isNaN(appointmentDate.getTime())) {
-        throw new Error('Invalid reschedule date or time');
+        throw new Error("Invalid reschedule date or time");
       }
 
-      if (appointmentAction === 'reschedule') {
-        if (appointmentKind === 'orientation') {
-          await apiCall('/applications/confirm-acceptance', {
-            method: 'POST',
+      if (appointmentAction === "reschedule") {
+        if (appointmentKind === "orientation") {
+          await apiCall("/applications/confirm-acceptance", {
+            method: "POST",
             body: JSON.stringify({
               id: Number(numericId),
               email: email.trim(),
             }),
           });
           setResult((current) =>
-            current ? { ...current, status: 'accepted' } : current,
+            current ? { ...current, status: "accepted" } : current,
           );
         } else {
-          await apiCall('/appointments/confirm', {
-            method: 'POST',
+          await apiCall("/appointments/confirm", {
+            method: "POST",
             body: JSON.stringify({
               applicationId: Number(numericId),
-              type: 'interview',
+              type: "interview",
             }),
           });
           setResult((current) =>
-            current ? { ...current, status: 'for_interview' } : current,
+            current ? { ...current, status: "for_interview" } : current,
           );
         }
       }
 
-      await apiCall('/appointments/update', {
-        method: 'PATCH',
+      await apiCall("/appointments/update", {
+        method: "PATCH",
         body: JSON.stringify({
           applicationId: Number(numericId),
           appointmentDate: appointmentDate.toISOString(),
@@ -916,10 +945,10 @@ function TrackPageContent(): JSX.Element {
       });
 
       setIsAcceptanceModalOpen(false);
-      toast.success('Your reschedule request was submitted successfully.');
+      toast.success("Your reschedule request was submitted successfully.");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to reschedule';
+        error instanceof Error ? error.message : "Failed to reschedule";
       toast.error(message);
     } finally {
       setIsRescheduling(false);
@@ -946,14 +975,34 @@ function TrackPageContent(): JSX.Element {
 
   useEffect(() => {
     const hasActionParam =
-      confirmParam === '1' || actionParam === 'confirm' || actionParam === 'reschedule';
+      confirmParam === "1" ||
+      actionParam === "confirm" ||
+      actionParam === "reschedule" ||
+      actionParam === "reject";
 
     if (!hasActionParam || !confirmedIdParam || !confirmedEmailParam) {
       return;
     }
 
-    setAppointmentAction(actionParam === 'reschedule' ? 'reschedule' : 'confirm');
-    setAppointmentKind(kindParam === 'interview' ? 'interview' : 'orientation');
+    if (actionParam === "reject") {
+      setApplicationId(
+        confirmedIdParam.toUpperCase().startsWith("NTC-APP-")
+          ? confirmedIdParam.toUpperCase()
+          : `NTC-APP-${confirmedIdParam}`,
+      );
+      setEmail(confirmedEmailParam);
+      void submitAcceptanceDecision(
+        "reject",
+        confirmedIdParam,
+        confirmedEmailParam,
+      );
+      return;
+    }
+
+    setAppointmentAction(
+      actionParam === "reschedule" ? "reschedule" : "confirm",
+    );
+    setAppointmentKind(kindParam === "interview" ? "interview" : "orientation");
 
     setApplicationId(
       confirmedIdParam.toUpperCase().startsWith("NTC-APP-")
@@ -1056,8 +1105,8 @@ function TrackPageContent(): JSX.Element {
             <ResultSection
               application={result}
               onRequestAcceptanceConfirmation={() => {
-                setAppointmentAction('confirm');
-                setAppointmentKind('orientation');
+                setAppointmentAction("confirm");
+                setAppointmentKind("orientation");
                 setIsAcceptanceModalOpen(true);
               }}
             />
@@ -1070,7 +1119,7 @@ function TrackPageContent(): JSX.Element {
             action={appointmentAction}
             onClose={() => setIsAcceptanceModalOpen(false)}
             onConfirm={
-              appointmentKind === 'orientation'
+              appointmentKind === "orientation"
                 ? handleConfirmAcceptance
                 : handleConfirmInterview
             }

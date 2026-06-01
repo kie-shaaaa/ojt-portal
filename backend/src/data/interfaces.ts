@@ -25,6 +25,7 @@ export interface AcceptanceConfirmationEmailDto {
   orientationDate?: string;
   orientationTime?: string;
   confirmUrl: string;
+  rejectUrl?: string;
   rescheduleUrl?: string;
 }
 

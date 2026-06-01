@@ -449,7 +449,8 @@ export class ApplicationsService {
 
       await client.query('BEGIN');
 
-      const persistedStatus = status === 'for_interview' ? 'pending accept' : status;
+      const persistedStatus =
+        status === 'for_interview' ? 'pending accept' : status;
 
       // 1. Update application and return updated row
       const res = await client.query<Application>(
@@ -628,6 +629,7 @@ export class ApplicationsService {
         const frontendBaseUrl =
           process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
         const confirmUrl = `${frontendBaseUrl}/track?confirm=1&id=${id}&email=${encodeURIComponent(data.email)}`;
+        const rejectUrl = `${frontendBaseUrl}/track?action=reject&id=${id}&email=${encodeURIComponent(data.email)}`;
         const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${id}&email=${encodeURIComponent(data.email)}`;
 
         const mailSent = await this.mailerService.acceptanceConfirmationEmail({
@@ -638,6 +640,7 @@ export class ApplicationsService {
           orientationDate: acceptedDate,
           orientationTime: acceptedTime,
           confirmUrl,
+          rejectUrl,
           rescheduleUrl,
         });
         if (!mailSent)
@@ -671,6 +674,7 @@ export class ApplicationsService {
   async confirmAcceptance(
     applicationId: number,
     email: string,
+    decision: 'accept' | 'reject' = 'accept',
   ): Promise<SuccessResponse> {
     const client = this.databaseService.getClient();
 
@@ -688,6 +692,45 @@ export class ApplicationsService {
       }
 
       const application = exists.rows[0];
+
+      if (decision === 'reject') {
+        if (application.status !== 'pending accept') {
+          throwAppError('bad_request', 'Application is not pending acceptance');
+        }
+
+        await client.query('BEGIN');
+
+        const rejected = await client.query<Application>(
+          `
+            UPDATE applications
+            SET status = 'rejected', reviewed_date = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING *
+          `,
+          [applicationId],
+        );
+
+        if (rejected.rowCount === 0) {
+          throw new Error('Application not found');
+        }
+
+        await client.query('COMMIT');
+
+        await this.logsService
+          .logApplicationStatusChange({
+            userId: 0,
+            oldStatus: 'pending accept',
+            newStatus: 'rejected',
+          })
+          .catch((err) =>
+            console.error('Failed to log rejection confirmation', err),
+          );
+
+        return SuccessHandler(
+          'Application rejected successfully',
+          rejected.rows[0],
+        );
+      }
 
       if (application.status === 'accepted') {
         return SuccessHandler('Acceptance already confirmed', application);
