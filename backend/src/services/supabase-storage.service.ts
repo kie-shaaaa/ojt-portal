@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Injectable, Logger } from '@nestjs/common';
 import { Readable } from 'stream';
+import ws from 'ws';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY =
@@ -12,12 +13,13 @@ export class SupabaseStorage {
   private readonly logger = new Logger(SupabaseStorage.name);
 
   constructor() {
-    this.client = createClient(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_KEY,
-    ) as SupabaseClient<any, 'public'>;
+    this.client = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      realtime: {
+        transport: ws,
+      },
+    }) as SupabaseClient<any, 'public'>;
   }
-
+  
   // Upload a Buffer to a bucket
   async uploadBuffer(
     bucket: string,
