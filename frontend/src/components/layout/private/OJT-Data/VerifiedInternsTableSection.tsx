@@ -553,6 +553,11 @@ export const VerifiedInternsTableSection = ({
       return;
     }
 
+    const normalizedApplicationId =
+      intern.application_id && Number.isFinite(intern.application_id)
+        ? intern.application_id
+        : undefined;
+
     const getApplicationIdsFromEmail = async () => {
       if (!intern.email) return [] as number[];
 
@@ -579,8 +584,8 @@ export const VerifiedInternsTableSection = ({
 
     const candidateApplicationIds = new Set<number>();
 
-    if (intern.application_id && Number.isFinite(intern.application_id)) {
-      candidateApplicationIds.add(intern.application_id);
+    if (normalizedApplicationId) {
+      candidateApplicationIds.add(normalizedApplicationId);
     }
 
     const emailApplicationIds = await getApplicationIdsFromEmail();
@@ -594,6 +599,7 @@ export const VerifiedInternsTableSection = ({
     }
 
     const applicationIds = [...candidateApplicationIds].sort((a, b) => b - a);
+    const applicantName = getInternName(intern);
 
     setIsDownloadingInternId(intern.id);
 
@@ -663,7 +669,7 @@ export const VerifiedInternsTableSection = ({
       const pdfBlob = new Blob([new Uint8Array(finalPdfBytes)], {
         type: "application/pdf",
       });
-      const outputName = `${sanitizeApplicantName(getInternName(intern))}.pdf`;
+      const outputName = `${sanitizeApplicantName(applicantName)}.pdf`;
 
       saveAs(pdfBlob, outputName);
 
@@ -794,15 +800,12 @@ export const VerifiedInternsTableSection = ({
                   <SquarePen size={16} />
                 </button>
                 <button
-                  onClick={() => handleDownloadInternFiles(intern)}
+                  type="button"
                   title="Download files"
+                  onClick={() => handleDownloadInternFiles(intern)}
                   disabled={isDownloadingInternId === intern.id}
+                  className="rounded-lg bg-slate-50 p-2 text-slate-600 transition hover:bg-slate-100 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-busy={isDownloadingInternId === intern.id}
-                  className={`rounded-lg p-2 text-slate-600 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 ${
-                    isDownloadingInternId === intern.id
-                      ? "bg-slate-100 shadow-inner ring-2 ring-slate-300 animate-pulse"
-                      : "bg-slate-50 hover:bg-slate-100 hover:scale-105"
-                  }`}
                 >
                   <Download
                     size={16}
