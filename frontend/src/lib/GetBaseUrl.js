@@ -1,5 +1,10 @@
+'use client';
+
 export default function getBaseUrl() {
-  const raw = process.env.NEXT_PUBLIC_LOCAL_URL || process.env.LOCAL_URL;
+  const raw =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_LOCAL_URL ||
+    process.env.LOCAL_URL;
 
   if (raw && typeof raw === "string") {
     if (raw.startsWith("http://") || raw.startsWith("https://")) {

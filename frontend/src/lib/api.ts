@@ -1,8 +1,7 @@
 import getBaseUrl from "@/lib/GetBaseUrl";
 
-const API_URL = getBaseUrl();
-
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const API_URL = getBaseUrl();
   const isFormData = options.body instanceof FormData;
   const headers = new Headers(options.headers);
 
