@@ -59,6 +59,7 @@ export interface ResubmissionEmailDto {
   lastName: string;
   applicationId: number;
   requiredFiles: string[];
+  rejectionReason?: string;
 }
 
 export interface ContactMessageDto {

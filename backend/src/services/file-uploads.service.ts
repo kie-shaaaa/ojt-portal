@@ -300,7 +300,11 @@ export class FileUploadsService {
   /**
    * Delete multiple files from Supabase and database, then notify the applicant once.
    */
-  async deleteFiles(fileIds: number[], userId: number) {
+  async deleteFiles(
+    fileIds: number[],
+    userId: number,
+    rejectionReason?: string,
+  ) {
     try {
       const uniqueFileIds = [
         ...new Set(fileIds.map((id) => Number(id))),
@@ -394,6 +398,7 @@ export class FileUploadsService {
       const resubmissionDto = {
         ...resubmissionDtoBase,
         requiredFiles,
+        rejectionReason,
       };
 
       // Always notify the applicant when an admin rejects a file.

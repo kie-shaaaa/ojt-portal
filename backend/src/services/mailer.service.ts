@@ -489,12 +489,13 @@ export class MailerService {
       : `<p>We encourage you to apply again in future application periods.</p>`;
     const safeConfirmUrl = confirmUrl ? escapeHtml(confirmUrl) : '';
     const safeRescheduleUrl = rescheduleUrl ? escapeHtml(rescheduleUrl) : '';
-    const actionButtons = isApproved && (safeConfirmUrl || safeRescheduleUrl)
-      ? `<div style="text-align:center;margin:32px 0;">
+    const actionButtons =
+      isApproved && (safeConfirmUrl || safeRescheduleUrl)
+        ? `<div style="text-align:center;margin:32px 0;">
           ${safeConfirmUrl ? `<a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Confirm Appointment</a>` : ''}
           ${safeRescheduleUrl ? `<a href="${safeRescheduleUrl}" style="display:inline-block;background:#fff;color:#0038A8;padding:12px 28px;text-decoration:none;border:1px solid #0038A8;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Request Reschedule</a>` : ''}
         </div>`
-      : '';
+        : '';
 
     const bodyContent = `
     <p>Dear <strong>${fullName}</strong>,</p>
@@ -579,7 +580,14 @@ export class MailerService {
   // ─── 5. Resubmission email ────────────────────────────────────────────────
 
   async resubmissionEmail(dto: ResubmissionEmailDto): Promise<boolean> {
-    const { to, firstName, lastName, applicationId, requiredFiles } = dto;
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      requiredFiles,
+      rejectionReason,
+    } = dto;
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const portalUrl = process.env.FRONTEND_URL || 'https://ojt.ntc.gov.ph';
@@ -588,6 +596,17 @@ export class MailerService {
     const filesList = requiredFiles
       .map((file) => `<li>${file}</li>`)
       .join('\n');
+
+    const reasonHtml = rejectionReason
+      ? `<p><strong>Selected reason(s) for rejection:</strong></p>
+      <div style="white-space:pre-wrap;background:#f8f8f8;border:1px solid #e5e7eb;padding:14px;border-radius:8px;margin:16px 0;font-family:Arial,sans-serif;color:#333;">${escapeHtml(
+        rejectionReason,
+      )}</div>`
+      : '';
+
+    const reasonText = rejectionReason
+      ? `Reason for rejection:\n${rejectionReason}\n\n`
+      : '';
 
     const html = wrapEmail(
       ntcHeader('OJT Application Portal'),
@@ -604,6 +623,8 @@ export class MailerService {
       <ul style="padding-left:20px;">
         ${filesList}
       </ul>
+
+      ${reasonHtml}
 
       <p style="margin-top:24px;"><strong>How to Resubmit:</strong></p>
       <ol style="padding-left:20px;">
@@ -645,6 +666,7 @@ export class MailerService {
       'Required Files:',
       requiredFiles.map((f) => `  - ${f}`).join('\n'),
       '',
+      reasonText,
       `Resubmit here: ${resubmitLink}`,
       '',
       'Deadline: 7 days from receipt of this email',
@@ -874,7 +896,8 @@ export class MailerService {
 
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
-    const typeLabel = appointmentType === 'interview' ? 'Interview' : 'Orientation';
+    const typeLabel =
+      appointmentType === 'interview' ? 'Interview' : 'Orientation';
     const actionLabel = action === 'confirmed' ? 'Confirmed' : 'Rescheduled';
 
     const details = [
@@ -885,11 +908,15 @@ export class MailerService {
     ];
 
     if (appointmentDate) {
-      details.push(`<br/><strong>Date:</strong> ${escapeHtml(appointmentDate)}`);
+      details.push(
+        `<br/><strong>Date:</strong> ${escapeHtml(appointmentDate)}`,
+      );
     }
 
     if (appointmentTime) {
-      details.push(`<br/><strong>Time:</strong> ${escapeHtml(appointmentTime)}`);
+      details.push(
+        `<br/><strong>Time:</strong> ${escapeHtml(appointmentTime)}`,
+      );
     }
 
     const html = wrapEmail(
