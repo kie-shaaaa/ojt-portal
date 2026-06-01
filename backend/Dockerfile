@@ -12,7 +12,7 @@ COPY nest-cli.json ./
 COPY src ./src
 
 # Build NESTJS app to ./dist
-RUN npm run build
+RUN npm run build && find dist -type f
 
 # -------------- Runtime Stage ------------------
 FROM node:20-alpine AS runner
@@ -25,9 +25,10 @@ RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit
 
 # Copy built artifacts
 COPY --from=builder /app/dist ./dist
+RUN find /app/dist -type f
 
 # Declare a port
-ENV PORT = 8080
+ENV PORT=8080
 EXPOSE 8080
 
 # Start the application
