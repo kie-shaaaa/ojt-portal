@@ -120,11 +120,8 @@ export const ApplicationDetailsSection = (): JSX.Element => {
   };
 
   return (
-    <section
-      aria-label="Application details"
-      className="grid grid-cols-1 gap-6 lg:grid-cols-3"
-    >
-      <div className="grid gap-6 lg:col-span-2 lg:grid-cols-2">
+    <section aria-label="Application details" className="w-full">
+      <div className="grid gap-6">
         <section
           aria-labelledby="application-control-heading"
           className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
@@ -292,47 +289,7 @@ export const ApplicationDetailsSection = (): JSX.Element => {
             </div>
           </div>
         </section>
-
-        <section
-          aria-labelledby="recent-activity-heading"
-          className="min-h-75 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm"
-        >
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-6">
-            <Activity className="h-5 w-5 text-slate-600" />
-
-            <h2
-              id="recent-activity-heading"
-              className="text-sm font-bold text-slate-700"
-            >
-              Recent Activity
-            </h2>
-          </div>
-
-          <div className="flex flex-col items-center justify-center py-16 opacity-40">
-            <Inbox className="h-16 w-16 text-slate-400" />
-
-            <p className="mt-4 text-center text-sm font-medium text-slate-500">
-              No recent activity
-            </p>
-          </div>
-        </section>
       </div>
-
-      <section
-        aria-labelledby="applicant-schools-heading"
-        className="rounded-xl border border-slate-200 bg-white shadow-sm lg:col-start-3 lg:self-start"
-      >
-        <div className="border-b border-slate-100 p-4 sm:p-6">
-          <h2
-            id="applicant-schools-heading"
-            className="text-sm font-semibold text-slate-700"
-          >
-            Applicant&apos;s Schools
-          </h2>
-        </div>
-
-        <div className="min-h-60 xl:min-h-65" />
-      </section>
 
       {/* Saving Modal */}
       <ProcessingLoaderOverlay open={isSaving} title="Saving" />
