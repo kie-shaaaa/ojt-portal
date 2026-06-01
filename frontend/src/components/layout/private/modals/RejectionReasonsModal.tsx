@@ -25,7 +25,7 @@ const requirementsData: Requirement[] = [
     id: "picture-1x1",
     title: "PICTURE-1X1",
     icon: <ImageIcon size={20} />,
-    expanded: true,
+    expanded: false,
     reasons: [
       "Blurry or low-quality image",
       "Missing handwritten signature",
@@ -72,6 +72,7 @@ export const RejectionReasons = ({
   onClose,
   onSubmit,
   selectedCount = 0,
+  selectedRequirementIds = [],
 }: {
   onClose?: () => void;
   onSubmit?: (payload: {
@@ -83,16 +84,28 @@ export const RejectionReasons = ({
     }>;
   }) => void;
   selectedCount?: number;
+  selectedRequirementIds?: string[];
 }): JSX.Element => {
   const componentId = useId();
 
+  const selectedRequirementsData = useMemo(
+    () =>
+      requirementsData.filter((requirement) =>
+        selectedRequirementIds.includes(requirement.id),
+      ),
+    [selectedRequirementIds],
+  );
+
   const initialExpanded = useMemo(
     () =>
-      requirementsData.reduce<Record<string, boolean>>((acc, requirement) => {
-        acc[requirement.id] = Boolean(requirement.expanded);
-        return acc;
-      }, {}),
-    [],
+      selectedRequirementsData.reduce<Record<string, boolean>>(
+        (acc, requirement) => {
+          acc[requirement.id] = Boolean(requirement.expanded);
+          return acc;
+        },
+        {},
+      ),
+    [selectedRequirementsData],
   );
 
   const [expandedItems, setExpandedItems] =
@@ -101,17 +114,23 @@ export const RejectionReasons = ({
   const [selectedReasons, setSelectedReasons] = useState<
     Record<string, string[]>
   >(
-    requirementsData.reduce<Record<string, string[]>>((acc, requirement) => {
-      acc[requirement.id] = [];
-      return acc;
-    }, {}),
+    selectedRequirementsData.reduce<Record<string, string[]>>(
+      (acc, requirement) => {
+        acc[requirement.id] = [];
+        return acc;
+      },
+      {},
+    ),
   );
 
   const [comments, setComments] = useState<Record<string, string>>(
-    requirementsData.reduce<Record<string, string>>((acc, requirement) => {
-      acc[requirement.id] = "";
-      return acc;
-    }, {}),
+    selectedRequirementsData.reduce<Record<string, string>>(
+      (acc, requirement) => {
+        acc[requirement.id] = "";
+        return acc;
+      },
+      {},
+    ),
   );
 
   const toggleExpanded = (id: string) => {
@@ -143,7 +162,7 @@ export const RejectionReasons = ({
     }));
   };
 
-  const canSubmit = requirementsData.some((requirement) => {
+  const canSubmit = selectedRequirementsData.some((requirement) => {
     const hasReasons = (selectedReasons[requirement.id] ?? []).length > 0;
 
     const hasComment = (comments[requirement.id] ?? "").trim().length > 0;
@@ -195,7 +214,7 @@ export const RejectionReasons = ({
       {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto bg-white">
         <div className="flex flex-col gap-5 p-4 sm:p-6">
-          {requirementsData.map((requirement) => {
+          {selectedRequirementsData.map((requirement) => {
             const isExpanded = expandedItems[requirement.id];
 
             const currentComment = comments[requirement.id] ?? "";
@@ -332,6 +351,7 @@ export const RejectionReasons = ({
       <footer className="flex shrink-0 items-center justify-between border-t border-gray-200 bg-slate-50 px-4 py-4 sm:px-6">
         <button
           type="button"
+          onClick={() => onClose?.()}
           className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
         >
           <ArrowLeft size={16} />
@@ -344,7 +364,7 @@ export const RejectionReasons = ({
           onClick={() => {
             if (!canSubmit) return;
 
-            const items = requirementsData.map((requirement) => ({
+            const items = selectedRequirementsData.map((requirement) => ({
               id: requirement.id,
               title: requirement.title,
               reasons: selectedReasons[requirement.id] ?? [],

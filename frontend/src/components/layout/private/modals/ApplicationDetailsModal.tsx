@@ -779,6 +779,26 @@ export const ApplicationDetails = ({
   );
 
   const fileUploads = files.length > 0 ? files : [];
+
+  const normalizeRequirementKey = (file: (typeof fileUploads)[number]) =>
+    file.document_key?.trim().toLowerCase() ||
+    file.file_type.trim().toLowerCase();
+
+  const selectedRequirementIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          selectedRejectFileIds
+            .map((fileId) => {
+              const file = fileUploads.find((item) => item.id === fileId);
+              return file ? normalizeRequirementKey(file) : "";
+            })
+            .filter(Boolean),
+        ),
+      ),
+    [fileUploads, selectedRejectFileIds],
+  );
+
   const handleToggleRejectFile = useCallback(
     (file: (typeof fileUploads)[number]) => {
       setSelectedRejectFileIds((current) => {
@@ -1044,7 +1064,8 @@ export const ApplicationDetails = ({
         >
           <div onClick={(e) => e.stopPropagation()}>
             <RejectionReasons
-              selectedCount={selectedRejectFileIds.length}
+              selectedCount={selectedRequirementIds.length}
+              selectedRequirementIds={selectedRequirementIds}
               onClose={() => setShowRejectionReasons(false)}
               onSubmit={handleSubmitRejectionReasons}
             />
