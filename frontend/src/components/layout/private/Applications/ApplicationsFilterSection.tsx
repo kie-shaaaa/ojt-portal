@@ -40,13 +40,21 @@ export const ApplicationsFilterSection = ({
 }: Props): JSX.Element => {
   const sectionTitleId = useId();
   const schoolDropdownRef = useRef<HTMLDivElement>(null);
+  const timePeriodDropdownRef = useRef<HTMLDivElement>(null);
   const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
+  const [isTimePeriodDropdownOpen, setIsTimePeriodDropdownOpen] = useState(false);
   const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
 
   useOutsidePointerDown(
     schoolDropdownRef,
     () => setIsSchoolDropdownOpen(false),
     isSchoolDropdownOpen,
+  );
+
+  useOutsidePointerDown(
+    timePeriodDropdownRef,
+    () => setIsTimePeriodDropdownOpen(false),
+    isTimePeriodDropdownOpen,
   );
 
   const filteredSchoolOptions = schoolOptions
@@ -120,9 +128,6 @@ export const ApplicationsFilterSection = ({
                 Filter Applications
               </h2>
 
-              <p className="text-xs text-slate-500">
-                Customize your view by school or time period
-              </p>
             </div>
           </div>
 
@@ -165,34 +170,53 @@ export const ApplicationsFilterSection = ({
 
                 <div
                   className="relative w-full"
-                  ref={field.key === "school" ? schoolDropdownRef : undefined}
+                  ref={
+                    field.key === "school"
+                      ? schoolDropdownRef
+                      : field.key === "timePeriod"
+                      ? timePeriodDropdownRef
+                      : undefined
+                  }
                 >
-                  {field.key === "school" ? (
-                    <>
-                      <input
-                        type="text"
-                        id={field.key}
-                        name={field.key}
-                        value={
-                          isSchoolDropdownOpen
+                  <>
+                    <input
+                      type="text"
+                      id={field.key}
+                      name={field.key}
+                      value={
+                        field.key === "school"
+                          ? isSchoolDropdownOpen
                             ? schoolSearchQuery
                             : filters.school === "all-schools"
-                              ? ""
-                              : field.options.find(
-                                  (o) => o.value === filters.school,
-                                )?.label || ""
+                            ? ""
+                            : field.options.find(
+                                (o) => o.value === filters.school,
+                              )?.label || ""
+                          : field.options.find(
+                              (o) => o.value === filters.timePeriod,
+                            )?.label || ""
+                      }
+                      placeholder={
+                        field.key === "school" ? "All Schools" : "All Time"
+                      }
+                      readOnly={field.key === "timePeriod"}
+                      onChange={(e) => {
+                        if (field.key !== "school") {
+                          return;
                         }
-                        placeholder="All Schools"
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSchoolSearchQuery(val);
+
+                        const val = e.target.value;
+                        setSchoolSearchQuery(val);
+                        setIsSchoolDropdownOpen(true);
+                        setIsTimePeriodDropdownOpen(false);
+                        if (val.trim() === "") {
+                          handleFilterChange("school", "all-schools");
+                        }
+                      }}
+                      onFocus={() => {
+                        if (field.key === "school") {
                           setIsSchoolDropdownOpen(true);
-                          if (val.trim() === "") {
-                            handleFilterChange("school", "all-schools");
-                          }
-                        }}
-                        onFocus={() => {
-                          setIsSchoolDropdownOpen(true);
+                          setIsTimePeriodDropdownOpen(false);
                           if (filters.school !== "all-schools") {
                             setSchoolSearchQuery(
                               field.options.find(
@@ -202,59 +226,63 @@ export const ApplicationsFilterSection = ({
                           } else {
                             setSchoolSearchQuery("");
                           }
-                        }}
-                        autoComplete="off"
-                        className="h-11 w-full cursor-text appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
-                      />
-                      {isSchoolDropdownOpen && (
-                        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-slate-200 bg-white py-1 shadow-lg outline-none">
-                          {filteredSchoolOptions.length > 0 ? (
-                            filteredSchoolOptions.map((option) => {
-                              const isSelected =
-                                filters.school === option.value;
-                              return (
-                                <div
-                                  key={option.value}
-                                  onClick={() => {
-                                    handleFilterChange("school", option.value);
+                        } else {
+                          setIsTimePeriodDropdownOpen(true);
+                          setIsSchoolDropdownOpen(false);
+                        }
+                      }}
+                      onClick={() => {
+                        if (field.key === "timePeriod") {
+                          setIsTimePeriodDropdownOpen(true);
+                          setIsSchoolDropdownOpen(false);
+                        }
+                      }}
+                      autoComplete="off"
+                      className="h-11 w-full cursor-text appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 placeholder:text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
+                    />
+                    {(isSchoolDropdownOpen && field.key === "school") ||
+                    (isTimePeriodDropdownOpen && field.key === "timePeriod") ? (
+                      <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-slate-200 bg-white py-1 shadow-lg outline-none">
+                        {(field.key === "school"
+                          ? filteredSchoolOptions
+                          : field.options
+                        ).length > 0 ? (
+                          (field.key === "school"
+                            ? filteredSchoolOptions
+                            : field.options
+                          ).map((option) => {
+                            const isSelected =
+                              filters[field.key] === option.value;
+                            return (
+                              <div
+                                key={option.value}
+                                onClick={() => {
+                                  handleFilterChange(field.key, option.value);
+                                  if (field.key === "school") {
                                     setIsSchoolDropdownOpen(false);
                                     setSchoolSearchQuery("");
-                                  }}
-                                  className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
-                                    isSelected
-                                      ? "bg-blue-50 font-semibold text-blue-700 hover:bg-blue-100"
-                                      : "text-slate-900"
-                                  }`}
-                                >
-                                  {option.label}
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="px-4 py-3 text-sm text-slate-500">
-                              No schools found
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <select
-                      id={field.key}
-                      name={field.key}
-                      value={filters[field.key]}
-                      onChange={(event) =>
-                        handleFilterChange(field.key, event.target.value)
-                      }
-                      className="h-11 w-full cursor-pointer appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
-                    >
-                      {field.options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                                  } else {
+                                    setIsTimePeriodDropdownOpen(false);
+                                  }
+                                }}
+                                className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
+                                  isSelected
+                                    ? "bg-blue-50 font-semibold text-blue-700 hover:bg-blue-100"
+                                    : "text-slate-900"
+                                }`}
+                              >
+                                {option.label}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="px-4 py-3 text-sm text-slate-500">
+                            No schools found
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
 
                   <ChevronDown
                     size={18}

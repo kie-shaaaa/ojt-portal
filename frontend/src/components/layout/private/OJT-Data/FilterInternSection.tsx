@@ -22,7 +22,9 @@ export const FilterInternsSection = ({
 }: FilterInternsSectionProps): JSX.Element => {
   const sectionTitleId = useId();
   const schoolDropdownRef = useRef<HTMLDivElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
   const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
 
   useOutsidePointerDown(
@@ -30,6 +32,14 @@ export const FilterInternsSection = ({
     () => setIsSchoolDropdownOpen(false),
     isSchoolDropdownOpen,
   );
+
+  useOutsidePointerDown(
+    sortDropdownRef,
+    () => setIsSortDropdownOpen(false),
+    isSortDropdownOpen,
+  );
+
+  const sortDateOptions = ["Newest First", "Oldest First"] as const;
 
   const filteredSchoolOptions = useMemo(
     () =>
@@ -151,25 +161,51 @@ export const FilterInternsSection = ({
               Sort by Date
             </label>
           </div>
-          <div className="relative flex w-full items-center self-stretch">
-            <select
+          <div
+            className="relative flex w-full items-center self-stretch"
+            ref={sortDropdownRef}
+          >
+            <input
+              type="text"
               id="sortByDate"
               name="sortByDate"
               aria-label="Sort by Date"
               value={filters.sortByDate}
-              onChange={(event) =>
-                onFilterChange({
-                  ...filters,
-                  sortByDate: event.target.value as
-                    | "Newest First"
-                    | "Oldest First",
-                })
-              }
-              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-            >
-              <option value="Newest First">Newest First</option>
-              <option value="Oldest First">Oldest First</option>
-            </select>
+              placeholder="Newest First"
+              readOnly
+              onFocus={() => {
+                setIsSortDropdownOpen(true);
+                setIsSchoolDropdownOpen(false);
+              }}
+              onClick={() => {
+                setIsSortDropdownOpen(true);
+                setIsSchoolDropdownOpen(false);
+              }}
+              className="relative flex w-full appearance-none cursor-pointer items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+            />
+            {isSortDropdownOpen && (
+              <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
+                {sortDateOptions.map((option) => {
+                  const isSelected = filters.sortByDate === option;
+                  return (
+                    <div
+                      key={option}
+                      onClick={() => {
+                        onFilterChange({ ...filters, sortByDate: option });
+                        setIsSortDropdownOpen(false);
+                      }}
+                      className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
+                        isSelected
+                          ? "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                          : "text-slate-600"
+                      }`}
+                    >
+                      {option}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-10.5 items-center justify-center">
               <ChevronDown
                 size={18}

@@ -905,7 +905,7 @@ export const ApplicationsTableSection = ({
   return (
     <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 max-[767px]:flex-col max-[767px]:items-start">
+      <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 max-[1023px]:flex-col max-[1023px]:items-start">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-800">
             Applications
@@ -918,8 +918,8 @@ export const ApplicationsTableSection = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 max-[767px]:w-full max-[767px]:flex-col max-[767px]:items-stretch">
-          <div className="relative w-full sm:w-[28rem] lg:w-[34rem] max-[767px]:w-full">
+        <div className="flex items-center gap-2 max-[1280px]:items-center max-[1023px]:w-full max-[1023px]:flex-col max-[1023px]:items-center">
+          <div className="relative w-full max-w-full sm:max-w-[30rem] lg:max-w-[34rem] max-[1280px]:max-w-[20rem] flex-1 min-w-0 max-[1280px]:mx-auto max-[1023px]:mx-auto max-[1023px]:w-full">
             <Search
               size={18}
               aria-hidden="true"
@@ -940,27 +940,29 @@ export const ApplicationsTableSection = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 max-[767px]:justify-end">
-            <button
-              className="flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-700 hover:to-emerald-800 active:scale-95"
-              onClick={handleExportApplications}
-              type="button"
-            >
-              <Download size={18} className="text-white" />
-              Export
-            </button>
+          <div className="flex items-center gap-2 max-[1023px]:w-full max-[1023px]:flex-col max-[1023px]:items-stretch max-[1023px]:justify-end">
+            <div className="w-auto max-[1280px]:w-auto max-[1280px]:flex max-[1280px]:justify-center max-[1023px]:w-full">
+              <button
+                className="flex justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-700 hover:to-emerald-800 active:scale-95 max-[1280px]:max-w-[20rem] sm:max-w-[28rem] lg:max-w-[34rem] max-[1023px]:w-full max-[1023px]:px-3 max-[1023px]:py-2 max-[767px]:text-xs"
+                onClick={handleExportApplications}
+                type="button"
+              >
+                <Download size={18} className="text-white" />
+                Export
+              </button>
+            </div>
 
-            <div className="flex items-center gap-2 max-[767px]:justify-end">
+            <div className="flex items-center gap-2 max-[1023px]:w-full max-[1023px]:flex-wrap max-[1023px]:justify-between max-[1023px]:gap-2 max-[1023px]:px-1">
               <button
                 type="button"
                 disabled
                 aria-label="Previous page"
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 max-[1280px]:h-9 max-[1280px]:w-9 max-[1023px]:h-8 max-[1023px]:w-8 max-[767px]:h-7 max-[767px]:w-7"
               >
                 <ChevronLeft size={18} />
               </button>
 
-              <span className="px-3 py-2 text-sm font-semibold text-slate-600">
+              <span className="px-3 py-2 text-sm font-semibold text-slate-600 max-[1023px]:px-2 max-[1023px]:py-1 max-[767px]:text-xs">
                 {currentPage} / {totalPages}
               </span>
 
@@ -968,7 +970,7 @@ export const ApplicationsTableSection = ({
                 type="button"
                 disabled
                 aria-label="Next page"
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 max-[1280px]:h-9 max-[1280px]:w-9 max-[1023px]:h-8 max-[1023px]:w-8 max-[767px]:h-7 max-[767px]:w-7"
               >
                 <ChevronRight size={18} />
               </button>
@@ -1216,16 +1218,16 @@ export const ApplicationsTableSection = ({
       </div>
 
       {selectedRows.size > 0 && (
-        <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
+        <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full max-[767px]:flex-col max-[767px]:items-stretch max-[767px]:gap-3">
           <p className="text-sm font-semibold text-blue-900">
             ✓ {selectedRows.size} application
             {selectedRows.size !== 1 ? "s" : ""} selected
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-[767px]:flex-col max-[767px]:items-stretch max-[767px]:w-full">
             <button
               onClick={handleExportApplications}
-              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
+              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md max-[767px]:w-full"
               type="button"
             >
               Export Selected
@@ -1233,7 +1235,7 @@ export const ApplicationsTableSection = ({
 
             <button
               onClick={() => setShowBulkStatusModal(true)}
-              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
+              className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md max-[767px]:w-full"
               title={`Change status for ${selectedRows.size} selected applications`}
               type="button"
             >
@@ -1243,7 +1245,7 @@ export const ApplicationsTableSection = ({
             <button
               onClick={() => setShowBulkDeleteConfirm(true)}
               disabled={isBulkDeleting}
-              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 border border-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 border border-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed max-[767px]:w-full"
               type="button"
             >
               Delete Selected

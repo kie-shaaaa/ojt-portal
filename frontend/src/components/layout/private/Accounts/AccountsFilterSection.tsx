@@ -1,6 +1,8 @@
 "use client;"
-import { JSX, useId } from "react";
+import { JSX, useId, useState, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+
+import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
 interface FilterValues {
   accountType: string;
@@ -17,6 +19,33 @@ export const AccountsFilterSection = ({
   onFilterChange 
 }: AccountsFilterSectionProps): JSX.Element => {
   const sectionTitleId = useId();
+  const accountTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const [isAccountTypeOpen, setIsAccountTypeOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+
+  const accountTypeOptions = [
+    { value: "all", label: "All Types" },
+    { value: "admin", label: "Admin" },
+    { value: "employee", label: "Employee" },
+  ];
+
+  const sortDateOptions = [
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+  ];
+
+  useOutsidePointerDown(
+    accountTypeDropdownRef,
+    () => setIsAccountTypeOpen(false),
+    isAccountTypeOpen,
+  );
+
+  useOutsidePointerDown(
+    sortDropdownRef,
+    () => setIsSortOpen(false),
+    isSortOpen,
+  );
 
   return (
     <section
@@ -42,24 +71,51 @@ export const AccountsFilterSection = ({
               Account Type
             </label>
           </div>
-          <div className="relative flex w-full items-center self-stretch">
-            <select
+          <div
+            className="relative flex w-full items-center self-stretch"
+            ref={accountTypeDropdownRef}
+          >
+            <input
+              type="text"
               id="account-type"
               name="account-type"
               aria-label="Account Type"
-              value={filters.accountType}
-              onChange={(event) =>
-                onFilterChange({
-                  ...filters,
-                  accountType: event.target.value,
-                })
+              value={
+                accountTypeOptions.find((option) => option.value === filters.accountType)
+                  ?.label ?? "All Types"
               }
-              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-            >
-              <option value="all">All Types</option>
-              <option value="admin">Admin</option>
-              <option value="employee">Employee</option>
-            </select>
+              placeholder="All Types"
+              readOnly
+              onClick={() => {
+                setIsAccountTypeOpen(true);
+                setIsSortOpen(false);
+              }}
+              onFocus={() => {
+                setIsAccountTypeOpen(true);
+                setIsSortOpen(false);
+              }}
+              className="relative flex w-full appearance-none cursor-pointer items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+            />
+            {isAccountTypeOpen && (
+              <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
+                {accountTypeOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    onClick={() => {
+                      onFilterChange({ ...filters, accountType: option.value });
+                      setIsAccountTypeOpen(false);
+                    }}
+                    className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
+                      filters.accountType === option.value
+                        ? "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {option.label}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-[42px] items-center justify-center">
               <ChevronDown
                 size={18}
@@ -80,23 +136,51 @@ export const AccountsFilterSection = ({
               Sort by Date
             </label>
           </div>
-          <div className="relative flex w-full items-center self-stretch">
-            <select
+          <div
+            className="relative flex w-full items-center self-stretch"
+            ref={sortDropdownRef}
+          >
+            <input
+              type="text"
               id="sort-by-date"
               name="sort-by-date"
               aria-label="Sort by Date"
-              value={filters.sortByDate}
-              onChange={(event) =>
-                onFilterChange({
-                  ...filters,
-                  sortByDate: event.target.value,
-                })
+              value={
+                sortDateOptions.find((option) => option.value === filters.sortByDate)
+                  ?.label ?? "Newest First"
               }
-              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-            </select>
+              placeholder="Newest First"
+              readOnly
+              onClick={() => {
+                setIsSortOpen(true);
+                setIsAccountTypeOpen(false);
+              }}
+              onFocus={() => {
+                setIsSortOpen(true);
+                setIsAccountTypeOpen(false);
+              }}
+              className="relative flex w-full appearance-none cursor-pointer items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-[0] text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+            />
+            {isSortOpen && (
+              <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
+                {sortDateOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    onClick={() => {
+                      onFilterChange({ ...filters, sortByDate: option.value });
+                      setIsSortOpen(false);
+                    }}
+                    className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
+                      filters.sortByDate === option.value
+                        ? "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {option.label}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-[42px] items-center justify-center">
               <ChevronDown
                 size={18}
