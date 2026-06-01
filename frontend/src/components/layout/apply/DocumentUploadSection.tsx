@@ -276,7 +276,7 @@ export const DocumentUploadSection = ({
         id: "draft-moa",
         number: "5",
         title: "Draft Memorandum of Agreement",
-        required: true,
+        required: false,
         description: "PDF only • Max 5 MB",
         areaClassName: "relative w-full h-fit",
         contentClassName:

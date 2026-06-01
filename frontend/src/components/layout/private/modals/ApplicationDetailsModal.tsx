@@ -1067,6 +1067,10 @@ export const ApplicationDetails = ({
               selectedCount={selectedRequirementIds.length}
               selectedRequirementIds={selectedRequirementIds}
               onClose={() => setShowRejectionReasons(false)}
+              onBack={() => {
+                setShowRejectionReasons(false);
+                setShowRejectConfirm(true);
+              }}
               onSubmit={handleSubmitRejectionReasons}
             />
           </div>
