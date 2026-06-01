@@ -8,6 +8,7 @@ import React, {
   useCallback,
   useMemo,
   useEffect,
+  useRef,
 } from "react";
 
 export interface User {
@@ -26,7 +27,7 @@ export interface AuthContextType {
     password: string,
     rememberMe: boolean,
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -39,11 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const sessionVersionRef = useRef(0);
 
   useEffect(() => {
+    const sessionVersion = ++sessionVersionRef.current;
+
     const syncSession = async () => {
       try {
         const response = await apiCall("/auth/me", { method: "GET" });
+
+        if (sessionVersionRef.current !== sessionVersion) {
+          return;
+        }
+
         const sessionUser = response.user ?? response;
 
         if (sessionUser) {
@@ -90,9 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
-  void apiCall("/auth/logout", { method: "POST" }).catch(() => undefined);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    sessionVersionRef.current += 1;
+    await apiCall("/auth/logout", { method: "POST" }).catch(() => undefined);
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
     sessionStorage.removeItem("access_token");

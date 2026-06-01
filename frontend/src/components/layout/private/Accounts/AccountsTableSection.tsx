@@ -131,7 +131,7 @@ export const AccountsTableSection = ({
       }
 
       if (selectedAccount.id === user?.id) {
-        logout();
+        await logout();
         router.push("/");
       }
 
