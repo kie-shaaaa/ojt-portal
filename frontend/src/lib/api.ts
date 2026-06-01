@@ -1,7 +1,5 @@
 import getBaseUrl from "@/lib/GetBaseUrl";
 
-const API_URL = getBaseUrl();
-
 const CSRF_TOKEN_COOKIE = "csrf_token";
 
 function getCookieValue(name: string): string | null {
