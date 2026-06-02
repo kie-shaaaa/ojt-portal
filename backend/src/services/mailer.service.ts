@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { ApplicationStatus } from '../data/types';
 import {
   AcceptanceConfirmationEmailDto,
@@ -123,10 +124,11 @@ export class MailerService {
     this.transporter = nodemailer.createTransport({
       host,
       port,
+      family: 4,
       secure: port === 465,
       auth: { user, pass },
       tls: { rejectUnauthorized: false },
-    });
+    } as SMTPTransport.Options);
 
     await new Promise<void>((resolve) => {
       this.transporter!.verify((err) => {
