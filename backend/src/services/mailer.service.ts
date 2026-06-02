@@ -52,6 +52,104 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+const parseRejectionReasons = (value: string) => {
+  const lines = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines.reduce(
+    (
+      items: Array<{ title: string; reasons: string[]; note?: string }>,
+      line,
+    ) => {
+      if (!line.startsWith('- ')) {
+        return items;
+      }
+
+      const payload = line.slice(2).trim();
+      const separatorIndex = payload.indexOf(':');
+      const title =
+        separatorIndex >= 0 ? payload.slice(0, separatorIndex).trim() : payload;
+      let remainder =
+        separatorIndex >= 0 ? payload.slice(separatorIndex + 1).trim() : '';
+
+      let note: string | undefined;
+      const noteIndex = remainder.indexOf('—');
+      if (noteIndex >= 0) {
+        note = remainder.slice(noteIndex + 1).trim();
+        remainder = remainder.slice(0, noteIndex).trim();
+      }
+
+      const reasons = remainder
+        .split(';')
+        .map((reason) => reason.trim())
+        .filter(Boolean);
+
+      items.push({ title, reasons, note });
+      return items;
+    },
+    [],
+  );
+};
+
+const renderRejectionReasonHtml = (value: string) => {
+  const items = parseRejectionReasons(value);
+  if (items.length === 0) {
+    return `<div style="white-space:pre-wrap;background:#f8f8f8;border:1px solid #e5e7eb;padding:14px;border-radius:8px;margin:16px 0;font-family:Arial,sans-serif;color:#333;">${escapeHtml(
+      value,
+    )}</div>`;
+  }
+
+  const formattedItems = items
+    .map(({ title, reasons, note }) => {
+      const reasonList = reasons.length
+        ? `<ul style="padding-left:20px;margin:0 0 10px;">${reasons
+            .map(
+              (reason) =>
+                `<li style="margin-bottom:6px;color:#1f2937;">${escapeHtml(
+                  reason,
+                )}</li>`,
+            )
+            .join('')}</ul>`
+        : '';
+      const noteHtml =
+        `<p style="margin:12px 0 6px;font-weight:bold;color:#111827;margin-left:12px;">Additional Notes:</p>` +
+        `<blockquote style="margin:0 0 12px 12px;padding:12px 14px;background:#f8fafc;border-left:4px solid #e5e7eb;border-radius:6px;color:#1f2937;">"${escapeHtml(
+          note || 'None',
+        )}"</blockquote>`;
+
+      return (
+        `<div style="margin-bottom:18px;">` +
+        `<p style="margin:0 0 8px;font-weight:bold;color:#111827;">${escapeHtml(
+          title,
+        )}:</p>` +
+        reasonList +
+        noteHtml +
+        `</div>`
+      );
+    })
+    .join('');
+
+  return `<div style="background:#f8f8f8;border:1px solid #e5e7eb;padding:18px;border-radius:10px;margin:16px 0;font-family:Arial,sans-serif;color:#333;">${formattedItems}</div>`;
+};
+
+const renderRejectionReasonText = (value: string) => {
+  const items = parseRejectionReasons(value);
+  if (items.length === 0) {
+    return value;
+  }
+
+  return items
+    .map(({ title, reasons, note }) => {
+      const reasonLines = reasons.map((reason) => `  • ${reason}`).join('\n');
+      const noteLine = `Additional Notes:\n    "${note || 'None'}"`;
+
+      return [`${title}:`, reasonLines, noteLine].filter(Boolean).join('\n');
+    })
+    .join('\n\n');
+};
+
 const wrapEmail = (header: string, body: string) =>
   `<!DOCTYPE html>
   <html>
@@ -608,14 +706,13 @@ export class MailerService {
       .join('\n');
 
     const reasonHtml = rejectionReason
-      ? `<p><strong>Selected reason(s) for rejection:</strong></p>
-      <div style="white-space:pre-wrap;background:#f8f8f8;border:1px solid #e5e7eb;padding:14px;border-radius:8px;margin:16px 0;font-family:Arial,sans-serif;color:#333;">${escapeHtml(
-        rejectionReason,
-      )}</div>`
+      ? `<p><strong>Selected reason(s) for rejection:</strong></p>${renderRejectionReasonHtml(
+          rejectionReason,
+        )}`
       : '';
 
     const reasonText = rejectionReason
-      ? `Reason for rejection:\n${rejectionReason}\n\n`
+      ? `Reason for rejection:\n${renderRejectionReasonText(rejectionReason)}\n\n`
       : '';
 
     const html = wrapEmail(
