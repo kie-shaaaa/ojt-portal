@@ -16,10 +16,10 @@ export const ApplicationPortalClosedModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-4 backdrop-blur-md sm:items-center sm:py-6">
+      <div className="relative w-full max-w-md max-h-[calc(100vh-2rem)] overflow-hidden rounded-2xl bg-white shadow-lg">
         {/* Red Header Section */}
-        <div className="flex flex-col items-center bg-gradient-to-r from-red-500 to-red-600 px-8 py-8 text-white">
+        <div className="flex flex-col items-center bg-gradient-to-r from-red-500 to-red-600 px-6 py-6 text-white sm:px-8 sm:py-8">
           <div className="relative mb-4 h-16 w-16 overflow-hidden rounded-full">
             <Image
               src="/ntc-logo.png"
@@ -49,7 +49,7 @@ export const ApplicationPortalClosedModal = ({
         </button>
 
         {/* White Content Section */}
-        <div className="px-8 py-6 text-center">
+        <div className="px-6 py-6 text-center sm:px-8">
           <p className="text-sm leading-6 text-gray-700">
             We&apos;re currently not accepting new applications. The portal is
             temporarily closed for submissions. Please check back later for

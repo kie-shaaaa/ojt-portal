@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { WebSocketLikeConstructor } from '@supabase/realtime-js';
 import { Injectable, Logger } from '@nestjs/common';
 import { Readable } from 'stream';
 import ws from 'ws';
@@ -16,7 +17,7 @@ export class SupabaseStorage {
   constructor() {
     this.client = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       realtime: {
-        transport: ws,
+        transport: ws as unknown as WebSocketLikeConstructor,
       },
     }) as SupabaseClient<any, 'public'>;
   }

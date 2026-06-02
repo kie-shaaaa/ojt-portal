@@ -175,7 +175,7 @@ export default function InternDetailsModal({
   const fileUploads = preloadedFiles.length > 0 ? preloadedFiles : files;
   return (
     <div
-      className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-99999 flex items-start justify-center bg-black/50 p-3 transition-opacity duration-200 ease-out sm:items-center sm:p-4 ${
         isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
       }`}
       onClick={() => onClose?.()}
@@ -185,14 +185,14 @@ export default function InternDetailsModal({
         aria-modal="true"
         aria-labelledby="intern-details-title"
         onClick={(e) => e.stopPropagation()}
-        className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out ${
+        className={`flex w-full max-w-2xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out sm:max-h-[90vh] ${
           isVisible
             ? "scale-100 translate-y-0 opacity-100"
             : "scale-95 translate-y-2 opacity-0"
         }`}
       >
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <header className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:items-center sm:px-6 sm:py-4">
           <h1
             id="intern-details-title"
             className="text-lg font-bold text-blue-800"
@@ -211,7 +211,7 @@ export default function InternDetailsModal({
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-4">
           {/* Details */}
           {detailRows.map((row) => (
             <div key={row.label} className="flex border-b border-gray-100 py-3">
@@ -232,12 +232,12 @@ export default function InternDetailsModal({
           ))}
 
           {/* Requirement Files */}
-          <div className="flex py-4">
+          <div className="flex flex-col gap-4 py-4 sm:flex-row">
             <div className="w-1/3">
               <span className="text-sm text-gray-700">File Uploads:</span>
             </div>
 
-            <div className="flex w-2/3 flex-col gap-4">
+            <div className="flex w-full flex-col gap-4 sm:w-2/3">
               {preloadedFiles.length === 0 && filesLoading ? (
                 <div className="text-sm text-gray-500">Loading files...</div>
               ) : preloadedFiles.length === 0 && filesError ? (

@@ -128,7 +128,7 @@ export const AsideSidebar = ({
 
       {/* Mobile / Tablet bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0038a8] z-40 border-t border-[#1e40af80]">
-        <div className="flex justify-between items-center px-2 py-1 gap-2">
+        <div className="flex items-center justify-between gap-1.5 px-2 pt-1 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
           {navigationItems.map((item) => {
             const isActive = item.href
               ? pathname?.startsWith(item.href)
@@ -139,7 +139,7 @@ export const AsideSidebar = ({
                 key={item.label}
                 href={item.href ?? "#"}
                 aria-current={isActive ? "page" : undefined}
-                className="flex-1 flex flex-col items-center justify-center text-white text-xs py-1"
+                className="flex flex-1 flex-col items-center justify-center py-2 text-xs text-white"
               >
                 <Icon
                   className={`w-6 h-6 ${isActive ? "text-white" : "text-white/80"}`}
@@ -155,7 +155,7 @@ export const AsideSidebar = ({
           <button
             type="button"
             onClick={() => setShowLogoutModal(true)}
-            className="flex-1 flex flex-col items-center justify-center text-white text-xs py-1"
+            className="flex flex-1 flex-col items-center justify-center py-2 text-xs text-white"
           >
             <LogOut className="w-6 h-6 text-white" />
             <span className="mt-1">Logout</span>
@@ -164,13 +164,15 @@ export const AsideSidebar = ({
       </nav>
 
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-[90%] max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-bold text-gray-800">Confirm Logout</h2>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-sm max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
+            <h2 className="text-lg font-bold text-gray-800 sm:text-xl">
+              Confirm Logout
+            </h2>
             <p className="mt-2 text-sm text-gray-600">
               Are you sure you want to logout?
             </p>
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(false)}
