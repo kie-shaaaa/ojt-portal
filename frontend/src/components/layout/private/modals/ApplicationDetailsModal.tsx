@@ -235,7 +235,7 @@ const CompiledFilesModal = memo(
           aria-modal="true"
           aria-labelledby="compiled-files-title"
           onClick={(e) => e.stopPropagation()}
-          className={`flex w-full max-w-4xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out ${
+          className={`flex w-full max-w-4xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out sm:max-h-[90vh] ${
             isVisible
               ? "scale-100 translate-y-0 opacity-100"
               : "scale-95 translate-y-2 opacity-0"
@@ -443,7 +443,7 @@ const RejectFilesConfirmModal = memo(
         requestAnimationFrame(() => setIsVisible(false));
         return;
       }
-
+      
       const animationFrameId = requestAnimationFrame(() => setIsVisible(true));
 
       return () => {
@@ -471,7 +471,7 @@ const RejectFilesConfirmModal = memo(
           aria-modal="true"
           aria-labelledby="reject-files-title"
           onClick={(event) => event.stopPropagation()}
-          className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out ${
+          className={`flex w-full max-w-2xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out sm:max-h-[90vh] ${
             isVisible
               ? "scale-100 translate-y-0 opacity-100"
               : "scale-95 translate-y-2 opacity-0"
@@ -931,18 +931,15 @@ export const ApplicationDetails = ({
         aria-modal="true"
         aria-labelledby="application-details-title"
         onClick={(e) => e.stopPropagation()}
-        className={`flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out ${
+        className={`flex w-full max-w-2xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-xl transition-[transform,opacity] duration-200 ease-out sm:max-h-[90vh] ${
           isVisible
             ? "scale-100 translate-y-0 opacity-100"
             : "scale-95 translate-y-2 opacity-0"
         }`}
       >
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h1
-            id="application-details-title"
-            className="text-lg font-bold text-blue-800"
-          >
+        <header className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:items-center sm:px-6 sm:py-4">
+          <h1 id="application-details-title" className="text-base font-bold text-blue-800 sm:text-lg">
             Application Details
           </h1>
 
@@ -957,7 +954,7 @@ export const ApplicationDetails = ({
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-4">
           {/* Details */}
           {detailRows.map((row) => (
             <div key={row.label} className="flex border-b border-gray-100 py-3">
@@ -1059,10 +1056,10 @@ export const ApplicationDetails = ({
 
       {showRejectionReasons && (
         <div
-          className={`fixed inset-0 z-[100002] flex items-center justify-center bg-black/60 p-4`}
+          className={`fixed inset-0 z-[100002] flex items-start justify-center bg-black/60 p-3 sm:items-center sm:p-4`}
           onClick={() => setShowRejectionReasons(false)}
         >
-          <div onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <RejectionReasons
               selectedCount={selectedRequirementIds.length}
               selectedRequirementIds={selectedRequirementIds}

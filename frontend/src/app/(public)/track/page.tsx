@@ -432,7 +432,7 @@ function AppointmentActionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/70 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
       role="presentation"
       onClick={onClose}
     >
@@ -440,7 +440,7 @@ function AppointmentActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="acceptance-confirm-title"
-        className="w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"
+        className="w-full max-w-lg max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:rounded-3xl sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start gap-4">

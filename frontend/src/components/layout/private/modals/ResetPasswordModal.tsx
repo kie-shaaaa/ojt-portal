@@ -59,7 +59,7 @@ export const ResetPasswordModal = ({
   };
 
   return (
-    <main className="relative flex min-h-screen w-full items-center justify-center bg-gray-100 px-4 py-12">
+    <main className="relative flex min-h-screen w-full items-start justify-center bg-gray-100 px-3 py-4 sm:items-center sm:px-4 sm:py-12">
       <div
         className="fixed inset-0 z-40 bg-black/50"
         onClick={handleCancel}
@@ -69,19 +69,16 @@ export const ResetPasswordModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="reset-password-title"
-        className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-[620px] -translate-y-1/2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+        className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-1rem)] max-w-[620px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:w-[calc(100%-2rem)]"
       >
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-gray-100 px-7 py-5">
+        <header className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:items-center sm:px-7 sm:py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
               <ShieldCheck className="h-6 w-6 text-[#0038a8]" />
             </div>
 
-            <h1
-              id="reset-password-title"
-              className="text-2xl font-bold text-[#0038a8]"
-            >
+            <h1 id="reset-password-title" className="text-xl font-bold text-[#0038a8] sm:text-2xl">
               Reset Password
             </h1>
           </div>
@@ -89,8 +86,8 @@ export const ResetPasswordModal = ({
           <button
             type="button"
             aria-label="Close reset password dialog"
-            onClick={handleCancel} 
-            className="..."
+            onClick={handleCancel}
+            className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
           >
             <X className="h-5 w-5" />
           </button>
@@ -98,7 +95,7 @@ export const ResetPasswordModal = ({
 
         <form onSubmit={handleSubmit}>
           {/* Content */}
-          <div className="flex flex-col gap-6 px-10 py-8">
+          <div className="flex max-h-[calc(100vh-12rem)] flex-col gap-5 overflow-y-auto px-4 py-5 sm:px-10 sm:py-8">
             <p className="text-[17px] text-gray-700">
               Reset password for:{" "}
               <span className="font-bold text-gray-900">
@@ -156,7 +153,7 @@ export const ResetPasswordModal = ({
             <section
               id={`${passwordId}-requirements`}
               aria-label="Password requirements"
-              className="rounded-xl border border-gray-200 bg-neutral-50 px-6 py-5"
+              className="rounded-xl border border-gray-200 bg-neutral-50 px-4 py-4 sm:px-6 sm:py-5"
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {requirements.map((requirement) => {
@@ -198,11 +195,11 @@ export const ResetPasswordModal = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-4 border-t border-gray-100 px-8 py-6">
+          <div className="flex flex-col-reverse gap-3 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6">
             <button
               type="button"
               onClick={handleCancel}
-              className="min-w-[120px] rounded-lg border border-gray-300 px-8 py-3 text-base font-bold text-gray-700 transition hover:bg-gray-50"
+              className="w-full rounded-lg border border-gray-300 px-6 py-3 text-base font-bold text-gray-700 transition hover:bg-gray-50 sm:w-auto sm:min-w-[120px] sm:px-8"
             >
               Cancel
             </button>
@@ -210,7 +207,7 @@ export const ResetPasswordModal = ({
             <button
               type="submit"
               disabled={!isPasswordValid}
-              className="min-w-[200px] rounded-lg bg-[#0038a8] px-10 py-3 text-base font-bold text-white transition hover:bg-[#002d87] disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="w-full rounded-lg bg-[#0038a8] px-6 py-3 text-base font-bold text-white transition hover:bg-[#002d87] disabled:cursor-not-allowed disabled:bg-blue-300 sm:w-auto sm:min-w-[200px] sm:px-10"
             >
               Reset Password
             </button>

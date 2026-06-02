@@ -307,16 +307,16 @@ export default function Page() {
   return (
     <>
       <main
-        className="relative flex w-full flex-col items-start gap-6 p-8"
+        className="relative flex w-full min-w-0 flex-col items-start gap-6 p-4 sm:p-6 lg:p-8"
         aria-label="Calendar main content"
       >
         <CalendarHeaderSection />
 
         <section
-          className="flex flex-col items-start justify-center p-6 relative flex-1 self-stretch w-full grow overflow-auto"
+          className="relative flex w-full flex-1 self-stretch flex-col items-start justify-center overflow-auto p-3 sm:p-4 lg:p-6"
           aria-label="Calendar content"
         >
-          <div className="flex flex-col max-h-275 items-start p-6 flex-1 min-h-0 grow bg-white rounded-2xl border border-gray-100 shadow-[0px_1px_2px_#0000000d] self-stretch w-full">
+          <div className="flex min-h-0 flex-1 flex-col items-start max-h-275 self-stretch w-full rounded-2xl border border-gray-100 bg-white p-3 shadow-[0px_1px_2px_#0000000d] sm:p-4 lg:p-6">
             <CalendarNavigationToolbarSection
               monthLabel={monthLabel}
               onPrev={goPrevMonth}

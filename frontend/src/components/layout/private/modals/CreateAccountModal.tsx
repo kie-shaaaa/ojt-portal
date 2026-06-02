@@ -58,7 +58,6 @@ export const CreateAccountModal = ({
       {
         id: "uppercase",
         label: "Uppercase (A-Z)",
-        met: /[A-Z]/.test(formData.password),
       },
       {
         id: "number",
@@ -131,7 +130,7 @@ export const CreateAccountModal = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/50"
+        className="fixed inset-0 z-40 bg-black/50 p-3 sm:p-4"
         onClick={handleCancel}
         aria-hidden="true"
       />
@@ -141,19 +140,16 @@ export const CreateAccountModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${formId}-title`}
-        className="fixed top-1/2 left-1/2 z-50 w-[550px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-xl"
+        className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-1rem)] max-w-[550px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl bg-white shadow-xl sm:w-[calc(100%-2rem)]"
       >
         {/* Header */}
-        <header className="relative flex w-full items-center justify-between border-b border-gray-100 px-6 py-5">
+        <header className="relative flex w-full items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
           <div className="inline-flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
               <ShieldCheck className="h-5 w-5 text-[#003eb3]" />
             </div>
 
-            <h1
-              id={`${formId}-title`}
-              className="text-xl font-bold leading-7 tracking-[-0.5px] text-[#003eb3]"
-            >
+            <h1 id={`${formId}-title`} className="text-lg font-bold leading-7 tracking-[-0.5px] text-[#003eb3] sm:text-xl">
               Create New Account
             </h1>
           </div>
@@ -169,7 +165,7 @@ export const CreateAccountModal = ({
         </header>
 
         <form onSubmit={handleSubmit} className="flex flex-col" noValidate>
-          <div className="flex w-full flex-col items-start gap-5 px-6 py-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+          <div className="flex max-h-[calc(100vh-12rem)] w-full flex-col items-start gap-5 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
             {/* Username */}
             <div className="flex w-full flex-col items-start gap-1.5">
               <label
@@ -271,7 +267,7 @@ export const CreateAccountModal = ({
             <div
               id={passwordRequirementsId}
               aria-live="polite"
-              className="grid h-fit grid-cols-2 grid-rows-[16px_16px] gap-y-[10px] rounded-lg border bg-gray-50 p-4"
+              className="grid h-fit grid-cols-1 gap-y-[10px] rounded-lg border bg-gray-50 p-4 sm:grid-cols-2 sm:grid-rows-[16px_16px]"
             >
               {passwordRequirements.map((requirement, index) => {
                 const cellClassNames = [

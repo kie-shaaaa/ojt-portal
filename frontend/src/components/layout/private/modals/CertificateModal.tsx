@@ -41,10 +41,10 @@ export default function CertificateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-3 sm:items-center sm:p-4">
+      <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="flex items-start justify-between gap-3 border-b px-4 py-4 sm:items-center sm:px-6 sm:py-4">
           <h3 className="text-xl font-semibold text-slate-800">
             Generate Certificates
           </h3>
@@ -57,7 +57,7 @@ export default function CertificateModal({
         </div>
 
         {/* Body */}
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
+        <div className="max-h-[75vh] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <p className="mb-4 text-sm text-slate-700">
             You have selected <strong>{interns.length}</strong> intern(s)
             for certificate generation.
@@ -86,14 +86,14 @@ export default function CertificateModal({
           </div>
 
           {/* Tutorial Section */}
-          <div className="rounded-xl border-l-4 border-blue-600 bg-blue-50 p-5">
+          <div className="rounded-xl border-l-4 border-blue-600 bg-blue-50 p-4 sm:p-5">
             <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-blue-700">
               <Info size={18} />
               How to Generate Certificates
             </h4>
             <div className="flex flex-col gap-4">
               {/* Step 1 */}
-              <div className="flex gap-4 rounded-xl bg-white p-4">
+              <div className="flex gap-4 rounded-xl bg-white p-3 sm:p-4">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                   1
                 </div>
@@ -110,7 +110,7 @@ export default function CertificateModal({
               </div>
 
               {/* Step 2 */}
-              <div className="flex gap-4 rounded-xl bg-white p-4">
+              <div className="flex gap-4 rounded-xl bg-white p-3 sm:p-4">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                   2
                 </div>
@@ -125,7 +125,7 @@ export default function CertificateModal({
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-4 rounded-xl bg-white p-4">
+              <div className="flex gap-4 rounded-xl bg-white p-3 sm:p-4">
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                   3
                 </div>
@@ -144,7 +144,7 @@ export default function CertificateModal({
           </div>
 
           {/* Footer */}
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
               onClick={onClose}
               className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"

@@ -173,9 +173,9 @@ export const RejectionReasons = ({
   });
 
   return (
-    <section className="flex max-h-[calc(100vh-2rem)] w-[672px] max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+    <section className="flex max-h-[calc(100vh-1.5rem)] w-[calc(100vw-1rem)] max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:w-[672px]">
       {/* Header */}
-      <header className="flex items-start justify-between px-6 py-5 border-b border-gray-200">
+      <header className="flex items-start justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex items-start gap-4">
           <div className="p-2 bg-red-100 rounded-lg">
             <AlertTriangle className="text-red-600" size={22} />
@@ -204,7 +204,7 @@ export const RejectionReasons = ({
       </header>
 
       {/* Alert Banner */}
-      <div className="flex items-center gap-2 px-6 py-3 bg-red-50 border-b border-red-100">
+      <div className="flex items-center gap-2 border-b border-red-100 bg-red-50 px-4 py-3 sm:px-6">
         <AlertTriangle size={14} className="text-red-700" />
 
         <p className="text-xs font-semibold text-red-700">
@@ -350,7 +350,7 @@ export const RejectionReasons = ({
       </div>
 
       {/* Footer */}
-      <footer className="flex shrink-0 items-center justify-between border-t border-gray-200 bg-slate-50 px-4 py-4 sm:px-6">
+      <footer className="flex shrink-0 flex-col-reverse gap-3 border-t border-gray-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <button
           type="button"
           onClick={() => {
@@ -360,7 +360,7 @@ export const RejectionReasons = ({
             }
             onClose?.();
           }}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-3 transition hover:bg-gray-50 sm:justify-start"
         >
           <ArrowLeft size={16} />
           <span className="text-sm text-gray-700">Back</span>
@@ -381,7 +381,7 @@ export const RejectionReasons = ({
 
             onSubmit?.({ items });
           }}
-          className={`px-8 py-3 rounded-xl text-white text-sm font-medium transition ${
+          className={`rounded-xl px-8 py-3 text-sm font-medium text-white transition ${
             canSubmit
               ? "bg-red-600 hover:bg-red-700"
               : "bg-red-300 cursor-not-allowed"

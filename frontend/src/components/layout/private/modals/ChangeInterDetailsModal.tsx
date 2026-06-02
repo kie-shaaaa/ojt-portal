@@ -81,16 +81,16 @@ export const ChangeInterDetailsModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-3 backdrop-blur-sm sm:items-center sm:p-4">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="relative flex w-full max-w-2xl flex-col max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl"
+        className="relative flex w-full max-w-2xl max-h-[calc(100vh-1.5rem)] flex-col overflow-auto rounded-xl bg-white shadow-2xl sm:max-h-[90vh]"
       >
         {/* Header */}
-        <header className="flex w-full items-center justify-between border-b border-gray-100 px-8 pt-8 pb-6">
+        <header className="flex w-full items-center justify-between border-b border-gray-100 px-4 pb-4 pt-4 sm:px-8 sm:pb-6 sm:pt-8">
           <div className="flex flex-col">
             <h1 id={titleId} className="text-xl font-bold text-blue-700">
               Edit Intern Details
@@ -110,7 +110,7 @@ export const ChangeInterDetailsModal = ({
         </header>
 
         {/* Content */}
-        <div className="flex flex-col gap-6 px-8 pt-6 pb-10">
+        <div className="flex flex-col gap-4 px-4 pb-6 pt-4 sm:gap-6 sm:px-8 sm:pb-10 sm:pt-6">
           {/* Intern Name */}
           <dl className="grid w-full gap-1 border-b border-gray-50 py-4">
             <dt className="text-base font-bold text-gray-700">Intern Name:</dt>
@@ -118,7 +118,7 @@ export const ChangeInterDetailsModal = ({
           </dl>
 
           {/* Form */}
-          <form className="grid gap-6 md:grid-cols-2 md:grid-rows-[102px_86px]">
+          <form className="grid gap-4 md:grid-cols-2 md:grid-rows-[102px_86px] sm:gap-6">
             {/* Gender */}
             <div className="flex flex-col gap-1.5">
               <label
@@ -204,7 +204,7 @@ export const ChangeInterDetailsModal = ({
         </div>
 
         {/* Footer */}
-        <footer className="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-8 py-6">
+        <footer className="flex flex-col-reverse gap-3 border-t border-gray-100 bg-gray-50 px-4 py-4 sm:flex-row sm:justify-end sm:px-8 sm:py-6">
           <button
             type="button"
             className="rounded-md border border-gray-300 bg-white px-6 py-2 text-sm text-gray-700"

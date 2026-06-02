@@ -127,7 +127,7 @@ export default function CalendarAppointmentModal({
 
   return (
     <div
-      className={`fixed inset-0 z-99999 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-99999 flex items-start justify-center bg-black/50 p-3 transition-opacity duration-200 ease-out sm:items-center sm:p-4 ${
         isVisible ? "opacity-100 backdrop-blur-sm" : "opacity-0 backdrop-blur-0"
       }`}
       onClick={onClose}
@@ -137,17 +137,17 @@ export default function CalendarAppointmentModal({
         aria-modal="true"
         aria-labelledby="calendar-appointment-title"
         onClick={(event) => event.stopPropagation()}
-        className={`flex w-full max-w-4xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out ${
+        className={`flex w-full max-w-4xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-all duration-200 ease-out sm:max-h-[90vh] ${
           isVisible
             ? "scale-100 translate-y-0 opacity-100"
             : "scale-95 translate-y-2 opacity-0"
         }`}
       >
-        <header className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
-          <div>
+        <header className="flex shrink-0 flex-col items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-4">
+          <div className="min-w-0">
             <h1
               id="calendar-appointment-title"
-              className="text-xl font-bold text-[#0038a8]"
+              className="text-lg font-bold text-[#0038a8] sm:text-xl"
             >
               {activeAppointment.appointmentType} -{" "}
               {activeAppointment.applicantName}
@@ -168,7 +168,7 @@ export default function CalendarAppointmentModal({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -307,7 +307,7 @@ export default function CalendarAppointmentModal({
           </div>
         </div>
 
-        <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 shrink-0">
+        <footer className="flex shrink-0 flex-col gap-3 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <button
             type="button"
             className="rounded-lg border border-green-600 px-4 py-2.5 text-sm font-semibold text-green-600 transition hover:bg-green-50"
@@ -340,16 +340,16 @@ export default function CalendarAppointmentModal({
       {/* Clear appointment modal with optional cancellation reason */}
       {isClearModalOpen && (
         <div
-          className={`fixed inset-0 z-999999 flex items-center justify-center bg-black/40 p-4`}
+          className={`fixed inset-0 z-999999 flex items-start justify-center bg-black/40 p-3 sm:items-center sm:p-4`}
           onClick={() => setIsClearModalOpen(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-xl rounded-lg bg-white shadow-lg"
+            className="w-full max-w-xl max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-lg bg-white shadow-lg sm:max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="border-b px-6 py-4">
+            <div className="border-b px-4 py-4 sm:px-6">
               <h3 className="text-lg font-semibold text-slate-800">
                 Clear appointment
               </h3>
@@ -359,7 +359,7 @@ export default function CalendarAppointmentModal({
               </p>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <label className="block text-sm font-medium text-slate-700">
                 Message to applicant (optional)
               </label>
@@ -372,7 +372,7 @@ export default function CalendarAppointmentModal({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
+            <div className="flex flex-col-reverse gap-3 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
               <button
                 type="button"
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"

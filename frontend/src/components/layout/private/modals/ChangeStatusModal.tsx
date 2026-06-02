@@ -375,13 +375,13 @@ const ChangeStatusModal = ({
 
   return (
     <div
-      className={`fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-[99999] flex items-start justify-center bg-black/50 p-3 transition-opacity duration-200 ease-out sm:items-center sm:p-4 ${
         isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
       onClick={() => onClose()}
     >
       <section
-        className={`flex flex-col max-w-lg w-[512px] max-h-[90vh] bg-white rounded-xl overflow-hidden shadow-2xl transition-opacity duration-200 ease-out ${
+        className={`flex w-full max-w-lg max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-opacity duration-200 ease-out sm:w-[512px] sm:max-h-[90vh] ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
         role="dialog"
@@ -391,8 +391,8 @@ const ChangeStatusModal = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <header className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
-          <h2 id={headingId} className="text-lg font-bold text-blue-800">
+        <header className="flex flex-shrink-0 items-start justify-between border-b border-gray-100 px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
+          <h2 id={headingId} className="text-base font-bold text-blue-800 sm:text-lg">
             {bulkMode
               ? `Change Status for ${bulkCount} Applications`
               : mode === "appointment-date"
@@ -411,7 +411,7 @@ const ChangeStatusModal = ({
         </header>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4" ref={bodyRef}>
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6" ref={bodyRef}>
           {mode === "appointment-date" ? (
             // Appointment Date Mode
             <>

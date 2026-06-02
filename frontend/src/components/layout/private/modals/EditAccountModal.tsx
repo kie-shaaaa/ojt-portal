@@ -52,7 +52,7 @@ export const EditAccountModal = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/50"
+        className="fixed inset-0 z-40 bg-black/50 p-3 sm:p-4"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -62,10 +62,10 @@ export const EditAccountModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-account-title"
-        className="fixed top-1/2 left-1/2 z-50 w-md max-w-md -translate-x-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-xl bg-white shadow-[0px_25px_50px_-12px_#00000040]"
+        className="fixed left-1/2 top-1/2 z-50 flex w-[calc(100%-1rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white shadow-[0px_25px_50px_-12px_#00000040] sm:w-[calc(100%-2rem)]"
       >
         {/* Header */}
-        <div className="relative flex w-full items-center justify-between border-b border-gray-100 px-6 py-5">
+        <div className="relative flex w-full items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
           <div className="inline-flex items-center gap-3">
             <div
               className="inline-flex items-center justify-center"
@@ -95,10 +95,7 @@ export const EditAccountModal = ({
         </div>
 
         {/* Form */}
-        <form
-          className="flex w-full flex-col gap-6 p-8"
-          onSubmit={handleSubmit}
-        >
+        <form className="flex w-full flex-col gap-5 p-4 sm:gap-6 sm:p-8" onSubmit={handleSubmit}>
           {/* Username */}
           <div className="flex w-full flex-col gap-2">
             <label
@@ -155,7 +152,7 @@ export const EditAccountModal = ({
           </div>
 
           {/* Actions */}
-          <div className="flex w-full items-center justify-end gap-3">
+          <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
@@ -173,7 +170,7 @@ export const EditAccountModal = ({
           </div>
         </form>
 
-        <div className="h-8 w-full" />
+        <div className="h-4 w-full sm:h-8" />
       </section>
     </>
   );
