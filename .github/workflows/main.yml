@@ -2,14 +2,17 @@ name: Sync Fork
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # every 30 minutes
-  workflow_dispatch: # on button click
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+# ADD THESE THREE LINES:
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   sync:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: tgymnich/fork-sync@v1.8
         with:
@@ -17,3 +20,4 @@ jobs:
           name: ojt-portal
           base: master
           head: master
+          token: ${{ secrets.MY_PAT }} 
