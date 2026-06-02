@@ -486,11 +486,11 @@ export const OjtInformationSection = ({
           onChange={handleSelectChange("course")}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[78px] h-fit gap-6 self-stretch w-full">
-          {textFields.map((field, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 self-stretch w-full">
+          {textFields.map((field) => (
             <div
               key={field.id}
-              className={`relative row-[1/2] ${index === 0 ? "col-[1/2]" : "col-[2/3]"} w-full h-fit flex flex-col items-start gap-2`}
+              className="w-full flex flex-col items-start gap-2"
             >
               {field.id === "deploymentDate" ? (
                 <DatePicker
