@@ -886,19 +886,19 @@ export const VerifiedInternsTableSection = ({
 
   return (
     <>
-      <section className="flex relative self-stretch w-full flex-col items-start rounded-xl border border-solid border-slate-200 bg-white shadow-lg overflow-hidden">
-        {/* Header with title and export button */}
-        <div className="flex flex-col gap-4 w-full border-b border-slate-100 p-6 pb-4 bg-linear-to-r from-slate-50 to-transparent sm:flex-row sm:items-center sm:justify-between">
+      <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5 max-[1023px]:flex-col max-[1023px]:items-start">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Verified Interns
-            </h3>
-            <p className="text-sm text-slate-500 ml-4">
+            </h2>
+            <p className="text-sm font-medium text-slate-500">
               {`Page: ${currentPage} of ${totalPages} • ${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
-          <div className="ml-auto flex w-full max-w-fit flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
+          <div className="flex items-center gap-2 max-[1023px]:w-full max-[1023px]:flex-col max-[1023px]:items-stretch max-[1023px]:justify-end">
+            <div className="relative w-full max-w-full sm:max-w-[30rem] lg:max-w-[34rem] max-[1280px]:max-w-[20rem] flex-1 min-w-0 max-[1280px]:mx-auto max-[1023px]:mx-auto max-[1023px]:w-full">
               <Search
                 size={18}
                 aria-hidden="true"
@@ -919,35 +919,38 @@ export const VerifiedInternsTableSection = ({
               />
             </div>
 
-            {/* Export to Excel Button */}
-            <button
-              onClick={handleExportExcel}
-              disabled={rows.length === 0}
-              className="px-4 py-2 text-sm font-semibold text-white bg-linear-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <Download size={16} />
-              Export
-            </button>
+            <div className="w-auto max-[1280px]:w-auto max-[1280px]:flex max-[1280px]:justify-center max-[1023px]:w-full">
+              <button
+                className="flex justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-700 hover:to-emerald-800 active:scale-95 max-[1280px]:max-w-[20rem] sm:max-w-[28rem] lg:max-w-[34rem] max-[1023px]:w-full max-[1023px]:px-3 max-[1023px]:py-2 max-[767px]:text-xs"
+                onClick={handleExportExcel}
+                type="button"
+              >
+                <Download size={18} className="text-white" />
+                Export
+              </button>
+            </div>
 
-            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-end sm:ml-auto">
+            <div className="flex items-center gap-2 max-[1023px]:w-full max-[1023px]:flex-wrap max-[1023px]:justify-between max-[1023px]:gap-2 max-[1023px]:px-1">
               <button
                 onClick={onPreviousPage}
                 type="button"
                 disabled={currentPage === 1}
                 aria-label="Previous page"
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 max-[1280px]:h-9 max-[1280px]:w-9 max-[1023px]:h-8 max-[1023px]:w-8 max-[767px]:h-7 max-[767px]:w-7"
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="px-3 py-2 text-sm font-semibold text-slate-600">
+
+              <span className="px-3 py-2 text-sm font-semibold text-slate-600 max-[1023px]:px-2 max-[1023px]:py-1 max-[767px]:text-xs">
                 {currentPage} / {totalPages}
               </span>
+
               <button
                 onClick={onNextPage}
                 type="button"
                 disabled={currentPage >= totalPages}
                 aria-label="Next page"
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 max-[1280px]:h-9 max-[1280px]:w-9 max-[1023px]:h-8 max-[1023px]:w-8 max-[767px]:h-7 max-[767px]:w-7"
               >
                 <ChevronRight size={18} />
               </button>
@@ -958,11 +961,11 @@ export const VerifiedInternsTableSection = ({
         {/* Table */}
         <div
           ref={scrollRef}
-          className={`w-full flex-1 overflow-x-auto ${
+          className={`relative min-h-[400px] overflow-x-auto ${
             shouldVirtualize ? "max-h-[calc(100vh-20rem)] overflow-auto" : ""
           }`}
         >
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[1000px] border-collapse">
             <thead className="bg-slate-100 border-b border-slate-200 sticky top-0">
               <tr>
                 <th
@@ -1026,7 +1029,7 @@ export const VerifiedInternsTableSection = ({
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {shouldVirtualize && windowedRange.topSpacerHeight > 0 && (
                 <tr aria-hidden="true">
                   <td
@@ -1082,15 +1085,15 @@ export const VerifiedInternsTableSection = ({
 
         {/* Footer with selection info */}
         {selectedInterns.length > 0 && (
-          <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
+          <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full max-[767px]:flex-col max-[767px]:items-stretch max-[767px]:gap-3">
             <p className="text-sm font-semibold text-blue-900">
               ✓ {selectedInterns.length} intern
               {selectedInterns.length !== 1 ? "s" : ""} selected
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 max-[767px]:flex-col max-[767px]:items-stretch max-[767px]:w-full">
               <button
                 onClick={handleExportExcel}
-                className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md"
+                className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md max-[767px]:w-full"
                 type="button"
               >
                 Export Selected
@@ -1098,7 +1101,7 @@ export const VerifiedInternsTableSection = ({
               <button
                 onClick={() => setShowBulkDeleteConfirm(true)}
                 disabled={isBulkDeleting}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 border border-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 border border-red-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed max-[767px]:w-full"
                 type="button"
               >
                 Delete Selected
@@ -1106,7 +1109,7 @@ export const VerifiedInternsTableSection = ({
 
               <button
                 onClick={() => setIsCertificateModalOpen(true)}
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 border border-blue-700 transition-all shadow-sm hover:shadow-md"
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 border border-blue-700 transition-all shadow-sm hover:shadow-md max-[767px]:w-full"
                 type="button"
               >
                 Generate Certificate
