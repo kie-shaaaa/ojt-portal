@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Injectable, Logger } from '@nestjs/common';
 import { Readable } from 'stream';
@@ -19,7 +20,7 @@ export class SupabaseStorage {
       },
     }) as SupabaseClient<any, 'public'>;
   }
-  
+
   // Upload a Buffer to a bucket
   async uploadBuffer(
     bucket: string,

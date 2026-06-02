@@ -176,7 +176,9 @@ export class AppointmentsController {
       return await this.appointmentService.confirmAppointment(applicationId);
     } catch (error) {
       throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to confirm appointment',
+        error instanceof Error
+          ? error.message
+          : 'Failed to confirm appointment',
       );
     }
   }
