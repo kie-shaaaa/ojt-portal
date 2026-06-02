@@ -30,7 +30,7 @@ export default function DatePicker({
   disabled = false,
   minDate,
   placeholder = "yyyy/mm/dd",
-  dropdownPlacement = "up",
+  dropdownPlacement = "down",
 }: DatePickerProps): JSX.Element {
   const pickerRootRef = useRef<HTMLDivElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
