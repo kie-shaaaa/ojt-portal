@@ -11,7 +11,6 @@ export const ApplicationsHeaderSection = (): JSX.Element => {
           Applications
         </h1>
       </div>
-
     </header>
   );
 };

@@ -164,7 +164,7 @@ export const AsideSidebar = ({
       </nav>
 
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm max-h-[calc(100vh-2rem)] overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
             <h2 className="text-lg font-bold text-gray-800 sm:text-xl">
               Confirm Logout
