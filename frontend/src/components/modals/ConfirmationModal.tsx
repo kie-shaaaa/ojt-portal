@@ -54,8 +54,8 @@ export const ConfirmationModal = ({
     }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6">
-      <div className="relative flex w-full max-w-3xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+      <div className="relative flex w-full max-w-3xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)] sm:rounded-3xl">
         <button
           type="button"
           onClick={onClose}
@@ -65,7 +65,7 @@ export const ConfirmationModal = ({
           <X className="h-5 w-5" />
         </button>
 
-        <div className="bg-gradient-to-r from-[#002b80] via-[#0038A8] to-[#1d4ed8] px-5 py-6 text-white sm:px-8 sm:py-7">
+        <div className="bg-gradient-to-r from-[#002b80] via-[#0038A8] to-[#1d4ed8] px-4 py-5 text-white sm:px-8 sm:py-7">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 sm:h-14 sm:w-14">
               <CheckCircle2 className="h-7 w-7 sm:h-8 sm:w-8" aria-hidden="true" />
@@ -85,7 +85,7 @@ export const ConfirmationModal = ({
           </div>
         </div>
 
-        <div className="grid flex-1 gap-4 overflow-y-auto bg-slate-50/60 p-4 sm:p-6 lg:grid-cols-2 lg:p-8">
+        <div className="grid flex-1 gap-4 overflow-y-auto bg-slate-50/60 p-3 sm:p-6 lg:grid-cols-2 lg:p-8">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0038A8] ring-1 ring-blue-100">
@@ -182,7 +182,7 @@ export const ConfirmationModal = ({
           </section>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-4">
           <button
             type="button"
             onClick={onClose}

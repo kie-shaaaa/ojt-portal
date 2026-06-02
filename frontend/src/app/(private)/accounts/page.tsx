@@ -99,7 +99,7 @@ export const MainContentArea = (): JSX.Element => {
 
   return (
     <main
-      className="relative flex flex-col items-start gap-6 p-8"
+      className="relative flex w-full min-w-0 flex-col items-start gap-6 p-4 sm:p-6 lg:p-8"
       aria-label="Accounts main content"
     >
       <AccountsHeaderSection />

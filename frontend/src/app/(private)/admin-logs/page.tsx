@@ -18,7 +18,7 @@ export default function AdminLogsPage(): JSX.Element {
 
   return (
     <main
-      className="relative flex w-full flex-col items-start gap-6 p-8"
+      className="relative flex w-full min-w-0 flex-col items-start gap-6 p-4 sm:p-6 lg:p-8"
       data-id="main-content"
     >
       <AdminLogsHeaderSection />

@@ -16,9 +16,9 @@ export const ApplicationSubmittedModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[#002b80] shadow-2xl">
-        <div className="flex flex-col items-center bg-emerald-600 px-8 py-8 text-white">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-4 py-4 backdrop-blur-sm sm:items-center sm:py-6">
+      <div className="relative w-full max-w-md max-h-[calc(100vh-2rem)] overflow-hidden rounded-2xl bg-[#002b80] shadow-2xl">
+        <div className="flex flex-col items-center bg-emerald-600 px-6 py-6 text-white sm:px-8 sm:py-8">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
             <CheckCircle2 className="h-10 w-10" aria-hidden="true" />
           </div>
@@ -32,7 +32,7 @@ export const ApplicationSubmittedModal = ({
           </p>
         </div>
 
-        <div className="px-8 py-6 text-center">
+        <div className="px-6 py-6 text-center sm:px-8">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
             <Image
               src="/ntc-logo.png"

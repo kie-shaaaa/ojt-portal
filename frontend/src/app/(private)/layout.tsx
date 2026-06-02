@@ -35,12 +35,12 @@ export default function PrivateLayout({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       <AsideSidebar
         account_type={currentUser?.account_type}
         email={currentUser?.email}
       />
-      <main className="md:ml-64 pb-16 md:pb-0">{children}</main>
+      <main className="pb-20 md:ml-64 md:pb-0">{children}</main>
     </div>
   );
 }
