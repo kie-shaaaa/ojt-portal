@@ -17,7 +17,7 @@ export class SupabaseStorage {
       realtime: {
         transport: ws,
       },
-    }) as SupabaseClient<any, 'public'>;
+    });
   }
   
   // Upload a Buffer to a bucket
