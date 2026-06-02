@@ -988,9 +988,9 @@ export const ApplicationsTableSection = ({
       >
         {isLoading && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px]">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent shadow-lg" />
+            <div className="h-10 w-10 rounded-full border-4 border-blue-600 border-t-transparent shadow-lg" />
 
-            <p className="mt-4 animate-pulse text-sm font-bold text-slate-600">
+            <p className="mt-4 text-sm font-bold text-slate-600">
               Fetching valid applications...
             </p>
           </div>
@@ -1186,7 +1186,7 @@ export const ApplicationsTableSection = ({
                         className={
                           isDownloadingApplicationId ===
                           application.applicationId
-                            ? "animate-spin"
+                            ? ""
                             : ""
                         }
                       />

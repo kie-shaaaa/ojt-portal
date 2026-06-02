@@ -9,9 +9,6 @@ export const AdminLogsHeaderSection = (): JSX.Element => {
                 <h1 className="text-2xl font-bold leading-8 text-[#003366]">
                     Admin Logs
                 </h1>
-                <h3>
-                    Track all the actions, update, and configuration of each user.
-                </h3>
             </div>
         </header>
     );

@@ -104,7 +104,7 @@ export const ApplicationsFilterSection = ({
   return (
     <section
       aria-labelledby={sectionTitleId}
-      className="relative w-full rounded-2xl border border-slate-200/60 bg-linear-to-br from-slate-50 to-slate-100/50 px-8 py-8 shadow-sm"
+      className="relative w-full rounded-2xl border border-slate-200/60  px-8 py-8 shadow-sm"
     >
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
