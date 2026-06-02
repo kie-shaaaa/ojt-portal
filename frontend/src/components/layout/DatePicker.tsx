@@ -158,7 +158,7 @@ export default function DatePicker({
         {showPicker && (
           <div
             ref={pickerRef}
-            className={`absolute left-0 z-50 w-80 rounded-lg border border-gray-200 bg-white p-4 shadow-lg ${dropdownPlacement === "down" ? "top-full mt-2" : "bottom-full mb-2"}`}
+            className={`absolute left-0 z-50 w-full max-w-[20rem] rounded-lg border border-gray-200 bg-white p-4 shadow-lg ${dropdownPlacement === "down" ? "top-full mt-2" : "bottom-full mb-2"}`}
           >
             {/* Header */}
             <div className="mb-4 flex items-center justify-between">
