@@ -257,8 +257,8 @@ export const AccountsTableSection = ({
         </div>
 
         <div className="px-6 pb-6 w-full">
-          <div className="overflow-x-auto w-full">
-            <table className="w-full text-left table-fixed">
+          <div className="relative min-h-[320px] overflow-x-auto w-full">
+            <table className="w-full min-w-[920px] border-collapse text-left">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {columns
