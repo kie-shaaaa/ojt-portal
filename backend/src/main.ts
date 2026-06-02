@@ -5,12 +5,11 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import 'dotenv/config';
-
+import { setDefaultResultOrder } from 'node:dns';
 import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
-
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -42,6 +41,8 @@ async function bootstrap() {
     },
   });
 
+  setDefaultResultOrder('ipv4first');
+  
   app.enableCors({
     origin: true,
     credentials: true,
