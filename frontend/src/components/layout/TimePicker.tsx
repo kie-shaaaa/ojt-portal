@@ -119,7 +119,7 @@ export default function TimePicker({
                   value={hours12}
                   onChange={(e) => handleHourChange(Number(e.target.value))}
                   size={5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {hourOptions.map((h) => (
                     <option key={h} value={h}>
@@ -138,7 +138,7 @@ export default function TimePicker({
                   value={minutes}
                   onChange={(e) => handleMinuteChange(Number(e.target.value))}
                   size={5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {minuteOptions.map((m) => (
                     <option key={m} value={m}>
@@ -158,10 +158,15 @@ export default function TimePicker({
                   onChange={(e) =>
                     handlePeriodChange(e.target.value as "AM" | "PM")
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
+                  <option 
+                    value="AM"
+                    className="bg-white text-gray-700">
+                      AM</option>
+                  <option 
+                    value="PM"
+                    className="bg-white text-gray-700">PM</option>
                 </select>
               </div>
             </div>
