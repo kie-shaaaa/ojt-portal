@@ -9,9 +9,6 @@ export const CalendarHeaderSection = (): JSX.Element => {
         <h1 className="text-2xl font-bold leading-8 text-[#003366]">
           Calendar
         </h1>
-        <h3>
-          Appointments scheduled within the months.
-        </h3>
       </div>
 
       <div className="w-72 max-[767px]:w-full">
