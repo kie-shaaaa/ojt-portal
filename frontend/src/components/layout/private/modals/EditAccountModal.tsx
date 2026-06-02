@@ -2,10 +2,13 @@
 
 import type { AccountRow } from "@/app/(private)/accounts/page";
 import type { FormEvent, JSX } from "react";
-import { useId, useState } from "react";
+import { useId, useState, useRef } from "react";
 import { ChevronDown, Shield, X } from "lucide-react";
 
-import { useEscapeKey } from "@/hooks/useDismissableEvents";
+import {
+  useEscapeKey,
+  useOutsidePointerDown,
+} from "@/hooks/useDismissableEvents";
 
 type AccountType = AccountRow["account_type"];
 
@@ -27,14 +30,20 @@ export const EditAccountModal = ({
 }: EditAccountModalProps): JSX.Element => {
   const usernameId = useId();
   const accountTypeId = useId();
+  const accountTypeDropdownRef = useRef<HTMLDivElement>(null);
 
   const [username, setUsername] = useState(account.username);
-
   const [account_type, setAccountType] = useState<AccountType>(
     account.account_type,
   );
+  const [isAccountTypeOpen, setIsAccountTypeOpen] = useState(false);
 
   useEscapeKey(onClose);
+  useOutsidePointerDown(
+    accountTypeDropdownRef,
+    () => setIsAccountTypeOpen(false),
+    isAccountTypeOpen,
+  );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -117,7 +126,7 @@ export const EditAccountModal = ({
           </div>
 
           {/* Account Type */}
-          <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full flex-col gap-2" ref={accountTypeDropdownRef}>
             <label
               htmlFor={accountTypeId}
               className="text-sm font-medium leading-5 text-gray-700"
@@ -126,21 +135,41 @@ export const EditAccountModal = ({
             </label>
 
             <div className="relative w-full">
-              <select
+              <input
                 id={accountTypeId}
                 name="accountType"
-                value={account_type}
-                onChange={(event) =>
-                  setAccountType(event.target.value as AccountType)
+                type="text"
+                value={
+                  accountTypes.find((type) => type.value === account_type)
+                    ?.label ?? ""
                 }
-                className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-base font-normal leading-6 text-gray-700 outline-none transition focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/20"
-              >
-                {accountTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+                readOnly
+                onClick={() => setIsAccountTypeOpen((current) => !current)}
+                onFocus={() => setIsAccountTypeOpen(true)}
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-base font-normal leading-6 text-gray-700 outline-none transition focus:border-[#0038A8] focus:ring-2 focus:ring-[#0038A8]/20"
+              />
+
+              {isAccountTypeOpen && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-300 bg-white shadow-[0px_25px_50px_-12px_#00000040]">
+                  {accountTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => {
+                        setAccountType(type.value as AccountType);
+                        setIsAccountTypeOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-base transition-colors hover:bg-slate-100 ${
+                        account_type === type.value
+                          ? "bg-slate-50 text-slate-900"
+                          : "text-slate-600"
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div
                 className="pointer-events-none absolute inset-y-0 right-3 flex items-center"
