@@ -1,6 +1,7 @@
-import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, BadRequestException, Get } from '@nestjs/common';
 import { MailerService } from '../services/mailer.service';
 import type { ContactMessageDto } from '../data/interfaces';
+import dns from 'node:dns/promises';
 
 @Controller('mailer')
 export class MailerController {
@@ -50,5 +51,14 @@ export class MailerController {
       adminSent: result.adminSent,
       senderSent: result.senderSent,
     };
+  }
+
+  @Get('smtp-test')
+  async test() {
+    const result = await dns.lookup('smtp.hostinger.com', {
+      all: true,
+    });
+
+    return result;
   }
 }
