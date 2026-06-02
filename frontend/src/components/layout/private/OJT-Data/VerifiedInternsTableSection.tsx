@@ -800,7 +800,7 @@ export const VerifiedInternsTableSection = ({
                   : "bg-slate-50 hover:bg-slate-100"
             }`}
           >
-            <td className="px-6 py-4">
+            <td className="px-4 py-3 sm:px-6 sm:py-4">
               <label className="inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -811,32 +811,32 @@ export const VerifiedInternsTableSection = ({
                 />
               </label>
             </td>
-            <td className="px-6 py-4 font-mono font-semibold text-blue-600">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 font-mono font-semibold text-blue-600">
               {getOjtId(intern)}
             </td>
-            <td className="px-6 py-4 font-semibold text-slate-900">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 font-semibold text-slate-900">
               {getInternName(intern)}
             </td>
-            <td className="px-6 py-4 text-slate-700">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-700">
               <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium">
                 {intern.gender || "Not set"}
               </span>
             </td>
-            <td className="px-6 py-4 text-slate-700 text-sm">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-700 text-sm">
               {intern.school_name}
             </td>
-            <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-600 text-sm max-w-xs truncate">
               {intern.course || (
                 <span className="text-slate-400 italic">—</span>
               )}
             </td>
-            <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
               {formatDate(intern.deployment_date)}
             </td>
-            <td className="px-6 py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
+            <td className="px-4 py-3 sm:px-6 sm:py-4 text-slate-700 text-sm whitespace-nowrap font-medium">
               {formatDate(intern.end_date)}
             </td>
-            <td className="px-6 py-4">
+            <td className="px-4 py-3 sm:px-6 sm:py-4">
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handleViewDetails(intern)}
@@ -888,16 +888,16 @@ export const VerifiedInternsTableSection = ({
     <>
       <section className="flex relative self-stretch w-full flex-col items-start rounded-xl border border-solid border-slate-200 bg-white shadow-lg overflow-hidden">
         {/* Header with title and export button */}
-        <div className="flex flex-col gap-4 w-full border-b border-slate-100 p-6 pb-4 bg-linear-to-r from-slate-50 to-transparent sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 w-full border-b border-slate-100 p-4 pb-4 bg-linear-to-r from-slate-50 to-transparent sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <h3 className="text-xl font-bold text-slate-900">
               Verified Interns
             </h3>
-            <p className="text-sm text-slate-500 ml-4">
+            <p className="mt-2 text-sm text-slate-500 sm:ml-4">
               {`Page: ${currentPage} of ${totalPages} • ${rows.length} record${rows.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
-          <div className="ml-auto flex w-full max-w-fit flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="ml-auto flex w-full max-w-full flex-col gap-3 sm:max-w-fit sm:flex-row sm:items-center">
             <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
               <Search
                 size={18}
@@ -923,13 +923,13 @@ export const VerifiedInternsTableSection = ({
             <button
               onClick={handleExportExcel}
               disabled={rows.length === 0}
-              className="px-4 py-2 text-sm font-semibold text-white bg-linear-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="w-full justify-center px-4 py-2 text-sm font-semibold text-white bg-linear-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 sm:w-auto"
             >
               <Download size={16} />
               Export
             </button>
 
-            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-end sm:ml-auto">
+            <div className="flex flex-wrap items-center justify-end gap-2 self-end w-full sm:w-auto max-[767px]:justify-between sm:ml-auto">
               <button
                 onClick={onPreviousPage}
                 type="button"
@@ -962,12 +962,12 @@ export const VerifiedInternsTableSection = ({
             shouldVirtualize ? "max-h-[calc(100vh-20rem)] overflow-auto" : ""
           }`}
         >
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[900px] table-auto text-left text-sm">
             <thead className="bg-slate-100 border-b border-slate-200 sticky top-0">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 w-12"
+                  className="px-4 py-3 font-bold text-slate-800 w-12 sm:px-6 sm:py-4"
                 >
                   <input
                     type="checkbox"
@@ -978,49 +978,49 @@ export const VerifiedInternsTableSection = ({
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
                   OJT ID
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
                   Name
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
                   Gender
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
                   School
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
                 >
                   Details
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
                 >
                   Start Date
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide whitespace-nowrap"
                 >
                   End Date
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-4 font-bold text-slate-800 uppercase tracking-wide"
+                  className="px-4 py-3 sm:px-6 sm:py-4 font-bold text-slate-800 uppercase tracking-wide"
                 >
                   Actions
                 </th>
@@ -1039,7 +1039,7 @@ export const VerifiedInternsTableSection = ({
 
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-14 text-center">
+                  <td colSpan={9} className="px-4 py-14 sm:px-6 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                         <Search size={32} />
@@ -1082,7 +1082,7 @@ export const VerifiedInternsTableSection = ({
 
         {/* Footer with selection info */}
         {selectedInterns.length > 0 && (
-          <div className="px-6 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex items-center justify-between w-full">
+          <div className="px-4 py-4 bg-linear-to-r from-blue-50 to-blue-100 border-t border-blue-200 flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p className="text-sm font-semibold text-blue-900">
               ✓ {selectedInterns.length} intern
               {selectedInterns.length !== 1 ? "s" : ""} selected

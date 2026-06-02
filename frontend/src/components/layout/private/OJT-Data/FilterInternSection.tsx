@@ -54,7 +54,7 @@ export const FilterInternsSection = ({
   return (
     <section
       aria-labelledby={sectionTitleId}
-      className="flex relative self-stretch w-full flex-[0_0_auto] flex-col items-start gap-6 rounded-lg border border-solid border-slate-200 bg-white p-6 shadow-[0px_1px_2px_#0000000d]"
+      className="relative flex flex-col w-full items-start gap-6 rounded-lg border border-solid border-slate-200 bg-white p-4 shadow-[0px_1px_2px_#0000000d] sm:p-6"
     >
       <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
         <h2
@@ -64,9 +64,9 @@ export const FilterInternsSection = ({
           Filter Interns
         </h2>
       </div>
-      <div className="grid h-fit w-full grid-cols-1 gap-8 sm:grid-cols-2 sm:grid-rows-[70px]">
+      <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
         {/* School Filter */}
-        <div className="relative flex h-fit w-full flex-col items-start gap-2">
+        <div className="relative flex min-w-0 w-full flex-col items-start gap-2">
           <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
             <label
               htmlFor="school"
@@ -109,7 +109,7 @@ export const FilterInternsSection = ({
                 }
               }}
               autoComplete="off"
-              className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+              className="block w-full rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 text-sm font-normal leading-5 tracking-normal text-slate-600 placeholder:text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
             />
             {isSchoolDropdownOpen && (
               <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
@@ -152,7 +152,7 @@ export const FilterInternsSection = ({
         </div>
 
         {/* Sort by Date Filter */}
-        <div className="relative flex h-fit w-full flex-col items-start gap-2">
+        <div className="relative flex min-w-0 w-full flex-col items-start gap-2">
           <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
             <label
               htmlFor="sortByDate"
@@ -181,7 +181,7 @@ export const FilterInternsSection = ({
                 setIsSortDropdownOpen(true);
                 setIsSchoolDropdownOpen(false);
               }}
-              className="relative flex w-full appearance-none cursor-pointer items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+              className="block w-full cursor-pointer rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
             />
             {isSortDropdownOpen && (
               <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">

@@ -210,7 +210,7 @@ export const AccountsTableSection = ({
   return (
     <>
       <section className="flex flex-col items-start pt-2 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] bg-white rounded-xl overflow-hidden border border-solid border-gray-100 shadow-sm">
-        <div className="flex items-start justify-between gap-4 p-6 relative self-stretch w-full flex-[0_0_auto] max-[767px]:flex-col max-[767px]:items-start">
+        <div className="flex items-start justify-between gap-4 p-6 relative self-stretch w-full flex-[0_0_auto] max-[1023px]:flex-col max-[1023px]:items-start">
           <div className="flex items-center gap-3">
             <h2 className="m-0 font-bold text-gray-700 text-lg">
               Admin &amp; Employee Accounts
@@ -220,8 +220,8 @@ export const AccountsTableSection = ({
             </p>
           </div>
 
-          <div className="ml-auto flex items-center gap-4 max-[767px]:ml-0 max-[767px]:w-full max-[767px]:flex-col max-[767px]:items-stretch">
-            <div className="relative w-full sm:w-md lg:w-136">
+          <div className="ml-auto flex items-center gap-4 max-[1023px]:ml-0 max-[1023px]:w-full max-[1023px]:flex-col max-[1023px]:items-stretch">
+            <div className="relative w-full sm:w-md lg:w-136 max-[1023px]:w-full">
               <Search
                 size={18}
                 aria-hidden="true"
@@ -258,7 +258,7 @@ export const AccountsTableSection = ({
 
         <div className="px-6 pb-6 w-full">
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-left table-fixed">
+            <table className="w-full text-left table-auto sm:table-fixed">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   {columns
@@ -266,29 +266,32 @@ export const AccountsTableSection = ({
                       (col) =>
                         user?.account_type == "admin" || col.key !== "actions",
                     )
-                    .map((column) => (
-                      <th
-                        key={column.key}
-                        scope="col"
-                        className={`px-6 py-4 text-sm font-semibold text-slate-700 ${column.key === "actions" ? "text-right" : ""}`}
-                        style={{
-                          width:
-                            column.key === "id"
-                              ? "6%"
-                              : column.key === "username"
-                                ? "24%"
-                                : column.key === "email"
-                                  ? "30%"
-                                  : column.key === "accountType"
-                                    ? "14%"
-                                    : column.key === "dateCreated"
-                                      ? "16%"
-                                      : "10%",
-                        }}
-                      >
-                        {column.label}
-                      </th>
-                    ))}
+                    .map((column) => {
+                      const isHiddenOnTablet = column.key === "email" || column.key === "dateCreated";
+                      return (
+                        <th
+                          key={column.key}
+                          scope="col"
+                          className={`px-6 py-4 text-sm font-semibold text-slate-700 ${column.key === "actions" ? "text-right" : ""} ${isHiddenOnTablet ? "hidden lg:table-cell" : ""}`}
+                          style={{
+                            width:
+                              column.key === "id"
+                                ? "6%"
+                                : column.key === "username"
+                                  ? "24%"
+                                  : column.key === "email"
+                                    ? "30%"
+                                    : column.key === "accountType"
+                                      ? "14%"
+                                      : column.key === "dateCreated"
+                                        ? "16%"
+                                        : "10%",
+                          }}
+                        >
+                          {column.label}
+                        </th>
+                      );
+                    })}
                 </tr>
               </thead>
 
@@ -337,14 +340,31 @@ export const AccountsTableSection = ({
                         {account.id}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-800">
-                        {account.username}
-                        {account.isCurrentUser && (
-                          <span className="ml-2 text-xs text-[#0b5cff]">
-                            You
-                          </span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{account.username}</span>
+                            {account.isCurrentUser && (
+                              <span className="text-xs text-[#0b5cff]">
+                                You
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1 text-[11px] text-slate-500 lg:hidden">
+                            <div className="truncate">
+                              <span className="font-medium text-slate-600">Email:</span> {account.email}
+                            </div>
+                            <div>
+                              <span className="font-medium text-slate-600">Joined:</span>{' '}
+                              {new Date(account.created_at).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-4 text-sm text-slate-600 hidden lg:table-cell">
                         {account.email}
                       </td>
                       <td className="px-6 py-4">
@@ -360,7 +380,7 @@ export const AccountsTableSection = ({
                           {account.account_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-4 text-sm text-slate-600 hidden lg:table-cell">
                         {new Date(account.created_at).toLocaleDateString(
                           "en-US",
                           {

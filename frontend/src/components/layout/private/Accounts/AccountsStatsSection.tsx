@@ -45,11 +45,11 @@ export const AccountsStatsSection = ({ accounts }: AccountsStatsSectionProps): J
 
   return (
     <section aria-label="Account statistics" className="w-full">
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
         {stats.map((stat) => (
           <article
             key={stat.id}
-            className="flex items-center gap-4 p-6 bg-white rounded-xl border border-solid border-gray-100 shadow-[0px_1px_2px_#0000000d]"
+            className="flex items-center gap-4 p-5 sm:p-6 bg-white rounded-xl border border-solid border-gray-100 shadow-[0px_1px_2px_#0000000d]"
           >
             {/* Icon with background */}
             <div className={`flex-shrink-0 w-12 h-12 rounded-full ${stat.iconBg} flex items-center justify-center`}>
@@ -61,7 +61,7 @@ export const AccountsStatsSection = ({ accounts }: AccountsStatsSectionProps): J
               <span className="font-bold text-gray-800 text-2xl leading-8">
                 {stat.value}
               </span>
-              <span className="font-medium text-gray-400 text-xs leading-4">
+              <span className="font-medium text-gray-400 text-xs sm:text-sm leading-4">
                 {stat.label}
               </span>
             </div>
