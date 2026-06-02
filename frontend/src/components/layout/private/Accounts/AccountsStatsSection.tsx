@@ -45,7 +45,7 @@ export const AccountsStatsSection = ({ accounts }: AccountsStatsSectionProps): J
 
   return (
     <section aria-label="Account statistics" className="w-full">
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat) => (
           <article
             key={stat.id}
