@@ -12,6 +12,7 @@ import {
   ResponseEmailDto,
   StatusUpdateEmailDto,
 } from '../data/interfaces';
+import dns from 'node:dns/promises';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -218,6 +219,8 @@ export class MailerService {
     }
 
     this.fromAddress = `"NTC Portal" <${user}>`;
+
+    console.log(await dns.lookup(host, { all: true }));
 
     this.transporter = nodemailer.createTransport({
       host,

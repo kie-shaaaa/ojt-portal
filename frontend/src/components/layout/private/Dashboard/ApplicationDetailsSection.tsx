@@ -261,16 +261,11 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                     placeholder="yyyy/mm/dd"
                     minDate={scheduledDate || undefined}
                   />
-                  <p className="text-[10px] italic text-slate-400">
+                  <p className="text-[12px] italic text-slate-400">
                     Leave empty for manual control only. Portal will auto-close
                     on this date.
                   </p>
                 </div>
-
-                <p className="text-[10px] italic text-slate-400">
-                  Leave empty for manual control only. Portal will auto-open on
-                  this date.
-                </p>
               </div>
             )}
 
