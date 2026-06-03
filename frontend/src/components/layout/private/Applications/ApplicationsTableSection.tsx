@@ -849,7 +849,7 @@ export const ApplicationsTableSection = ({
 
         row.getCell(1).font = {
           bold: true,
-          size: 10,
+          size: 8,
           color: { argb: statusTheme.text },
         };
 
