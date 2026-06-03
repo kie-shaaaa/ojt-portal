@@ -1,5 +1,5 @@
 import { JSX, useId, useState, useRef, useMemo } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Filter, X } from "lucide-react";
 
 import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
@@ -51,32 +51,55 @@ export const FilterInternsSection = ({
     [schoolOptions, schoolSearchQuery],
   );
 
+  const hasActiveFilters = filters.school !== "All Schools" || filters.sortByDate !== "Newest First";
+
+  const handleReset = () => {
+    onFilterChange({
+      school: "All Schools",
+      sortByDate: "Newest First",
+      status: undefined,
+    });
+  };
+
   return (
-    <section
-      aria-labelledby={sectionTitleId}
-      className="flex relative self-stretch w-full flex-[0_0_auto] flex-col items-start gap-6 rounded-lg border border-solid border-slate-200 bg-white p-6 shadow-[0px_1px_2px_#0000000d]"
-    >
-      <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
-        <h2
-          id={sectionTitleId}
-          className="relative -mt-px flex items-center self-stretch font-inter-bold text-lg font-bold leading-7 tracking-normal text-slate-700"
-        >
-          Filter Interns
-        </h2>
-      </div>
-      <div className="grid h-fit w-full grid-cols-1 gap-8 sm:grid-cols-2 sm:grid-rows-[70px]">
-        {/* School Filter */}
-        <div className="relative flex h-fit w-full flex-col items-start gap-2">
-          <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
-            <label
-              htmlFor="school"
-              className="relative -mt-px flex items-center self-stretch font-inter-bold text-sm font-bold leading-5 tracking-normal text-slate-600"
-            >
-              School
-            </label>
+    <div className="w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <Filter size={20} className="text-blue-600" />
           </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Filter Interns</h3>
+            <p className="text-xs text-slate-500">
+              {hasActiveFilters
+                ? `${[filters.school !== "All Schools", filters.sortByDate !== "Newest First"].filter(Boolean).length} filter(s) active`
+                : "No filters applied"}
+            </p>
+          </div>
+        </div>
+
+        {hasActiveFilters && (
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+          >
+            <X size={16} />
+            Clear All
+          </button>
+        )}
+      </div>
+
+      {/* Filters Grid */}
+      <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+        {/* School Filter */}
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            School
+          </label>
           <div
-            className="relative flex w-full items-center self-stretch"
+            className="relative w-full"
             ref={schoolDropdownRef}
           >
             <input
@@ -102,6 +125,7 @@ export const FilterInternsSection = ({
               }}
               onFocus={() => {
                 setIsSchoolDropdownOpen(true);
+                setIsSortDropdownOpen(false);
                 if (filters.school !== "All Schools") {
                   setSchoolSearchQuery(filters.school);
                 } else {
@@ -152,17 +176,12 @@ export const FilterInternsSection = ({
         </div>
 
         {/* Sort by Date Filter */}
-        <div className="relative flex h-fit w-full flex-col items-start gap-2">
-          <div className="relative flex w-full flex-[0_0_auto] flex-col items-start self-stretch">
-            <label
-              htmlFor="sortByDate"
-              className="relative -mt-px flex items-center self-stretch font-inter-bold text-sm font-bold leading-5 tracking-normal text-slate-600"
-            >
-              Sort by Date
-            </label>
-          </div>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Sort by Date
+          </label>
           <div
-            className="relative flex w-full items-center self-stretch"
+            className="relative w-full"
             ref={sortDropdownRef}
           >
             <input
@@ -216,6 +235,39 @@ export const FilterInternsSection = ({
           </div>
         </div>
       </div>
-    </section>
+
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 px-6 py-3">
+          {filters.school !== "All Schools" && (
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1.5">
+              <span className="text-xs font-semibold text-blue-700">
+                School: {filters.school}
+              </span>
+              <button
+                onClick={() => onFilterChange({ ...filters, school: "All Schools" })}
+                className="text-blue-700 transition hover:text-blue-900"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
+          {filters.sortByDate !== "Newest First" && (
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1.5">
+              <span className="text-xs font-semibold text-blue-700">
+                Sort: {filters.sortByDate}
+              </span>
+              <button
+                onClick={() => onFilterChange({ ...filters, sortByDate: "Newest First" })}
+                className="text-blue-700 transition hover:text-blue-900"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
