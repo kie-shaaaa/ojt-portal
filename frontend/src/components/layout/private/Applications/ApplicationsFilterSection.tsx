@@ -1,7 +1,7 @@
 "use client";
 
 import { JSX, useId, useState, useRef } from "react";
-import { ChevronDown, Filter, RotateCcw } from "lucide-react";
+import { ChevronDown, Filter, X } from "lucide-react";
 
 import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
 
@@ -102,71 +102,43 @@ export const ApplicationsFilterSection = ({
   };
 
   return (
-    <section
-      aria-labelledby={sectionTitleId}
-      className="relative w-full rounded-2xl border border-slate-200/60  px-8 py-8 shadow-sm"
-    >
-      {/* Decorative background elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-blue-100/30 opacity-40 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-slate-200/20 opacity-30 blur-3xl" />
-      </div>
-
-      <div className="relative z-10 flex flex-col gap-8">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-slate-200/50 bg-white/50 p-2 backdrop-blur-sm">
-              <Filter size={20} className="text-slate-700" />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <h2
-                id={sectionTitleId}
-                className="text-xl font-semibold leading-7 text-slate-900"
-              >
-                Filter Applications
-              </h2>
-
-            </div>
+    <div className="w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+            <Filter size={20} className="text-blue-600" />
           </div>
 
-          {/* Reset button */}
-          {hasActiveFilters && (
-            <button
-              onClick={handleReset}
-              className="group flex items-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm active:scale-95"
-              aria-label="Reset filters"
-            >
-              <RotateCcw
-                size={16}
-                className="transition-transform group-hover:rotate-180"
-              />
-              Reset
-            </button>
-          )}
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Filter Applications</h3>
+            <p className="text-xs text-slate-500">
+              {hasActiveFilters
+                ? `${[filters.school !== "all-schools", filters.timePeriod !== "all-time"].filter(Boolean).length} filter(s) active`
+                : "No filters applied"}
+            </p>
+          </div>
         </div>
 
-        {/* Filter controls */}
-        <div className="grid w-full grid-cols-2 gap-6 max-[640px]:grid-cols-1">
-          {filterFields.map((field) => {
-            const isActive = filters[field.key] !== field.defaultValue;
+        {hasActiveFilters && (
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+          >
+            <X size={16} />
+            Clear All
+          </button>
+        )}
+      </div>
 
-            return (
-              <div key={field.key} className="group/field flex flex-col gap-3">
-                <label
-                  htmlFor={field.key}
-                  className="text-sm font-semibold leading-5 text-slate-700 transition-colors group-focus-within/field:text-slate-900"
-                >
-                  {field.label}
-
-                  {isActive && (
-                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blue-100/80 px-2 py-0.5 text-xs font-medium text-blue-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-                      Active
-                    </span>
-                  )}
-                </label>
+      {/* Filters Grid */}
+      <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2">
+        {filterFields.map((field) => {
+          return (
+            <div key={field.key} className="flex flex-col gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                {field.label}
+              </label>
 
                 <div
                   className="relative w-full"
@@ -238,11 +210,11 @@ export const ApplicationsFilterSection = ({
                         }
                       }}
                       autoComplete="off"
-                      className="h-11 w-full cursor-text appearance-none rounded-xl border-2 border-slate-200 bg-white px-4 pr-11 text-sm font-medium text-slate-900 placeholder:text-slate-900 outline-none transition-all hover:border-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 group-hover/field:border-slate-300"
+                      className="relative flex w-full appearance-none items-center justify-center rounded-lg border border-solid border-slate-200 bg-white py-2.5 pl-3 pr-10 font-inter-regular text-sm font-normal leading-5 tracking-normal text-slate-600 outline-none transition-colors focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
                     />
                     {(isSchoolDropdownOpen && field.key === "school") ||
                     (isTimePeriodDropdownOpen && field.key === "timePeriod") ? (
-                      <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border-2 border-slate-200 bg-white py-1 shadow-lg outline-none">
+                      <div className="absolute z-50 top-full mt-1 max-h-60 w-full overflow-auto rounded-lg border border-solid border-slate-200 bg-white py-1 shadow-lg outline-none">
                         {(field.key === "school"
                           ? filteredSchoolOptions
                           : field.options
@@ -267,8 +239,8 @@ export const ApplicationsFilterSection = ({
                                 }}
                                 className={`cursor-pointer px-4 py-2 text-sm transition-colors hover:bg-slate-100 ${
                                   isSelected
-                                    ? "bg-blue-50 font-semibold text-blue-700 hover:bg-blue-100"
-                                    : "text-slate-900"
+                                    ? "bg-slate-50 font-semibold text-slate-700 hover:bg-slate-100"
+                                    : "text-slate-600"
                                 }`}
                               >
                                 {option.label}
@@ -284,41 +256,51 @@ export const ApplicationsFilterSection = ({
                     ) : null}
                   </>
 
-                  <ChevronDown
-                    size={18}
-                    className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 transition-all group-hover/field:text-slate-600"
-                    aria-hidden="true"
-                  />
-
-                  {/* Animated underline */}
-                  <div className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 rounded-full bg-linear-to-r from-blue-400 to-blue-500 transition-transform duration-300 group-focus-within/field:scale-x-100" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex h-full w-10.5 items-center justify-center">
+                    <ChevronDown
+                      size={18}
+                      className="text-slate-500"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Filter summary */}
-        {hasActiveFilters && (
-          <div className="border-t border-slate-200/50 pt-4">
-            <p className="text-xs text-slate-600">
-              <span className="font-semibold text-slate-700">
-                Filters applied:
-              </span>{" "}
-              {filters.school !== "all-schools" &&
-                filterFields[0].options.find((o) => o.value === filters.school)
-                  ?.label}{" "}
-              {filters.school !== "all-schools" &&
-                filters.timePeriod !== "all-time" &&
-                "•"}{" "}
-              {filters.timePeriod !== "all-time" &&
-                filterFields[1].options.find(
-                  (o) => o.value === filters.timePeriod,
-                )?.label}
-            </p>
-          </div>
-        )}
+            </div>
+          );
+        })}
       </div>
-    </section>
+
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 px-6 py-3">
+          {filters.school !== "all-schools" && (
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1.5">
+              <span className="text-xs font-semibold text-blue-700">
+                School: {filterFields[0].options.find((o) => o.value === filters.school)?.label}
+              </span>
+              <button
+                onClick={() => handleFilterChange("school", "all-schools")}
+                className="text-blue-700 transition hover:text-blue-900"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
+          {filters.timePeriod !== "all-time" && (
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1.5">
+              <span className="text-xs font-semibold text-blue-700">
+                Time: {filterFields[1].options.find((o) => o.value === filters.timePeriod)?.label}
+              </span>
+              <button
+                onClick={() => handleFilterChange("timePeriod", "all-time")}
+                className="text-blue-700 transition hover:text-blue-900"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };

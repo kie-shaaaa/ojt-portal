@@ -429,19 +429,16 @@ export class MailerService {
       applicationId,
       confirmUrl,
       rejectUrl,
-      rescheduleUrl,
     } = dto;
 
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const safeConfirmUrl = escapeHtml(confirmUrl);
     const safeRejectUrl = rejectUrl ? escapeHtml(rejectUrl) : '';
-    const safeRescheduleUrl = rescheduleUrl ? escapeHtml(rescheduleUrl) : '';
     const actionButtons = `
       <div style="text-align:center;margin:32px 0;">
         <a href="${safeConfirmUrl}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Confirm Acceptance</a>
         ${safeRejectUrl ? `<a href="${safeRejectUrl}" style="display:inline-block;background:#fff;color:#cf222e;padding:12px 28px;text-decoration:none;border:1px solid #cf222e;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Reject Application</a>` : ''}
-        ${safeRescheduleUrl ? `<a href="${safeRescheduleUrl}" style="display:inline-block;background:#fff;color:#0038A8;padding:12px 28px;text-decoration:none;border:1px solid #0038A8;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Request Reschedule</a>` : ''}
       </div>`;
 
     const html = wrapEmail(
@@ -578,15 +575,12 @@ export class MailerService {
       ? `<p><strong>Important reminders:</strong></p>
        <ul style="padding-left:20px;">
          <li>Arrive at least <strong>15 minutes</strong> before your scheduled interview.</li>
-         <li>Bring a valid government-issued ID and a printed copy of your application.</li>
-         <li>Dress appropriately in <strong>business attire</strong>.</li>
          <li>If you are unable to attend, please notify us <strong>at least 24 hours</strong> in advance.</li>
        </ul>`
       : isOrientation
         ? `<p><strong>Important reminders:</strong></p>
        <ul style="padding-left:20px;">
          <li>Arrive at least <strong>15 minutes</strong> before the orientation starts.</li>
-         <li>Bring a valid government-issued ID and any required documents.</li>
          <li>If you are unable to attend, please notify us <strong>at least 24 hours</strong> in advance.</li>
        </ul>`
         : '';

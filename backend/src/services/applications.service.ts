@@ -630,7 +630,6 @@ export class ApplicationsService {
           process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
         const confirmUrl = `${frontendBaseUrl}/track?confirm=1&id=${id}&email=${encodeURIComponent(data.email)}`;
         const rejectUrl = `${frontendBaseUrl}/track?action=reject&id=${id}&email=${encodeURIComponent(data.email)}`;
-        const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${id}&email=${encodeURIComponent(data.email)}`;
 
         const mailSent = await this.mailerService.acceptanceConfirmationEmail({
           to: data.email,
@@ -641,7 +640,6 @@ export class ApplicationsService {
           orientationTime: acceptedTime,
           confirmUrl,
           rejectUrl,
-          rescheduleUrl,
         });
         if (!mailSent)
           throwAppError('server_error', 'Interview mailing failed');
@@ -789,6 +787,10 @@ export class ApplicationsService {
         [email],
       );
 
+      const frontendBaseUrl =
+        process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+      const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${applicationId}&email=${encodeURIComponent(application.email)}`;
+
       const mailed = await this.mailerService.responseEmail({
         to: application.email,
         firstName: application.first_name,
@@ -797,6 +799,7 @@ export class ApplicationsService {
         status: 'orientation',
         acceptedDate: orientationDate,
         acceptedTime: orientationTime,
+        rescheduleUrl,
       });
 
       if (!mailed) {

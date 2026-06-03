@@ -239,7 +239,7 @@ export const AdminLogsTable = ({
     <section className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
       <div className="flex flex-col border-b border-slate-100">
-        <div className="flex items-center justify-between gap-4 px-6 py-5 max-[767px]:flex-col max-[767px]:items-start">
+        <div className="flex items-center justify-between gap-4 px-6 py-5 max-lg:flex-col max-lg:items-start">
           <div>
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
               Admin Logs
@@ -252,7 +252,7 @@ export const AdminLogsTable = ({
             </p>
           </div>
 
-          <div className="ml-auto flex w-full max-w-fit items-center gap-4 max-[767px]:ml-0 max-[767px]:w-full max-[767px]:max-w-none max-[767px]:flex-col max-[767px]:items-stretch">
+          <div className="ml-auto flex w-full max-w-fit items-center gap-4 max-lg:ml-0 max-lg:w-full max-lg:max-w-none max-lg:flex-col max-lg:items-stretch">
             <div className="relative w-full sm:w-[28rem] lg:w-[34rem]">
               <Search
                 size={18}
@@ -285,7 +285,7 @@ export const AdminLogsTable = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-end">
+            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-between">
               <button
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1 || isLoading}

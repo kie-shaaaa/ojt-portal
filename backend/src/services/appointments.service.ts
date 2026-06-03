@@ -294,9 +294,10 @@ export class AppointmentsService {
         first_name: string | null;
         last_name: string | null;
         email: string | null;
+        has_rescheduled: boolean;
       }>(
         `
-          SELECT a.type, ap.first_name, ap.last_name, ap.email
+          SELECT a.type, ap.first_name, ap.last_name, ap.email, a.has_rescheduled
           FROM appointments a
           LEFT JOIN applications ap ON ap.id = a.application_id
           WHERE a.application_id = $1
@@ -309,10 +310,26 @@ export class AppointmentsService {
 
       const appointmentRecord = appointmentInfo.rows[0] ?? null;
 
+      if (!appointmentRecord) {
+        throwAppError('not_found', 'No appointment found for this application');
+      }
+
+      // Check if appointment has already been rescheduled
+      if (appointmentRecord.has_rescheduled) {
+        throwAppError(
+          'bad_request',
+          'You have already used your one-time reschedule for this appointment. Please contact the Human Resource Division if you need further assistance.',
+        );
+      }
+
+      await client.query('BEGIN');
+
+      // Update appointment date and set has_rescheduled to true
       const result = await client.query(
         `
           UPDATE appointments
-          SET appointment_date = $1
+          SET appointment_date = $1,
+              has_rescheduled = TRUE
           WHERE application_id = $2
             AND type = $3
           RETURNING *
@@ -321,21 +338,51 @@ export class AppointmentsService {
       );
 
       if (result.rowCount === 0) {
+        await client.query('ROLLBACK');
         throwAppError('not_found', 'No appointment found for this application');
       }
+
+      // For orientation, also confirm the acceptance
+      if (appointmentType === 'orientation') {
+        await client.query(
+          `
+            UPDATE applications
+            SET status = 'accepted'
+            WHERE id = $1
+              AND status = 'pending accept'
+          `,
+          [applicationId],
+        );
+      }
+
+      // For interview, also confirm the appointment
+      if (appointmentType === 'interview') {
+        await client.query(
+          `
+            UPDATE applications
+            SET status = 'for_interview'
+            WHERE id = $1
+              AND status = 'pending accept'
+          `,
+          [applicationId],
+        );
+      }
+
+      await client.query('COMMIT');
 
       // Log appointment update
       await this.logsService
         .logOther({
-          action: 'Appointment Updated',
-          details: `Appointment for application ${applicationId} updated to ${appointmentDate.toISOString()}`,
+          action: 'Appointment Rescheduled',
+          details: `Appointment for application ${applicationId} rescheduled to ${appointmentDate.toISOString()}`,
         })
         .catch((err) => console.error('Failed to log appointment update', err));
 
+      // Send confirmation email (not rescheduled email, since rescheduling = confirmation)
       if (appointmentRecord?.email) {
         await this.mailerService
           .appointmentActionNotificationEmail({
-            action: 'rescheduled',
+            action: 'confirmed',
             appointmentType: appointmentRecord.type,
             applicationId,
             firstName: appointmentRecord.first_name ?? '',
@@ -351,18 +398,22 @@ export class AppointmentsService {
           })
           .catch((err) =>
             console.error(
-              'Failed to send appointment update notification',
+              'Failed to send appointment confirmation notification',
               err,
             ),
           );
       }
 
       return SuccessHandler(
-        'Appointment date updated successfully',
+        'Your appointment has been rescheduled and confirmed. Note: You have used your one-time reschedule for this appointment.',
         result.rows[0],
       );
     } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
       console.error('[APPOINTMENT] Error updating appointment:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throwAppError('server_error', 'Failed to update appointment');
     }
   }
