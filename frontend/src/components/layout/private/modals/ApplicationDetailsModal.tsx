@@ -109,7 +109,7 @@ const FileCard = memo(
 
     return (
       <div
-        className={`grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2 shadow-sm transition ${
+        className={`grid w-full grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-3 py-2 shadow-sm transition max-lg:grid-cols-[2.5rem_1fr] max-lg:gap-2 ${
           isSelected
             ? "border border-red-300 bg-red-50 ring-1 ring-red-200"
             : "border border-gray-100 bg-gray-50"
@@ -128,11 +128,11 @@ const FileCard = memo(
           </span>
         </div>
 
-        <div className="flex items-center gap-2 justify-self-end">
+        <div className="flex items-center gap-2 justify-self-end max-lg:col-span-2 max-lg:justify-self-auto max-lg:justify-center max-lg:mt-2">
           <button
             type="button"
             onClick={() => onRejectToggle?.(file)}
-            className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium ring-1 transition ${
+            className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-medium ring-1 transition ${
               isSelected
                 ? "bg-red-600 text-white ring-red-600 hover:bg-red-700"
                 : "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100"
