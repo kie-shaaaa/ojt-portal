@@ -909,33 +909,8 @@ function TrackPageContent(): JSX.Element {
         throw new Error("Invalid reschedule date or time");
       }
 
-      if (appointmentAction === "reschedule") {
-        if (appointmentKind === "orientation") {
-          await apiCall("/applications/confirm-acceptance", {
-            method: "POST",
-            body: JSON.stringify({
-              id: Number(numericId),
-              email: email.trim(),
-            }),
-          });
-          setResult((current) =>
-            current ? { ...current, status: "accepted" } : current,
-          );
-        } else {
-          await apiCall("/appointments/confirm", {
-            method: "POST",
-            body: JSON.stringify({
-              applicationId: Number(numericId),
-              type: "interview",
-            }),
-          });
-          setResult((current) =>
-            current ? { ...current, status: "for_interview" } : current,
-          );
-        }
-      }
-
-      await apiCall("/appointments/update", {
+      // Backend now handles confirmation logic, so we only call update
+      const response = await apiCall("/appointments/update", {
         method: "PATCH",
         body: JSON.stringify({
           applicationId: Number(numericId),
@@ -943,6 +918,17 @@ function TrackPageContent(): JSX.Element {
           type: appointmentKind,
         }),
       });
+
+      // Update status based on appointment type
+      if (appointmentKind === "orientation") {
+        setResult((current) =>
+          current ? { ...current, status: "accepted" } : current,
+        );
+      } else {
+        setResult((current) =>
+          current ? { ...current, status: "for_interview" } : current,
+        );
+      }
 
       setIsAcceptanceModalOpen(false);
       toast.success("Your reschedule request was submitted successfully.");

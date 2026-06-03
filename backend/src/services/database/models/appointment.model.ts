@@ -15,6 +15,7 @@ export async function createAppointment(client: Pool) {
             type appointment_type,
             is_done BOOLEAN DEFAULT FALSE,
             is_cancelled BOOLEAN DEFAULT FALSE,
+            has_rescheduled BOOLEAN DEFAULT FALSE,
             application_id INT REFERENCES applications(id) ON DELETE CASCADE,
             appointment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
