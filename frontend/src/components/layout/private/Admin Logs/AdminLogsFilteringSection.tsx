@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, X, ChevronDown } from "lucide-react";
+import { Filter, X, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { JSX, useId, useState, useRef, useMemo } from "react";
 
 import { useOutsidePointerDown } from "@/hooks/useDismissableEvents";
@@ -34,6 +34,143 @@ const actions = [
   "File Uploaded",
   "File Deleted",
 ];
+
+type CalendarPickerProps = {
+  value: string;
+  onChange: (date: string) => void;
+};
+
+const CalendarPicker = ({ value, onChange }: CalendarPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (value) {
+      const date = new Date(value);
+      return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+    return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  });
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  useOutsidePointerDown(
+    calendarRef,
+    () => setIsOpen(false),
+    isOpen,
+  );
+
+  const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+
+  const getDaysArray = () => {
+    const days: (number | null)[] = [];
+    const first = firstDayOfMonth(currentMonth);
+    const daysCount = daysInMonth(currentMonth);
+
+    for (let i = 0; i < first; i++) {
+      days.push(null);
+    }
+
+    for (let i = 1; i <= daysCount; i++) {
+      days.push(i);
+    }
+
+    return days;
+  };
+
+  const handleDateClick = (day: number) => {
+    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const dateString = newDate.toISOString().split('T')[0];
+    onChange(dateString);
+    setIsOpen(false);
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const selectedDate = value ? new Date(value) : null;
+  const isCurrentMonth = selectedDate && 
+    selectedDate.getFullYear() === currentMonth.getFullYear() && 
+    selectedDate.getMonth() === currentMonth.getMonth();
+
+  const days = getDaysArray();
+  const dayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  return (
+    <div className="relative w-full" ref={calendarRef}>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="yyyy-mm-dd"
+        className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none cursor-pointer"
+        onFocus={() => setIsOpen(true)}
+        readOnly
+      />
+      
+      {isOpen && (
+        <div className="absolute z-50 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={handlePrevMonth}
+              className="p-1 hover:bg-slate-100 rounded"
+              type="button"
+            >
+              <ChevronLeft size={20} className="text-slate-600" />
+            </button>
+            <h3 className="text-sm font-semibold text-slate-800">
+              {monthName}
+            </h3>
+            <button
+              onClick={handleNextMonth}
+              className="p-1 hover:bg-slate-100 rounded"
+              type="button"
+            >
+              <ChevronRight size={20} className="text-slate-600" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-7 gap-2 mb-2">
+            {dayLabels.map((day) => (
+              <div
+                key={day}
+                className="w-8 h-8 flex items-center justify-center text-xs font-semibold text-slate-600"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-2">
+            {days.map((day, index) => (
+              <div key={index} className="w-8 h-8">
+                {day ? (
+                  <button
+                    onClick={() => handleDateClick(day)}
+                    className={`w-full h-full flex items-center justify-center text-sm rounded ${
+                      isCurrentMonth && selectedDate?.getDate() === day
+                        ? 'bg-blue-600 text-white font-semibold'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                    type="button"
+                  >
+                    {day}
+                  </button>
+                ) : (
+                  <div />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const AdminLogsFilteringSection = ({
   filters,
@@ -232,11 +369,9 @@ export const AdminLogsFilteringSection = ({
           <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
             From Date
           </label>
-          <input
-            type="date"
+          <CalendarPicker
             value={filters.dateFrom}
-            onChange={(e) => handleDateFromChange(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            onChange={handleDateFromChange}
           />
         </div>
 
@@ -245,11 +380,9 @@ export const AdminLogsFilteringSection = ({
           <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
             To Date
           </label>
-          <input
-            type="date"
+          <CalendarPicker
             value={filters.dateTo}
-            onChange={(e) => handleDateToChange(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            onChange={handleDateToChange}
           />
         </div>
       </div>
