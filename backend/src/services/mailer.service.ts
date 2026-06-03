@@ -578,8 +578,6 @@ export class MailerService {
       ? `<p><strong>Important reminders:</strong></p>
        <ul style="padding-left:20px;">
          <li>Arrive at least <strong>15 minutes</strong> before your scheduled interview.</li>
-         <li>Bring a valid government-issued ID and a printed copy of your application.</li>
-         <li>Dress appropriately in <strong>business attire</strong>.</li>
          <li>If you are unable to attend, please notify us <strong>at least 24 hours</strong> in advance.</li>
        </ul>`
       : isOrientation
