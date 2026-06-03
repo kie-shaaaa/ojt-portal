@@ -285,7 +285,7 @@ export const AdminLogsTable = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 self-end max-lg:self-stretch max-lg:justify-between">
+            <div className="flex items-center gap-2 self-end max-[767px]:self-stretch max-[767px]:justify-between">
               <button
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1 || isLoading}
