@@ -20,6 +20,7 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { RequestContextModule } from './modules/request-context.module';
 import { RequestContextInterceptor } from './interceptors/request-context.interceptor';
 import { CsrfGuard } from './data/guards/csrf.guard';
+import { CronjobModule } from './modules/cronjob.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CsrfGuard } from './data/guards/csrf.guard';
     LogsModule,
     RequestContextModule,
     MailerModule,
+    CronjobModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController, DashboardController],
@@ -41,7 +43,6 @@ import { CsrfGuard } from './data/guards/csrf.guard';
     AppService,
     DashboardService,
     JwtService,
-    CronjobService,
     {
       provide: APP_INTERCEPTOR,
       useClass: RequestContextInterceptor,
