@@ -503,6 +503,7 @@ export const OjtInformationSection = ({
                   error={errors[field.id]}
                   required
                   placeholder="yyyy/mm/dd"
+                  dropdownPlacement="up"
                 />
               ) : (
                 <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
