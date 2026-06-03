@@ -22,6 +22,7 @@ import { apiCall } from "@/lib/api";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 import ApplicationDetails from "../modals/ApplicationDetailsModal";
 import ChangeStatusModal from "../modals/ChangeStatusModal";
+import { ProcessingLoaderOverlay } from "@/components/shared/ProcessingLoaderOverlay";
 import { useVirtualizedRows } from "@/hooks/useVirtualizedRows";
  
 type ApplicationRow = {
@@ -847,7 +848,7 @@ export const ApplicationsTableSection = ({
           };
         });
 
-        row.getCell(1).font = {
+        row.getCell(1).font = { 
           bold: true,
           size: 8,
           color: { argb: statusTheme.text },
@@ -1316,6 +1317,8 @@ export const ApplicationsTableSection = ({
           onConfirm={handleDeleteSelectedApplications}
         />
       )}
+
+      <ProcessingLoaderOverlay open={isDownloadingApplicationId !== null} title="Downloading files" />
     </section>
   );
 };
