@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { DatabaseService } from './database/database.service';
 import { LogsService } from './logs.service';
 import { MailerService } from './mailer.service';
+import SupabaseStorage from './supabase-storage.service';
 
 @Injectable()
 export class CronjobService {
@@ -12,12 +13,14 @@ export class CronjobService {
     private readonly databaseService: DatabaseService,
     private readonly logsService: LogsService,
     private readonly mailerService: MailerService,
+    private readonly supabaseStorage: SupabaseStorage
   ) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async handleDailyJobs(): Promise<void> {
     await this.closePortalIfClosingDateIsToday();
     await this.expirePastDueInterviewAppointments();
+    await this.deleteOldOjtFiles();
   }
 
   private async closePortalIfClosingDateIsToday(): Promise<void> {
@@ -223,6 +226,84 @@ export class CronjobService {
     } catch (error) {
       this.logger.error(
         `Failed to auto-expire past due interview appointments: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private async deleteOldOjtFiles(): Promise<void> {
+    const client = this.databaseService.getClient();
+
+    try {
+      const retentionDays = 20;
+
+      const result = await client.query<{
+        file_upload_id: number;
+        document_key: string | null;
+        uploaded_at: Date;
+        application_id: number;
+      }>(
+        `
+      SELECT
+        fu.id AS file_upload_id,
+        fu.document_key,
+        fu.uploaded_at,
+        fu.application_id
+      FROM file_uploads fu
+      INNER JOIN applications a
+        ON a.id = fu.application_id
+      INNER JOIN ojt_data o
+        ON LOWER(TRIM(o.email)) = LOWER(TRIM(a.email))
+      WHERE fu.uploaded_at < NOW() - ($1 * INTERVAL '1 day')
+      ORDER BY fu.uploaded_at ASC
+      `,
+        [retentionDays],
+      );
+
+      if (!result.rowCount) {
+        return;
+      }
+
+      let deletedCount = 0;
+
+      for (const file of result.rows) {
+        try {
+          await client.query('BEGIN');
+
+          if (file.document_key) {
+            await this.supabaseStorage.remove(
+              process.env.SUPABASE_BUCKET!,
+              file.document_key,
+            );
+          }
+
+          await client.query(
+            `
+          DELETE FROM file_uploads
+          WHERE id = $1
+          `,
+            [file.file_upload_id],
+          );
+
+          await client.query('COMMIT');
+
+          deletedCount++;
+        } catch (error) {
+          await client.query('ROLLBACK').catch(() => undefined);
+
+          this.logger.error(
+            `Failed deleting file ${file.file_upload_id}: ${
+              (error as Error).message
+            }`,
+          );
+        }
+      }
+
+      this.logger.log(
+        `Deleted ${deletedCount} old OJT file(s) from Supabase Storage`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed cleaning old OJT files: ${(error as Error).message}`,
       );
     }
   }
