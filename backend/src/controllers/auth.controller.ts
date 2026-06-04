@@ -30,7 +30,7 @@ function generateCsrfToken(): string {
 function setCsrfCookie(reply: FastifyReply, csrfToken: string): void {
   reply.setCookie(CSRF_TOKEN_COOKIE, csrfToken, {
     httpOnly: false,
-    sameSite: 'lax',
+    sameSite: 'none',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
   });
@@ -86,7 +86,7 @@ export class AuthController {
 
       reply.setCookie(ACCESS_TOKEN_COOKIE, result.access_token, {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         maxAge: getCookieMaxAge(body.rememberMe),
@@ -133,14 +133,14 @@ export class AuthController {
     reply.clearCookie(ACCESS_TOKEN_COOKIE, {
       path: '/',
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       secure: process.env.NODE_ENV === 'production',
     });
 
     reply.clearCookie(CSRF_TOKEN_COOKIE, {
       path: '/',
       httpOnly: false,
-      sameSite: 'lax',
+      sameSite: 'none',
       secure: process.env.NODE_ENV === 'production',
     });
 
