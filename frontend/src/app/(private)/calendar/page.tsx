@@ -210,7 +210,6 @@ export default function Page() {
       (acc, appointment) => {
         if (
           appointment.status !== "Accepted" &&
-          appointment.status !== "Pending Accept" &&
           appointment.status !== "For interview"
         ) {
           return acc;
@@ -234,6 +233,7 @@ export default function Page() {
     setSelectedAppointments(dayAppointments);
     setSelectedAppointmentId(appointment.id);
     setShowAppointmentModal(true);
+    void syncAppointments(false);
   };
 
   const openDayAppointments = (dayAppointments: CalendarAppointment[]) => {
@@ -241,6 +241,7 @@ export default function Page() {
     setSelectedAppointments(dayAppointments);
     setSelectedAppointmentId(dayAppointments[0].id);
     setShowAppointmentModal(true);
+    void syncAppointments(false);
   };
 
   const handleClearAppointment = async (
