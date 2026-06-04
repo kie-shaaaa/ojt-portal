@@ -143,8 +143,8 @@ export default function CalendarAppointmentModal({
             : "scale-95 translate-y-2 opacity-0"
         }`}
       >
-        <header className="flex shrink-0 flex-col items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-4">
-          <div className="min-w-0">
+        <header className="flex shrink-0 flex-row items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-4">
+          <div className="min-w-0 flex-1">
             <h1
               id="calendar-appointment-title"
               className="text-lg font-bold text-[#0038a8] sm:text-xl"
@@ -161,7 +161,7 @@ export default function CalendarAppointmentModal({
           <button
             type="button"
             aria-label="Close modal"
-            className="text-gray-400 transition hover:text-gray-600"
+            className="text-gray-400 transition hover:text-gray-600 shrink-0"
             onClick={onClose}
           >
             <X size={22} />
@@ -170,6 +170,52 @@ export default function CalendarAppointmentModal({
 
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <aside className="sticky top-0 z-10 rounded-xl border border-gray-200 bg-white shadow-sm lg:hidden">
+              <div className="border-b border-gray-100 px-4 py-3">
+                <p className="text-sm font-semibold text-gray-800">
+                  Appointments on this day
+                </p>
+              </div>
+
+              <div className="max-h-130 overflow-y-auto p-3">
+                <div className="flex flex-col gap-3">
+                  {appointments.map((appointment) => {
+                    const isSelected = appointment.id === activeAppointment.id;
+
+                    return (
+                      <button
+                        key={appointment.id}
+                        type="button"
+                        onClick={() => setActiveAppointmentId(appointment.id)}
+                        className={`rounded-xl border p-4 text-left transition ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50 shadow-sm"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-800">
+                              {appointment.applicantName}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-500">
+                              {formatDate(appointment.dateKey)} •{" "}
+                              {formatTime(appointment.appointmentTime)}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-flex w-fit min-w-max whitespace-nowrap rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wide leading-none ${getBadgeClasses(appointment.appointmentType)}`}
+                          >
+                            {appointment.tag}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </aside>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -259,7 +305,7 @@ export default function CalendarAppointmentModal({
               </div>
             </div>
 
-            <aside className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <aside className="hidden lg:block rounded-xl border border-gray-200 bg-white shadow-sm">
               <div className="border-b border-gray-100 px-4 py-3">
                 <p className="text-sm font-semibold text-gray-800">
                   Appointments on this day
