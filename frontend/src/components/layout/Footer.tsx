@@ -49,9 +49,7 @@ const resourceItems = [
 ];
 
 const legalLinks = [
-  { label: "Terms of Service", href: "#" },
   { label: "Privacy Policy", href: "#" },
-  { label: "Developer", href: "#" },
   { label: "Admin Login", href: "/login" },
 ];
 
