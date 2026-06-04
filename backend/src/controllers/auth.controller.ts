@@ -23,19 +23,6 @@ function getCookieMaxAge(rememberMe?: boolean): number | undefined {
   return rememberMe ? 5 * 24 * 60 * 60 : undefined;
 }
 
-function generateCsrfToken(): string {
-  return randomBytes(32).toString('base64url');
-}
-
-function setCsrfCookie(reply: FastifyReply, csrfToken: string): void {
-  reply.setCookie(CSRF_TOKEN_COOKIE, csrfToken, {
-    httpOnly: false,
-    sameSite: 'none',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-  });
-}
-
 function extractClientIp(request: FastifyRequest): string | undefined {
   const forwardedFor = request.headers['x-forwarded-for'];
   if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
@@ -49,6 +36,7 @@ function extractClientIp(request: FastifyRequest): string | undefined {
 
   return request.ip || request.socket?.remoteAddress || undefined;
 }
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -92,8 +80,6 @@ export class AuthController {
         maxAge: getCookieMaxAge(body.rememberMe),
       });
 
-      setCsrfCookie(reply, generateCsrfToken());
-
       return {
         access_token: result.access_token,
         user: {
@@ -109,23 +95,35 @@ export class AuthController {
     }
   }
 
-  @Get('me')
-  @UseGuards(AuthGuard('jwt'))
-  me(
-    @Req() request: FastifyRequest & { user?: AuthenticatedUser },
+  @Get('csrf')
+  getCsrf(
+    @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
+    let token = request.cookies?.csrf_token;
+
+    if (!token) {
+      token = randomBytes(32).toString('base64url');
+
+      reply.setCookie('csrf_token', token, {
+        httpOnly: false,
+        sameSite: 'none',
+        secure: true,
+        path: '/',
+      });
+    }
+
+    return { csrf_token: token };
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  me(@Req() request: FastifyRequest & { user?: AuthenticatedUser }) {
     if (!request.user) {
       throw new UnauthorizedException('Not authenticated');
     }
 
-    if (!request.cookies?.[CSRF_TOKEN_COOKIE]) {
-      setCsrfCookie(reply, generateCsrfToken());
-    }
-
-    return {
-      user: request.user,
-    };
+    return { user: request.user };
   }
 
   @Post('logout')
@@ -134,21 +132,18 @@ export class AuthController {
       path: '/',
       httpOnly: true,
       sameSite: 'none',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
     });
 
     reply.clearCookie(CSRF_TOKEN_COOKIE, {
       path: '/',
       httpOnly: false,
       sameSite: 'none',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
     });
 
-    return {
-      message: 'Logged out successfully',
-    };
+    return { message: 'Logged out successfully' };
   }
-
   @Post('change-password')
   @UseGuards(AuthGuard('jwt'))
   async changePassword(

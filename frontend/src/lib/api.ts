@@ -1,42 +1,50 @@
 import getBaseUrl from "@/lib/GetBaseUrl";
 
-const CSRF_TOKEN_COOKIE = "csrf_token";
-
-function getCookieValue(name: string): string | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const cookieMatch = document.cookie
-    .split("; ")
-    .find((cookie) => cookie.startsWith(`${name}=`));
-
-  if (!cookieMatch) {
-    return null;
-  }
-
-  const [, value] = cookieMatch.split("=");
-
-  return value ? decodeURIComponent(value) : null;
-}
-
 function shouldAttachCsrfHeader(method?: string): boolean {
   const normalizedMethod = (method ?? "GET").toUpperCase();
-
   return !["GET", "HEAD", "OPTIONS"].includes(normalizedMethod);
 }
 
+let csrfTokenCache: string = '';
+
+async function fetchCsrfToken(): Promise<string> {
+  const API_URL = getBaseUrl();
+
+  const response = await fetch(`${API_URL}/auth/csrf`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch CSRF token");
+  }
+
+  const data = await response.json();
+
+  if (!data?.csrf_token) {
+    throw new Error("Invalid CSRF response");
+  }
+
+  csrfTokenCache = data.csrf_token;
+
+  return csrfTokenCache;
+}
+
+/**
+ * Main API wrapper
+ */
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
   const API_URL = getBaseUrl();
   const isFormData = options.body instanceof FormData;
+
   const headers = new Headers(options.headers);
 
   if (shouldAttachCsrfHeader(options.method)) {
-    const csrfToken = getCookieValue(CSRF_TOKEN_COOKIE);
-
-    if (csrfToken) {
-      headers.set("x-csrf-token", csrfToken);
+    if (!csrfTokenCache) {
+      csrfTokenCache = await fetchCsrfToken();
     }
+
+    headers.set("x-csrf-token", csrfTokenCache);
   }
 
   if (!isFormData && !headers.has("Content-Type")) {
@@ -57,19 +65,19 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
     });
   } catch (error) {
     console.error("Fetch failed:", error);
-
     throw new Error(
       "Unable to connect to the server. Please check if the backend is running.",
     );
   }
 
-  let data;
+  let data: any;
 
   try {
     data = await response.json();
   } catch {
     data = null;
   }
+
   if (!response.ok) {
     const errorMessage =
       data?.message ||
@@ -81,4 +89,8 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   }
 
   return data;
+}
+
+export function clearCsrfCache() {
+  csrfTokenCache = '';
 }
