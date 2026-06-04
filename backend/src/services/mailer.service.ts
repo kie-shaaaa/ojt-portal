@@ -1,7 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { ApplicationStatus } from '../data/types';
 import {
   AcceptanceConfirmationEmailDto,
@@ -12,7 +9,7 @@ import {
   ResponseEmailDto,
   StatusUpdateEmailDto,
 } from '../data/interfaces';
-import dns from 'node:dns/promises';
+import { Resend } from 'resend';
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -193,57 +190,12 @@ const renderValue = (v?: string | Date | null) => {
 
 @Injectable()
 export class MailerService {
-  private transporter: Transporter | undefined;
+  private readonly resend: Resend;
   private readonly logger = new Logger(MailerService.name);
-  private fromAddress = '"NTC Portal" <no-reply@ntc.gov.ph>';
-
-  private disabled = false;
-  private ready: Promise<void>;
 
   constructor() {
-    this.ready = this.init();
+    this.resend = new Resend(process.env.RESEND_API_KEY);
   }
-
-  private async init(): Promise<void> {
-    const host = process.env.MAIL_HOST;
-    const port = Number(process.env.MAIL_PORT);
-    const user = process.env.MAIL_USER;
-    const pass = process.env.MAIL_PASS;
-
-    if (!host || !port || !user || !pass) {
-      this.disabled = true;
-      this.logger.error(
-        'Missing required mail env vars: MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS',
-      );
-      return;
-    }
-
-    this.fromAddress = `"NTC Portal" <${user}>`;
-
-    console.log(await dns.lookup(host, { all: true }));
-
-    this.transporter = nodemailer.createTransport({
-      host,
-      port,
-      family: 4,
-      secure: port === 465,
-      auth: { user, pass },
-      tls: { rejectUnauthorized: false },
-    } as SMTPTransport.Options);
-
-    await new Promise<void>((resolve) => {
-      this.transporter!.verify((err) => {
-        if (err) {
-          this.logger.error(`SMTP connection failed: ${err.message}`);
-        } else {
-          this.logger.log('SMTP connection verified ✅');
-        }
-        resolve();
-      });
-    });
-  }
-
-  // ─── Internal send helper ─────────────────────────────────────────────────
 
   private async send(options: {
     to: string;
@@ -251,34 +203,20 @@ export class MailerService {
     html: string;
     text: string;
   }): Promise<boolean> {
-    await this.ready;
-    if (this.disabled || !this.transporter) {
-      this.logger.warn(`Mail disabled — skipping send to ${options.to}`);
-      return false;
-    }
-
     try {
-      await this.transporter.sendMail({
-        from: this.fromAddress,
+      await this.resend.emails.send({
+        from: process.env.MAIL_FROM!,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
         replyTo: 'human.resource@ntc.gov.ph',
-        ...options,
       });
-      this.logger.log(`Mail sent → ${options.to} | ${options.subject}`);
-      return true;
-    } catch (err: unknown) {
-      this.logger.error(
-        `Mail failed → ${options.to} | ${(err as Error).message}`,
-      );
-      return false;
-    }
-  }
 
-  onModuleDestroy() {
-    try {
-      this.transporter?.close();
-      this.logger.log('SMTP transporter closed');
-    } catch {
-      this.logger.warn('Failed closing transporter');
+      return true;
+    } catch (err) {
+      this.logger.error(err);
+      return false;
     }
   }
 
@@ -422,15 +360,8 @@ export class MailerService {
   async acceptanceConfirmationEmail(
     dto: AcceptanceConfirmationEmailDto,
   ): Promise<boolean> {
-    const {
-      to,
-      firstName,
-      lastName,
-      applicationId,
-      confirmUrl,
-      rejectUrl,
-    } = dto;
-
+    const { to, firstName, lastName, applicationId, confirmUrl, rejectUrl } =
+      dto;
     const fullName = `${firstName} ${lastName}`;
     const ref = refNumber(applicationId);
     const safeConfirmUrl = escapeHtml(confirmUrl);
