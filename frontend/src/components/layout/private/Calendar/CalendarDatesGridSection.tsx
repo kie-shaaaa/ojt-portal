@@ -102,24 +102,54 @@ export const CalendarDatesGridSection = ({
   }, [year, month, events]);
 
   return (
-    <section
-      aria-label="Calendar dates grid"
-      className="grid grid-cols-7 grid-rows-6 auto-rows-[minmax(0,1fr)] aspect-[7/6] border-t border-gray-100 rounded-b-2xl overflow-hidden flex-1 min-h-0 w-full"
-    >
+    <>
+      <style>{`
+        @media (min-width: 640px) {
+          .appointment-cell-gradient {
+            background: white !important;
+            border-color: #f3f4f6 !important;
+          }
+        }
+      `}</style>
+      <section
+        aria-label="Calendar dates grid"
+        className="grid grid-cols-7 grid-rows-6 auto-rows-[minmax(70px,1fr)] sm:auto-rows-[minmax(0,1fr)] aspect-[7/6] border-t border-gray-100 rounded-b-2xl overflow-hidden flex-1 min-h-0 w-full"
+      >
       {cells.map((cell, idx) => {
         const isDisabled = !!cell.disabled;
         const textColor = cell.muted ? "text-slate-300" : "text-slate-800";
         const key = `cell-${idx}-${cell.date.toISOString()}`;
         const cellAppointments = cell.inCurrentMonth ? events[toDateKey(cell.date)] ?? [] : [];
 
+        const hasOrientation = cellAppointments.some((a) => a.appointmentType === "Orientation");
+        const hasInterview = cellAppointments.some((a) => a.appointmentType === "Interview");
+        const hasBoth = hasOrientation && hasInterview;
+
+        const cellBackgroundClass = cell.inCurrentMonth && !isDisabled && cellAppointments.length > 0
+          ? hasBoth
+            ? "bg-gradient-to-br from-green-300 to-purple-300 sm:!bg-white"
+            : hasOrientation
+              ? "bg-green-300 sm:!bg-white"
+              : "bg-purple-300 sm:!bg-white"
+          : "bg-white";
+
+        const cellBorderClass = cell.inCurrentMonth && !isDisabled && cellAppointments.length > 0
+          ? hasBoth
+            ? "border-green-400 sm:!border-gray-100"
+            : hasOrientation
+              ? "border-green-400 sm:!border-gray-100"
+              : "border-purple-400 sm:!border-gray-100"
+          : "border-gray-100";
+
         return (
           <div
             key={key}
             aria-disabled={isDisabled}
             data-disabled={isDisabled}
-            className={`relative flex flex-col h-full border-r border-b border-gray-100 bg-white p-2 min-w-0 overflow-hidden ${
+            className={`relative flex flex-col h-full border-r border-b ${cellBorderClass} ${cellBackgroundClass} p-2 min-w-0 overflow-hidden ${
               isDisabled ? "select-none" : ""
-            }`}
+            } ${cell.inCurrentMonth && !isDisabled && cellAppointments.length > 0 ? "appointment-cell-gradient cursor-pointer hover:opacity-80" : ""}`}
+            onClick={() => cell.inCurrentMonth && !isDisabled && cellAppointments.length > 0 && onMoreClick?.(cellAppointments)}
           >
             {/* Day Number */}
             <div className="flex justify-end flex-none">
@@ -233,5 +263,6 @@ export const CalendarDatesGridSection = ({
         );
       })}
     </section>
+    </>
   );
 };
