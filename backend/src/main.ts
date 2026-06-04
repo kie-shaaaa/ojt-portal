@@ -42,9 +42,9 @@ async function bootstrap() {
   });
 
   setDefaultResultOrder('ipv4first');
-  
+
   app.enableCors({
-    origin: true,
+    origin: process.env.FRONTEND_URL,
     credentials: true,
     methods: ['POST', 'PUT', 'GET', 'PATCH', 'DELETE'],
   });

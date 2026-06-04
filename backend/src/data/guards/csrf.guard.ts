@@ -28,14 +28,18 @@ function getHeaderValue(
 }
 
 function isEqualToken(expected: string, actual: string): boolean {
-  const expectedBuffer = Buffer.from(expected);
-  const actualBuffer = Buffer.from(actual);
+  try {
+    const expectedBuffer = Buffer.from(expected);
+    const actualBuffer = Buffer.from(actual);
 
-  if (expectedBuffer.length !== actualBuffer.length) {
+    if (expectedBuffer.length !== actualBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(expectedBuffer, actualBuffer);
+  } catch {
     return false;
   }
-
-  return timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
 @Injectable()
