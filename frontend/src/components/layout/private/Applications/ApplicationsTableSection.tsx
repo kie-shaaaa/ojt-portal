@@ -1137,7 +1137,7 @@ export const ApplicationsTableSection = ({
                 {/* Status */}
                 <td className="min-w-[160px] px-6 py-6 align-top">
                   <span
-                    className={`inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold ring-1 ring-inset shadow-sm ${getStatusStyles(
+                    className={`inline-flex items-center rounded-xl px-3 py-1.5 text-[11px] font-bold ring-1 ring-inset shadow-sm ${getStatusStyles(
                       application.status,
                     )}`}
                   >
