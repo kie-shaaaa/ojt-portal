@@ -5,7 +5,6 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 
-# ADD THESE THREE LINES:
 permissions:
   contents: write
   pull-requests: write
@@ -13,11 +12,12 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: tgymnich/fork-sync@v1.8
+      - uses: tgymnich/fork-sync@v2.0.10
         with:
+          token: ${{ github.token }}
           owner: Yurei21
-          name: ojt-portal
+          repo: ojt-portal
           base: master
           head: master
-          token: ${{ secrets.MY_PAT }} 
