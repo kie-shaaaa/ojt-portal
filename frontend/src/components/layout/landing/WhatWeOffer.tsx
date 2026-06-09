@@ -25,12 +25,12 @@ export function WhatWeOffer() {
     mission: {
       icon: <TargetIcon className="w-5 h-5" />,
       title: 'Our Mission',
-      body: 'To regulate and supervise the provision of public telecommunications services in the Philippines — ensuring quality, affordability, and accessibility for every Filipino while promoting fair competition and consumer welfare.',
+      body: 'Regulate and supervise telecommunication, broadcast, and ICT sectors through policies that promote affordable and reliable coomunication services and ensure consumer welfare and protection.',
     },
     vision: {
       icon: <EyeIcon className="w-5 h-5" />,
       title: 'Our Vision',
-      body: 'A world-class regulator that empowers the Filipino people through inclusive, reliable, and innovative telecommunications and broadcast services — connecting communities and driving national progress.',
+      body: 'By 2030, the NTC is a digitally empowered and dynamic regulatory agency that ensures and inclusive, secure, and dependable connectivity.',
     },
     mandate: {
       icon: <FileSignatureIcon className="w-5 h-5" />,

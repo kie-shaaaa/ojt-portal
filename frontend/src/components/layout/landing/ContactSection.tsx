@@ -27,6 +27,10 @@ const contactCards = [
         label: "HR:",
         value: "human.resource@ntc.gov.ph",
       },
+      {
+        label: "David Zaldua:",
+        value: "david.zaldua@ntc.gov.ph",
+      },
     ],
   },
   {
@@ -36,7 +40,7 @@ const contactCards = [
     lines: [
       {
         label: "Mon - Thurs:",
-        value: "8:00 AM - 5:00 PM",
+        value: "7:00 AM - 7:00 PM",
       },
       {
         label: "Closed:",
@@ -89,8 +93,8 @@ export const ContactSection = (): JSX.Element => {
     const trimmedSubject = formData.subject.trim();
     const trimmedMessage = formData.message.trim();
 
-    if (!trimmedName || !trimmedEmail || !trimmedSubject || !trimmedMessage) {
-      toast.error("Please complete all contact fields");
+    if (!trimmedEmail || !trimmedSubject || !trimmedMessage) {
+      toast.error("Please complete all required contact fields");
       return;
     }
 
@@ -224,7 +228,7 @@ export const ContactSection = (): JSX.Element => {
                     className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-blue-700 text-[10px] tracking-[0.50px] leading-[15px]"
                     htmlFor={fullNameId}
                   >
-                    FULL NAME *
+                    FULL NAME
                   </label>
                 </div>
                 <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
@@ -236,7 +240,6 @@ export const ContactSection = (): JSX.Element => {
                     type="text"
                     autoComplete="name"
                     maxLength={MAX_NAME_LENGTH}
-                    required
                     value={formData.fullName}
                     onChange={(event) =>
                       setFormData((prev) => ({

@@ -104,7 +104,7 @@ export const FaqSection = (): JSX.Element => {
       rightIcon: ChevronDown,
       expanded: false,
     },
-    {
+    /*{
       id: "application-process-time",
       question: "How long does the application process take?",
       answer: (
@@ -124,7 +124,7 @@ export const FaqSection = (): JSX.Element => {
       leftIconClassName: "relative w-3.5 h-3.5 text-[#0047ab]",
       rightIcon: ChevronDown,
       expanded: false,
-    },
+    },*/
     {
       id: "application-status",
       question: "How can I check my application status?",

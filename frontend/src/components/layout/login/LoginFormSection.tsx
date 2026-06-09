@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { type FormEvent, JSX, useId, useState } from "react";
-import { User, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { User, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ export const LoginFormSection = (): JSX.Element => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -122,14 +123,14 @@ export const LoginFormSection = (): JSX.Element => {
                 </label>
               </div>
               <div className="flex items-center justify-center relative self-stretch w-full flex-[0_0_auto]">
-                <div className="flex flex-col items-start pl-10 pr-4 py-3.5 relative flex-1 grow bg-[#eff4ff] rounded overflow-hidden border border-solid border-[#c4c5d5]">
+                <div className="flex flex-col items-start pl-10 pr-10 py-3.5 relative flex-1 grow bg-[#eff4ff] rounded overflow-hidden border border-solid border-[#c4c5d5]">
                   <input
                     autoComplete="current-password"
                     className="relative self-stretch w-full border-[none] [background:none] mt-[-1.00px] [font-family:'Public_Sans-Regular',Helvetica] font-normal text-[#6b7280] placeholder:text-gray-500 text-sm tracking-[0] leading-[normal] p-0 focus:outline-none"
                     id={passwordId}
                     name="password"
                     placeholder="••••••••"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
@@ -138,6 +139,18 @@ export const LoginFormSection = (): JSX.Element => {
                   className="absolute top-3.5 left-[15px] w-[13px] h-[18px] text-[#6b7280]"
                   aria-hidden="true"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-3.5 right-[15px] text-[#6b7280] hover:text-[#002068] transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-[13px] h-[13px]" />
+                  ) : (
+                    <Eye className="w-[13px] h-[13px]" />
+                  )}
+                </button>
               </div>
             </div>
             <div className="flex items-center relative self-stretch w-full flex-[0_0_auto]">
