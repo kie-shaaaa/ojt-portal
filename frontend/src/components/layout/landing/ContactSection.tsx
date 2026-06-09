@@ -58,14 +58,12 @@ const subjectOptions = [
   "Other",
 ];
 
-const MAX_NAME_LENGTH = 25;
 const MAX_MESSAGE_LENGTH = 500;
 
 const isValidEmail = (value: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
 export const ContactSection = (): JSX.Element => {
-  const fullNameId = useId();
   const emailId = useId();
   const subjectId = useId();
   const messageId = useId();
@@ -78,7 +76,6 @@ export const ContactSection = (): JSX.Element => {
   }, [pathname]);
 
   const [formData, setFormData] = useState({
-    fullName: "",
     email: "",
     subject: "",
     message: "",
@@ -88,7 +85,6 @@ export const ContactSection = (): JSX.Element => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const trimmedName = formData.fullName.trim();
     const trimmedEmail = formData.email.trim();
     const trimmedSubject = formData.subject.trim();
     const trimmedMessage = formData.message.trim();
@@ -103,11 +99,6 @@ export const ContactSection = (): JSX.Element => {
       return;
     }
 
-    if (trimmedName.length > MAX_NAME_LENGTH) {
-      toast.error(`Name must be ${MAX_NAME_LENGTH} characters or less`);
-      return;
-    }
-
     if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
       toast.error(`Message must be ${MAX_MESSAGE_LENGTH} characters or less`);
       return;
@@ -119,7 +110,6 @@ export const ContactSection = (): JSX.Element => {
       await apiCall("/mailer/contact", {
         method: "POST",
         body: JSON.stringify({
-          fullName: trimmedName,
           email: trimmedEmail,
           subject: trimmedSubject,
           message: trimmedMessage,
@@ -128,7 +118,6 @@ export const ContactSection = (): JSX.Element => {
 
       toast.success("Your message has been received");
       setFormData({
-        fullName: "",
         email: "",
         subject: "",
         message: "",
@@ -222,34 +211,6 @@ export const ContactSection = (): JSX.Element => {
               className="flex flex-col items-start gap-4 md:gap-6 pt-6 pb-0 px-0 relative self-stretch w-full flex-[0_0_auto] z-[1]"
               onSubmit={handleSubmit}
             >
-              <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
-                <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-                  <label
-                    className="relative flex items-center self-stretch mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-blue-700 text-[10px] tracking-[0.50px] leading-[15px]"
-                    htmlFor={fullNameId}
-                  >
-                    FULL NAME
-                  </label>
-                </div>
-                <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-gradient-to-b from-white to-slate-50 shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
-                  <input
-                    className="relative w-full border-0 bg-transparent px-4 py-3.5 font-['Inter-Regular',Helvetica] text-sm md:text-base leading-6 outline-none transition-colors duration-200 placeholder:text-slate-400 text-slate-900"
-                    id={fullNameId}
-                    name="fullName"
-                    placeholder="Enter your full name"
-                    type="text"
-                    autoComplete="name"
-                    maxLength={MAX_NAME_LENGTH}
-                    value={formData.fullName}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        fullName: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
               <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
                 <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
                   <label
