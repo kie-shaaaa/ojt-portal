@@ -287,33 +287,12 @@ export const DocumentUploadSection = ({
         icon: "resume",
         accept: ".pdf,application/pdf",
       },
-      {
-        id: "picture-1x1",
-        number: "6",
-        title: "1×1 Picture",
-        required: true,
-        description: "JPG / PNG only • Square (1:1) • Max 2 MB",
-        error: errors["picture-1x1"],
-        areaClassName: "relative w-full h-fit",
-        contentClassName:
-          "flex flex-col items-start gap-1 p-6 bg-white rounded-xl border-2 border-dashed border-blue-200",
-        iconWrapperClassName:
-          "inline-flex items-start p-2 relative flex-[0_0_auto] bg-blue-100 rounded-lg",
-        icon: "image",
-        accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
-      },
     ],
     [errors],
   );
 
   const orderedCards = useMemo(
-    () => [
-      uploadCards[3],
-      uploadCards[0],
-      uploadCards[1],
-      uploadCards[2],
-      uploadCards[4],
-    ],
+    () => [uploadCards[3], uploadCards[0], uploadCards[1], uploadCards[2]],
     [uploadCards],
   );
 
@@ -372,34 +351,6 @@ export const DocumentUploadSection = ({
       return;
     }
 
-    // If picture, validate 1:1 ratio
-    if (card.id === "picture-1x1") {
-      const objectUrl = URL.createObjectURL(file);
-      try {
-        const dims = await new Promise<{ w: number; h: number }>((res, rej) => {
-          const img = new Image();
-          img.onload = () => {
-            res({ w: img.width, h: img.height });
-          };
-          img.onerror = (e) => rej(e);
-          img.src = objectUrl;
-        });
-
-        if (dims.w !== dims.h) {
-          setLocalErrors((s) => ({
-            ...s,
-            [cardId]: "Image must be square (1:1)",
-          }));
-          onDocumentsChange({ ...documents, [cardId]: null });
-          return;
-        }
-      } finally {
-        try {
-          URL.revokeObjectURL(objectUrl);
-        } catch {}
-      }
-    }
-
     // Passed validation
     setLocalErrors((s) => {
       const next = { ...s };
@@ -433,19 +384,7 @@ export const DocumentUploadSection = ({
                   under{" "}
                 </span>
                 <span className="[font-family:'Nimbus_Sans-Bold',Helvetica] font-bold">
-                  5 MB
-                </span>
-                <span className="[font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5">
-                  ; the 1x1 picture must be{" "}
-                </span>
-                <span className="[font-family:'Nimbus_Sans-Bold',Helvetica] font-bold">
-                  JPG/PNG, square, and
-                </span>
-                <span className="[font-family:'Nimbus_Sans-Regular',Helvetica] font-normal text-gray-600 text-sm tracking-[0] leading-5">
-                  {" "}
-                </span>
-                <span className="[font-family:'Nimbus_Sans-Bold',Helvetica] font-bold">
-                  under 2 MB.
+                  5 MB.
                 </span>
               </p>
             </div>
