@@ -35,6 +35,16 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
 
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
+export function getAuthToken() {
+  return authToken;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -83,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (data.access_token) {
           setToken(data.access_token);
+          setAuthToken(data.access_token);
         }
 
         if (data.user) {

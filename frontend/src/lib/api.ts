@@ -1,3 +1,4 @@
+import { getAuthToken } from "@/contexts/auth-context";
 import getBaseUrl from "@/lib/GetBaseUrl";
 
 function shouldAttachCsrfHeader(method?: string): boolean {
@@ -5,7 +6,7 @@ function shouldAttachCsrfHeader(method?: string): boolean {
   return !["GET", "HEAD", "OPTIONS"].includes(normalizedMethod);
 }
 
-let csrfTokenCache: string = '';
+let csrfTokenCache: string = "";
 
 async function fetchCsrfToken(): Promise<string> {
   const API_URL = getBaseUrl();
@@ -38,6 +39,12 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   const isFormData = options.body instanceof FormData;
 
   const headers = new Headers(options.headers);
+
+  const token = getAuthToken();
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
   if (shouldAttachCsrfHeader(options.method)) {
     if (!csrfTokenCache) {
@@ -92,5 +99,5 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
 }
 
 export function clearCsrfCache() {
-  csrfTokenCache = '';
+  csrfTokenCache = "";
 }

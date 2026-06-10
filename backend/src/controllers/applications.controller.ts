@@ -505,6 +505,7 @@ export class ApplicationsController {
     @Body() body: { fileId: number },
     @Req() req: FastifyRequest & { user?: AuthenticatedUser },
   ) {
+    console.log('REJECT FILE HIT');
     const userId = req.user?.id;
     if (userId == null) {
       throw new BadRequestException('User ID is required');

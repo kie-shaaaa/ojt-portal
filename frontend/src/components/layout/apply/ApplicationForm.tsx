@@ -122,7 +122,6 @@ export const ApplicationForm = (): JSX.Element => {
     // Check for required documents
     const requiredDocs = [
       "resume-cv",
-      "picture-1x1",
       "proof-of-enrollment",
       "draft-endorsement",
       "vaccine-card",
@@ -206,7 +205,7 @@ export const ApplicationForm = (): JSX.Element => {
     if (currentStep < 4) {
       setCurrentStep((prev) => (prev + 1) as FormStep);
       setValidationErrors({});
-      setSubmitError(null);
+      setSubmitError(null); 
     } else {
       handleSubmit();
     }
