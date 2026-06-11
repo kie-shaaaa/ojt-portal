@@ -77,6 +77,14 @@ const SearchableField = ({
   const mergedOptions = useMemo(() => Array.from(new Set(options)), [options]);
   const query = value;
 
+  const sanitizeInput = (nextValue: string) => {
+    if (id === "school" || id === "course") {
+      return nextValue.replace(/\d/g, "");
+    }
+
+    return nextValue;
+  };
+
   const filteredOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -186,7 +194,7 @@ const SearchableField = ({
           placeholder={label}
           value={query}
           onChange={(event) => {
-            const nextValue = event.target.value;
+            const nextValue = sanitizeInput(event.target.value);
             onChange(nextValue);
             setIsOpen(true);
           }}
