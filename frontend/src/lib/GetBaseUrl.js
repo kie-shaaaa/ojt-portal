@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 export default function getBaseUrl() {
   const raw =
@@ -14,5 +14,5 @@ export default function getBaseUrl() {
     return `https://${raw}`;
   }
 
-  return "http://localhost:5000";
+  return "http://localhost:3001";
 }
