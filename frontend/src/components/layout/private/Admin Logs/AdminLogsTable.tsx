@@ -14,7 +14,6 @@ type LogRow = {
   userId: string;
   action: string;
   details: string;
-  ipAddress: string;
   createdAt: string;
   timestamp: string;
 };
@@ -24,7 +23,6 @@ type Log = {
   user_id: number;
   action: string;
   details: string;
-  ip_address: string;
   created_at: string;
 };
 
@@ -33,15 +31,7 @@ type Props = {
   filters?: LogFilters;
 };
 
-const columns = [
-  "ID",
-  "USER ID",
-  "ACTION",
-  "DETAILS",
-  "IP ADDRESS",
-  "CREATED AT",
-  "ACTIONS",
-];
+const columns = ["ID", "USER ID", "ACTION", "DETAILS", "CREATED AT", "ACTIONS"];
 
 const ITEMS_PER_PAGE = 10;
 
@@ -64,7 +54,6 @@ const mapLogs = (logs: Log[]): LogRow[] => {
       userId: String(log.user_id),
       action: log.action,
       details: log.details || "N/A",
-      ipAddress: log.ip_address || "N/A",
       createdAt: formattedDate,
       timestamp: formattedTime,
     };
@@ -169,8 +158,7 @@ export const AdminLogsTable = ({
           log.id.toLowerCase().includes(query) ||
           log.userId.toLowerCase().includes(query) ||
           log.action.toLowerCase().includes(query) ||
-          log.details.toLowerCase().includes(query) ||
-          log.ipAddress.toLowerCase().includes(query);
+          log.details.toLowerCase().includes(query);
 
         if (!matchesSearch) return false;
       }
@@ -268,7 +256,7 @@ export const AdminLogsTable = ({
                 id={searchInputId}
                 type="search"
                 value={searchQuery}
-                placeholder="Search by ID, action, details, or IP..."
+                placeholder="Search by ID, action, or details..."
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-10 text-sm text-gray-700 outline-none transition focus:border-slate-300 focus:ring-0"
               />
@@ -295,7 +283,7 @@ export const AdminLogsTable = ({
               </button>
 
               <span className="px-3 py-2 text-sm font-semibold text-slate-600">
-                {currentPage} / {totalPages }
+                {currentPage} / {totalPages}
               </span>
 
               <button
@@ -413,13 +401,6 @@ export const AdminLogsTable = ({
                   </div>
                 </td>
 
-                {/* IP Address */}
-                <td className="px-6 py-6 align-top">
-                  <code className="text-xs font-mono font-bold text-slate-600 bg-slate-100 rounded px-2 py-1">
-                    {log.ipAddress}
-                  </code>
-                </td>
-
                 {/* Created At */}
                 <td className="px-6 py-6 align-top">
                   <div className="flex items-center gap-2">
@@ -511,15 +492,6 @@ export const AdminLogsTable = ({
                   <p className="mt-1 text-sm font-bold text-slate-900">
                     {selectedLog.action}
                   </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                    IP Address
-                  </label>
-                  <code className="mt-1 inline-block font-mono text-xs font-bold text-slate-900 bg-slate-100 rounded px-2 py-1">
-                    {selectedLog.ipAddress}
-                  </code>
                 </div>
 
                 <div>

@@ -101,20 +101,6 @@ const REQUIRED_DOCUMENTS: PrefilledDocument[] = [
     accept: ".pdf,application/pdf",
     maxSizeMb: 5,
   },
-  {
-    id: "draft-moa",
-    label: "Draft Memorandum of Agreement",
-    description: "PDF only, maximum 5 MB",
-    accept: ".pdf,application/pdf",
-    maxSizeMb: 5,
-  },
-  {
-    id: "picture-1x1",
-    label: "1×1 Picture",
-    description: "JPG or PNG only, square, maximum 2 MB",
-    accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
-    maxSizeMb: 2,
-  },
 ];
 
 function refNumber(id: number) {
