@@ -1,4 +1,10 @@
-import { Body, Controller, Post, BadRequestException, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  BadRequestException,
+  Get,
+} from '@nestjs/common';
 import { MailerService } from '../services/mailer.service';
 import type { ContactMessageDto } from '../data/interfaces';
 import dns from 'node:dns/promises';
@@ -17,21 +23,12 @@ export class MailerController {
     adminSent: boolean;
     senderSent: boolean;
   }> {
-    const fullName = body?.fullName?.trim() ?? '';
     const email = body?.email?.trim() ?? '';
     const subject = body?.subject?.trim() ?? '';
     const message = body?.message?.trim() ?? '';
 
-    if (!fullName || !email || !subject || !message) {
-      throw new BadRequestException('All contact fields are required');
-    }
-
     if (!this.validateEmail(email)) {
       throw new BadRequestException('Please enter a valid email address');
-    }
-
-    if (fullName.length > 25) {
-      throw new BadRequestException('Name must be 25 characters or less');
     }
 
     if (message.length > 500) {
@@ -40,7 +37,6 @@ export class MailerController {
 
     const result = await this.mailerService.contactMessageEmail({
       ...body,
-      fullName,
       email,
       subject,
       message,

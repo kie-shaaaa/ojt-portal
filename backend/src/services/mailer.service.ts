@@ -996,11 +996,9 @@ export class MailerService {
     adminSent: boolean;
     senderSent: boolean;
   }> {
-    const sanitizedFullName = dto.fullName.trim();
     const sanitizedEmail = dto.email.trim();
     const sanitizedSubject = dto.subject.trim();
     const sanitizedMessage = dto.message.trim();
-    const escapedFullName = escapeHtml(sanitizedFullName);
     const escapedEmail = escapeHtml(sanitizedEmail);
     const escapedSubject = escapeHtml(sanitizedSubject);
     const escapedMessage = escapeHtml(sanitizedMessage).replace(/\n/g, '<br/>');
@@ -1011,7 +1009,6 @@ export class MailerService {
       <p>You have received a new message from the <strong>NTC OJT Application Portal</strong> contact form.</p>
 
       ${infoBox(`
-        <strong>Sender Name:</strong> ${escapedFullName}<br/>
         <strong>Sender Email:</strong> ${escapedEmail}<br/>
         <strong>Subject:</strong> ${escapedSubject}
       `)}
@@ -1031,7 +1028,6 @@ export class MailerService {
       'NEW CONTACT MESSAGE',
       '='.repeat(60),
       '',
-      `Name   : ${sanitizedFullName}`,
       `Email  : ${sanitizedEmail}`,
       `Subject: ${sanitizedSubject}`,
       '',
@@ -1043,7 +1039,7 @@ export class MailerService {
 
     const senderHtml = wrapEmail(
       ntcHeader('OJT Application Portal'),
-      `<p>Dear <strong>${escapedFullName}</strong>,</p>
+      `
       <p>Good day!</p>
       <p>We have received your message and will get back to you as soon as possible.</p>
 
@@ -1066,7 +1062,7 @@ export class MailerService {
       'MESSAGE RECEIVED',
       '='.repeat(60),
       '',
-      `Dear ${sanitizedFullName},`,
+      `Dear ${sanitizedEmail},`,
       '',
       'We have received your message and will get back to you soon.',
       '',
