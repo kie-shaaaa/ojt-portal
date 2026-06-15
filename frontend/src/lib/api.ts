@@ -98,6 +98,48 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
   return data;
 }
 
+export async function apiCallRaw(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<Response> {
+  const API_URL = getBaseUrl();
+  const isFormData = options.body instanceof FormData;
+  const headers = new Headers(options.headers);
+
+  const token = getAuthToken();
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (shouldAttachCsrfHeader(options.method)) {
+    if (!csrfTokenCache) {
+      csrfTokenCache = await fetchCsrfToken();
+    }
+    headers.set("x-csrf-token", csrfTokenCache);
+  }
+
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const { body, method, ...rest } = options;
+
+  try {
+    return await fetch(`${API_URL}${endpoint}`, {
+      ...rest,
+      method,
+      headers,
+      credentials: "include",
+      ...(method !== "GET" && method !== "HEAD" && body ? { body } : {}),
+    });
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw new Error(
+      "Unable to connect to the server. Please check if the backend is running.",
+    );
+  }
+}
+
 export function clearCsrfCache() {
   csrfTokenCache = "";
 }
