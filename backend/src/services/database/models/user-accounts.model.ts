@@ -24,6 +24,7 @@ export async function createUserAccounts(client: Pool) {
             username VARCHAR(50) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
+            google_refresh_token TEXT,
             account_status account_status DEFAULT 'active',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

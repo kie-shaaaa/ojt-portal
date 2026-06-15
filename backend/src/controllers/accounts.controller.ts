@@ -19,7 +19,7 @@ import { Roles } from '../data/decorators/roles.decorator';
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
-
+  /**
   // DEVELOPMENT ONLY: This endpoint is for testing the AuthGuard and RolesGuard functionality.
   @Get('test-guard')
   @Roles('admin')

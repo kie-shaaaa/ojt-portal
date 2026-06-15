@@ -91,3 +91,9 @@ export interface AuthenticatedUser {
   email: string;
   account_type: 'admin' | 'employee' | 'user';
 }
+
+export interface RequestWithUser extends Request {
+  user: {
+    id: string;
+  };
+}
