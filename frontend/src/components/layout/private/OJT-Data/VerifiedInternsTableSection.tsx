@@ -7,7 +7,7 @@ import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
 import CertificateModal from "../modals/CertificateModal";
 import { JSX, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { apiCall } from "@/lib/api";
+import { apiCall, apiCallRaw } from "@/lib/api";
 import { PDFDocument } from "pdf-lib";
 import {
   ChevronLeft,
@@ -275,6 +275,11 @@ export const VerifiedInternsTableSection = ({
   >({});
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
 
+  // Google OAuth connection state
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
+
   const rows = useMemo(
     () =>
       interns
@@ -318,7 +323,6 @@ export const VerifiedInternsTableSection = ({
 
   const getOjtId = (intern: Intern) => {
     if (intern.ojt_id) return intern.ojt_id;
-    // Fallback: construct from ID if ojt_id is missing
     return `OJT-${new Date(intern.moved_to_ojt_at).getFullYear()}-${String(intern.id).padStart(4, "0")}`;
   };
 
@@ -334,13 +338,125 @@ export const VerifiedInternsTableSection = ({
     }
   };
 
+  // ─── Google OAuth Connect ──────────────────────────────────────────────────
+  const handleConnectGoogle = async () => {
+    if (isConnectingGoogle) return;
+
+    setIsConnectingGoogle(true);
+
+    try {
+      const response = await apiCall("/google/connect");
+      const { url } = response as { url: string };
+
+      if (!url) {
+        toast.error("Failed to get Google authorization URL.");
+        return;
+      }
+
+      const popup = window.open(url, "google-oauth", "width=500,height=650");
+
+      if (!popup) {
+        window.location.href = url;
+        return;
+      }
+
+      // Wait for OAuth to complete in backend
+      const pollInterval = setInterval(async () => {
+        try {
+          // If popup is still open, just wait
+          if (!popup.closed) return;
+
+          clearInterval(pollInterval);
+
+          // IMPORTANT: verify real backend state
+          const res = await apiCall("/google/status");
+          const { connected } = res as { connected: boolean };
+
+          setIsGoogleConnected(connected);
+
+          if (connected) {
+            toast.success("Google account connected successfully.");
+          } else {
+            toast.error("Google connection failed. Please try again.");
+          }
+        } catch (err) {
+          clearInterval(pollInterval);
+          toast.error("Failed to verify Google connection.");
+        } finally {
+          setIsConnectingGoogle(false);
+        }
+      }, 1000);
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Failed to connect Google.";
+
+      toast.error(msg);
+      setIsConnectingGoogle(false);
+    }
+  };
+
+  // ─── Bulk Certificate Generation ──────────────────────────────────────────
+  const handleGenerateCertificates = async () => {
+    if (!isGoogleConnected) {
+      toast.error("Please connect your Google account first.");
+      return;
+    }
+    if (selectedInterns.length === 0) {
+      toast.error("No interns selected.");
+      return;
+    }
+    if (isGeneratingCertificate) return;
+    setIsGeneratingCertificate(true);
+
+    try {
+      // Send raw numeric IDs, not the formatted "OJT-2026-0001" strings
+      const internIds = selectedInterns; // already number[]
+      const response = await apiCallRaw("/certificates/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ojtIds: selectedInterns }),
+      });
+
+      if (response.status === 403) {
+        const body = await response.json().catch(() => ({}));
+        const message = (body as any)?.message || "";
+        if (message.toLowerCase().includes("google account not connected")) {
+          setIsGoogleConnected(false);
+          toast.error("Google account disconnected. Please reconnect.");
+        } else {
+          toast.error("Unauthorized. Please log in again.");
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const message =
+          (body as any)?.message || "Failed to generate certificates.";
+        toast.error(message);
+        return;
+      }
+
+      const blob = await response.blob();
+      saveAs(blob, "certificates.zip");
+      toast.success(
+        `${selectedInterns.length} certificate${selectedInterns.length !== 1 ? "s" : ""} generated and downloaded.`,
+      );
+    } catch (error) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Failed to generate certificates.";
+      toast.error(msg);
+    } finally {
+      setIsGeneratingCertificate(false);
+    }
+  };
+
   const exportToExcel = async (dataToExport: Intern[]) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Verified Interns");
 
-    // =========================
-    // COLUMN SETUP
-    // =========================
     worksheet.columns = [
       { header: "OJT ID", key: "ojtId", width: 15 },
       { header: "Intern Name", key: "name", width: 28 },
@@ -353,64 +469,35 @@ export const VerifiedInternsTableSection = ({
       { header: "Status", key: "status", width: 15 },
     ];
 
-    // =========================
-    // TITLE ROW
-    // =========================
     worksheet.mergeCells("A1:I1");
-
     const titleCell = worksheet.getCell("A1");
-
     titleCell.value = "VERIFIED INTERNS";
-
-    titleCell.font = {
-      bold: true,
-      size: 18,
-      color: { argb: "FFFFFFFF" },
-    };
-
-    titleCell.alignment = {
-      horizontal: "center",
-      vertical: "middle",
-    };
-
+    titleCell.font = { bold: true, size: 18, color: { argb: "FFFFFFFF" } };
+    titleCell.alignment = { horizontal: "center", vertical: "middle" };
     titleCell.fill = {
       type: "pattern",
       pattern: "solid",
       fgColor: { argb: "1F4E78" },
     };
-
     worksheet.getRow(1).height = 30;
 
-    // =========================
-    // HEADER ROW
-    // =========================
     const headerRow = worksheet.getRow(3);
-
     worksheet.columns.forEach((col, index) => {
       headerRow.getCell(index + 1).value = String(col.header);
     });
-
     headerRow.height = 25;
-
     headerRow.eachCell((cell) => {
-      cell.font = {
-        bold: true,
-        color: { argb: "FFFFFFFF" },
-        size: 11,
-      };
-
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
       cell.alignment = {
         horizontal: "center",
         vertical: "middle",
         wrapText: true,
       };
-
       cell.fill = {
         type: "pattern",
         pattern: "solid",
         fgColor: { argb: "1F4E78" },
       };
-
       cell.border = {
         top: { style: "thin", color: { argb: "D9E2F3" } },
         left: { style: "thin", color: { argb: "D9E2F3" } },
@@ -419,9 +506,6 @@ export const VerifiedInternsTableSection = ({
       };
     });
 
-    // =========================
-    // DATA ROWS
-    // =========================
     dataToExport.forEach((intern, index) => {
       const row = worksheet.addRow({
         ojtId: getOjtId(intern),
@@ -437,57 +521,35 @@ export const VerifiedInternsTableSection = ({
       });
 
       row.height = 22;
-
       row.eachCell((cell) => {
         cell.alignment = {
           vertical: "middle",
           horizontal: "center",
           wrapText: true,
         };
-
         cell.border = {
           top: { style: "thin", color: { argb: "D9D9D9" } },
           left: { style: "thin", color: { argb: "D9D9D9" } },
           bottom: { style: "thin", color: { argb: "D9D9D9" } },
           right: { style: "thin", color: { argb: "D9D9D9" } },
         };
-
-        // Alternating row colors
         cell.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: {
-            argb: index % 2 === 0 ? "F8FAFC" : "EAF2F8",
-          },
+          fgColor: { argb: index % 2 === 0 ? "F8FAFC" : "EAF2F8" },
         };
-
-        cell.font = {
-          size: 10,
-          color: { argb: "1F2937" },
-        };
+        cell.font = { size: 10, color: { argb: "1F2937" } };
       });
 
-      // Status color styling
       const statusCell = row.getCell(9);
-
       if (String(intern.original_status).toLowerCase() === "verified") {
-        statusCell.font = {
-          bold: true,
-          color: { argb: "008000" },
-        };
+        statusCell.font = { bold: true, color: { argb: "008000" } };
       }
-
       if (String(intern.original_status).toLowerCase() === "completed") {
-        statusCell.font = {
-          bold: true,
-          color: { argb: "1D4ED8" },
-        };
+        statusCell.font = { bold: true, color: { argb: "1D4ED8" } };
       }
     });
 
-    // =========================
-    // TOTAL ROW
-    // =========================
     const totalRow = worksheet.addRow([
       "",
       "",
@@ -499,26 +561,15 @@ export const VerifiedInternsTableSection = ({
       "TOTAL",
       dataToExport.length,
     ]);
-
     totalRow.height = 24;
-
     totalRow.eachCell((cell) => {
-      cell.font = {
-        bold: true,
-        color: { argb: "FFFFFFFF" },
-      };
-
-      cell.alignment = {
-        horizontal: "center",
-        vertical: "middle",
-      };
-
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
       cell.fill = {
         type: "pattern",
         pattern: "solid",
         fgColor: { argb: "1F4E78" },
       };
-
       cell.border = {
         top: { style: "thin", color: { argb: "FFFFFF" } },
         left: { style: "thin", color: { argb: "FFFFFF" } },
@@ -527,30 +578,16 @@ export const VerifiedInternsTableSection = ({
       };
     });
 
-    // =========================
-    // FREEZE HEADER
-    // =========================
-    worksheet.views = [
-      {
-        state: "frozen",
-        ySplit: 3,
-      },
-    ];
+    worksheet.views = [{ state: "frozen", ySplit: 3 }];
 
-    // =========================
-    // EXPORT
-    // =========================
     const buffer = await workbook.xlsx.writeBuffer();
-
     const blob = new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-
-    const fileName = `verified_interns_${
-      new Date().toISOString().split("T")[0]
-    }.xlsx`;
-
-    saveAs(blob, fileName);
+    saveAs(
+      blob,
+      `verified_interns_${new Date().toISOString().split("T")[0]}.xlsx`,
+    );
   };
 
   const handleExportExcel = async () => {
@@ -594,17 +631,13 @@ export const VerifiedInternsTableSection = ({
   };
 
   const handleEdit = (intern: Intern) => {
-    // Open the Change Intern Details modal with mock data derived from the intern
-    // debug: log intern being edited
     // eslint-disable-next-line no-console
     console.log("[UI] handleEdit - editingIntern source:", intern);
     setEditingIntern(intern);
   };
 
   const handleDownloadInternFiles = async (intern: Intern) => {
-    if (isDownloadingInternId !== null) {
-      return;
-    }
+    if (isDownloadingInternId !== null) return;
 
     const normalizedApplicationId =
       intern.application_id && Number.isFinite(intern.application_id)
@@ -613,19 +646,15 @@ export const VerifiedInternsTableSection = ({
 
     const getApplicationIdsFromEmail = async () => {
       if (!intern.email) return [] as number[];
-
       const lookupResponse = await apiCall(
         `/applications/fetch?email=${encodeURIComponent(intern.email)}`,
       );
-
       const lookupData = Array.isArray(lookupResponse)
         ? lookupResponse
         : Array.isArray((lookupResponse as any)?.data)
           ? (lookupResponse as any).data
           : [];
-
       if (!Array.isArray(lookupData)) return [] as number[];
-
       return lookupData
         .filter(
           (item): item is { id: number } =>
@@ -636,11 +665,8 @@ export const VerifiedInternsTableSection = ({
     };
 
     const candidateApplicationIds = new Set<number>();
-
-    if (normalizedApplicationId) {
+    if (normalizedApplicationId)
       candidateApplicationIds.add(normalizedApplicationId);
-    }
-
     const emailApplicationIds = await getApplicationIdsFromEmail();
     emailApplicationIds.forEach((id) => candidateApplicationIds.add(id));
 
@@ -653,21 +679,17 @@ export const VerifiedInternsTableSection = ({
 
     const applicationIds = [...candidateApplicationIds].sort((a, b) => b - a);
     const applicantName = getInternName(intern);
-
     setIsDownloadingInternId(intern.id);
 
     try {
       let files: ApplicationFile[] = [];
-
       for (const applicationId of applicationIds) {
         const response = await apiCall(`/applications/${applicationId}/files`);
-
         const fileData = Array.isArray(response)
           ? response
           : Array.isArray((response as any)?.data)
             ? (response as any).data
             : [];
-
         if (Array.isArray(fileData) && fileData.length > 0) {
           files = fileData;
           break;
@@ -688,21 +710,17 @@ export const VerifiedInternsTableSection = ({
           skippedFiles.push(file.file_name || "Unnamed file");
           continue;
         }
-
         try {
           const response = await fetch(file.signedUrl);
-
           if (!response.ok) {
             skippedFiles.push(file.file_name || "Unnamed file");
             continue;
           }
-
           const buffer = await response.arrayBuffer();
           const contentType = response.headers
             .get("content-type")
             ?.split(";")[0]
             .trim();
-
           await addFileToPdf(outputPdf, file, buffer, contentType || null);
           mergedPages += 1;
         } catch (error) {
@@ -722,9 +740,7 @@ export const VerifiedInternsTableSection = ({
       const pdfBlob = new Blob([new Uint8Array(finalPdfBytes)], {
         type: "application/pdf",
       });
-      const outputName = `${sanitizeApplicantName(applicantName)}.pdf`;
-
-      saveAs(pdfBlob, outputName);
+      saveAs(pdfBlob, `${sanitizeApplicantName(applicantName)}.pdf`);
 
       if (skippedFiles.length > 0) {
         toast.success(
@@ -746,26 +762,18 @@ export const VerifiedInternsTableSection = ({
   };
 
   const handleDelete = (intern: Intern) => {
-    // open confirm modal instead of native confirm()
     setInternToDelete(intern);
   };
 
   const handleDeleteSelectedInterns = async () => {
     if (selectedInterns.length === 0 || isBulkDeleting) return;
-
     try {
       setIsBulkDeleting(true);
-
       setDeletedInternIds((prev) => {
         const next = new Set(prev);
-
-        selectedInterns.forEach((internId) => {
-          next.add(internId);
-        });
-
+        selectedInterns.forEach((internId) => next.add(internId));
         return next;
       });
-
       setSelectedInterns([]);
       setShowBulkDeleteConfirm(false);
       toast.success("Selected interns deleted successfully");
@@ -904,11 +912,9 @@ export const VerifiedInternsTableSection = ({
                 aria-hidden="true"
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
-
               <label htmlFor="ojt-intern-search" className="sr-only">
                 Search interns
               </label>
-
               <input
                 id="ojt-intern-search"
                 type="search"
@@ -940,11 +946,9 @@ export const VerifiedInternsTableSection = ({
               >
                 <ChevronLeft size={18} />
               </button>
-
               <span className="px-3 py-2 text-sm font-semibold text-slate-600 max-[1023px]:px-2 max-[1023px]:py-1 max-[767px]:text-xs">
                 {currentPage} / {totalPages}
               </span>
-
               <button
                 onClick={onNextPage}
                 type="button"
@@ -1047,16 +1051,13 @@ export const VerifiedInternsTableSection = ({
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                         <Search size={32} />
                       </div>
-
                       <h3 className="text-lg font-bold text-slate-800">
                         No interns found
                       </h3>
-
                       <p className="max-w-xs text-sm text-slate-500">
                         We couldn&apos;t find any interns matching your current
                         search or filter criteria.
                       </p>
-
                       <button
                         onClick={onClearFilters}
                         className="mt-4 text-sm font-bold text-blue-600 hover:underline"
@@ -1098,6 +1099,7 @@ export const VerifiedInternsTableSection = ({
               >
                 Export Selected
               </button>
+
               <button
                 onClick={() => setShowBulkDeleteConfirm(true)}
                 disabled={isBulkDeleting}
@@ -1107,19 +1109,103 @@ export const VerifiedInternsTableSection = ({
                 Delete Selected
               </button>
 
+              {/* ── Google Connect button ───────────────────────────────── */}
               <button
-                onClick={() => setIsCertificateModalOpen(true)}
-                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 border border-blue-700 transition-all shadow-sm hover:shadow-md max-[767px]:w-full"
+                onClick={handleConnectGoogle}
+                disabled={isGoogleConnected || isConnectingGoogle}
                 type="button"
+                title={
+                  isGoogleConnected
+                    ? "Google account connected"
+                    : "Connect your Google account to enable certificate generation"
+                }
+                className={`
+                  flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all shadow-sm hover:shadow-md max-[767px]:w-full
+                  ${
+                    isGoogleConnected
+                      ? "bg-green-50 text-green-700 border-green-300 cursor-default"
+                      : isConnectingGoogle
+                        ? "bg-white text-slate-500 border-slate-300 cursor-wait opacity-70"
+                        : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                  }
+                `}
               >
-                Generate Certificate
+                {/* Google "G" SVG icon */}
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0"
+                >
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                {isGoogleConnected
+                  ? "Google Connected"
+                  : isConnectingGoogle
+                    ? "Connecting…"
+                    : "Connect Google"}
+              </button>
+
+              {/* ── Generate Certificate button ─────────────────────────── */}
+              <button
+                onClick={handleGenerateCertificates}
+                disabled={!isGoogleConnected || isGeneratingCertificate}
+                type="button"
+                title={
+                  !isGoogleConnected
+                    ? "Connect your Google account first"
+                    : "Generate certificates for selected interns"
+                }
+                className={`
+                  flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all shadow-sm max-[767px]:w-full
+                  ${
+                    !isGoogleConnected
+                      ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                      : isGeneratingCertificate
+                        ? "bg-blue-600 text-white border-blue-700 cursor-wait opacity-70"
+                        : "bg-blue-600 text-white border-blue-700 hover:bg-blue-700 hover:shadow-md active:scale-95"
+                  }
+                `}
+              >
+                {/* Certificate / document icon */}
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="9" y1="13" x2="15" y2="13" />
+                  <line x1="9" y1="17" x2="13" y2="17" />
+                </svg>
+                {isGeneratingCertificate
+                  ? "Generating…"
+                  : "Generate Certificate"}
               </button>
             </div>
           </div>
         )}
       </section>
 
-      {/* FIXED: Remove the !onViewDetails condition */}
       {viewingIntern && (
         <InternDetailsModal
           intern={viewingIntern}
@@ -1165,7 +1251,6 @@ export const VerifiedInternsTableSection = ({
           intern={{
             id: editingIntern.id.toString(),
             name: getInternName(editingIntern),
-            // Prefer deriving year from ojt_id if available, else fallback to deployment_date year
             ojtYear: (() => {
               if (editingIntern.ojt_id) {
                 const parts = editingIntern.ojt_id.split("-").filter(Boolean);
@@ -1186,7 +1271,6 @@ export const VerifiedInternsTableSection = ({
           }}
           onClose={() => setEditingIntern(null)}
           onSave={async (payload) => {
-            // Send update to backend and reflect changes locally
             const body = {
               id: Number(payload.id),
               ojtYear: payload.ojtYear,
@@ -1202,9 +1286,7 @@ export const VerifiedInternsTableSection = ({
                 body: JSON.stringify(body),
               });
 
-              // apiCall returns a Response when not ok
               if ((res as Response)?.ok === false) {
-                // try to extract message
                 let msg = "Failed to update intern";
                 try {
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -1214,7 +1296,6 @@ export const VerifiedInternsTableSection = ({
                 return;
               }
 
-              // res should be the success object { status, ok, message, data }
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               const updated = (res as any)?.data ?? (res as any);
 
@@ -1224,7 +1305,6 @@ export const VerifiedInternsTableSection = ({
                 return;
               }
 
-              // Update local editedInterns to reflect changed fields
               setEditedInterns((prev) => ({
                 ...prev,
                 [updated.id]: {
@@ -1256,6 +1336,7 @@ export const VerifiedInternsTableSection = ({
           }}
         />
       )}
+
       <CertificateModal
         isOpen={isCertificateModalOpen}
         onClose={() => setIsCertificateModalOpen(false)}
