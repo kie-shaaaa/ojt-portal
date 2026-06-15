@@ -20,6 +20,8 @@ import { RequestContextModule } from './modules/request-context.module';
 import { RequestContextInterceptor } from './interceptors/request-context.interceptor';
 import { CsrfGuard } from './data/guards/csrf.guard';
 import { CronjobModule } from './modules/cronjob.module';
+import { CertificateModule } from './modules/certificate.module';
+import { GoogleModule } from './modules/google.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { CronjobModule } from './modules/cronjob.module';
     MailerModule,
     CronjobModule,
     ScheduleModule.forRoot(),
+    CertificateModule,
+    GoogleModule,
   ],
   controllers: [AppController, DashboardController],
   providers: [
