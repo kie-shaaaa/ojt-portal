@@ -25,7 +25,7 @@ export function WhatWeOffer() {
     mission: {
       icon: <TargetIcon className="w-5 h-5" />,
       title: 'Our Mission',
-      body: 'Regulate and supervise telecommunication, broadcast, and ICT sectors through policies that promote affordable and reliable coomunication services and ensure consumer welfare and protection.',
+      body: 'Regulate and supervise telecommunication, broadcast, and ICT sectors through policies that promote affordable and reliable communication services and ensure consumer welfare and protection.',
     },
     vision: {
       icon: <EyeIcon className="w-5 h-5" />,
