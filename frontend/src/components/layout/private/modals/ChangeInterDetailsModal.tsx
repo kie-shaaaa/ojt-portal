@@ -1,12 +1,17 @@
-import { JSX, useEffect, useId, useState } from "react";
+import { JSX, useEffect, useId, useMemo, useState } from "react";
 import { X, Save, ChevronDown } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import DatePicker from "@/components/layout/DatePicker";
+import { apiCall } from "@/lib/api";
 
 interface ChangeInternDetailsProps {
   intern?: {
     id?: string;
     name?: string;
+    firstName?: string;
+    lastName?: string;
+    school?: string;
+    course?: string;
     ojtYear?: string;
     adminNote?: string;
     gender?: string;
@@ -17,6 +22,159 @@ interface ChangeInternDetailsProps {
   onSave?: (data: any) => void;
 }
 
+const defaultSchoolOptions = [
+  "University of the Philippines",
+  "Ateneo de Manila University",
+  "De La Salle University",
+  "Mapua University",
+  "Polytechnic University of the Philippines",
+  "University of Santo Tomas",
+  "Technological University of the Philippines",
+  "Far Eastern University",
+];
+
+const defaultCourseOptions = [
+  "BS Information Technology",
+  "BS Computer Science",
+  "BS Computer Engineering",
+  "BS Business Administration",
+  "BS Accountancy",
+  "BS Psychology",
+  "BS Tourism Management",
+  "Bachelor of Elementary Education",
+];
+
+interface SearchableFieldProps {
+  id: string;
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}
+
+const SearchableField = ({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: SearchableFieldProps): JSX.Element => {
+  const [isOpen, setIsOpen] = useState(false);
+  const mergedOptions = useMemo(() => Array.from(new Set(options)), [options]);
+
+  const normalizedQuery = value.trim().toLowerCase();
+  const filteredOptions = useMemo(() => {
+    if (!normalizedQuery) {
+      return mergedOptions;
+    }
+
+    return [...mergedOptions]
+      .filter((option) => option.toLowerCase().includes(normalizedQuery))
+      .sort((left, right) => {
+        const leftValue = left.toLowerCase();
+        const rightValue = right.toLowerCase();
+        const leftPrefix = leftValue.startsWith(normalizedQuery) ? 0 : 1;
+        const rightPrefix = rightValue.startsWith(normalizedQuery) ? 0 : 1;
+
+        if (leftPrefix !== rightPrefix) {
+          return leftPrefix - rightPrefix;
+        }
+
+        return leftValue.localeCompare(rightValue);
+      });
+  }, [mergedOptions, normalizedQuery]);
+
+  const exactMatch = mergedOptions.some(
+    (option) => option.toLowerCase() === normalizedQuery,
+  );
+
+  const normalizeWhitespace = (input: string) => input.replace(/\s+/g, " ").trim();
+
+  const resolveCanonicalValue = (rawValue: string) => {
+    const normalizedValue = normalizeWhitespace(rawValue);
+    if (!normalizedValue) return "";
+
+    const matched = mergedOptions.find(
+      (option) =>
+        option.toLowerCase() === normalizedValue.toLowerCase() ||
+        option.toLowerCase().includes(normalizedValue.toLowerCase()),
+    );
+
+    return matched ?? normalizedValue;
+  };
+
+  const handleSelect = (nextValue: string) => {
+    onChange(resolveCanonicalValue(nextValue));
+    setIsOpen(false);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (exactMatch) {
+        handleSelect(value.trim());
+      } else {
+        onChange(resolveCanonicalValue(value));
+        setIsOpen(false);
+      }
+    }
+
+    if (event.key === "Escape") {
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-bold text-gray-700">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type="text"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setIsOpen(false)}
+          onKeyDown={handleKeyDown}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 text-sm text-black"
+        />
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="absolute inset-y-0 right-3 flex items-center text-gray-400"
+          aria-label={`Toggle ${label} options`}
+        >
+          <ChevronDown size={18} />
+        </button>
+      </div>
+      {isOpen && (
+        <div className="absolute z-20 mt-14 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="max-h-60 overflow-y-auto p-1">
+            {filteredOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  handleSelect(option);
+                }}
+                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900"
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ChangeInterDetailsModal = ({
   intern,
   onClose,
@@ -24,11 +182,19 @@ export const ChangeInterDetailsModal = ({
 }: ChangeInternDetailsProps): JSX.Element => {
   const titleId = useId();
   const descriptionId = useId();
+  const firstNameId = useId();
+  const lastNameId = useId();
+  const schoolId = useId();
+  const courseId = useId();
   const adminNotesId = useId();
   const genderFieldId = useId();
   const deploymentDateId = useId();
   const endDateId = useId();
 
+  const [firstName, setFirstName] = useState(intern?.firstName ?? "");
+  const [lastName, setLastName] = useState(intern?.lastName ?? "");
+  const [school, setSchool] = useState(intern?.school ?? "");
+  const [course, setCourse] = useState(intern?.course ?? "");
   const [ojtYear, setOjtYear] = useState(intern?.ojtYear ?? "2026");
   const [adminNote, setAdminNote] = useState(intern?.adminNote ?? "");
   const [gender, setGender] = useState(intern?.gender ?? "Female");
@@ -36,12 +202,122 @@ export const ChangeInterDetailsModal = ({
     intern?.deploymentDate ?? "",
   );
   const [endDate, setEndDate] = useState(intern?.endDate ?? "");
+  const [schoolOptions, setSchoolOptions] = useState(defaultSchoolOptions);
+  const [courseOptions, setCourseOptions] = useState(defaultCourseOptions);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const response = await apiCall("/schools/fetch-all?count=1000");
+        let schools: unknown[] = [];
+
+        if (Array.isArray(response)) {
+          schools = response;
+        } else if (response && typeof response === "object") {
+          const payload = response as {
+            data?: unknown[];
+            schools?: unknown[];
+          };
+          schools = payload.data || payload.schools || [];
+        }
+
+        const schoolNames = schools
+          .map((schoolValue) => {
+            if (typeof schoolValue === "string") return schoolValue;
+            if (schoolValue && typeof schoolValue === "object") {
+              const payload = schoolValue as {
+                name?: string;
+                schoolName?: string;
+                school_name?: string;
+              };
+              return payload.schoolName || payload.name || payload.school_name || "";
+            }
+            return "";
+          })
+          .filter((name): name is string => Boolean(name.trim()));
+
+        const uniqueSchoolNames = Array.from(
+          new Map(
+            schoolNames.map((name) => [name.trim().toLowerCase(), name.trim()]),
+          ).values(),
+        );
+
+        setSchoolOptions(
+          uniqueSchoolNames.length > 0
+            ? uniqueSchoolNames
+            : defaultSchoolOptions,
+        );
+      } catch (error) {
+        setSchoolOptions(defaultSchoolOptions);
+      }
+    };
+
+    const fetchCourses = async () => {
+      try {
+        const response = await apiCall("/courses/fetch-all?count=1000");
+        let courses: unknown[] = [];
+
+        if (Array.isArray(response)) {
+          courses = response;
+        } else if (response && typeof response === "object") {
+          const payload = response as {
+            data?: unknown[];
+            courses?: unknown[];
+          };
+          courses = payload.data || payload.courses || [];
+        }
+
+        const courseNames = courses
+          .map((courseValue) => {
+            if (typeof courseValue === "string") return courseValue;
+            if (courseValue && typeof courseValue === "object") {
+              const payload = courseValue as {
+                name?: string;
+                courseName?: string;
+                course?: string;
+                course_name?: string;
+              };
+              return (
+                payload.courseName ||
+                payload.name ||
+                payload.course ||
+                payload.course_name ||
+                ""
+              );
+            }
+            return "";
+          })
+          .filter((name): name is string => Boolean(name.trim()));
+
+        const uniqueCourseNames = Array.from(
+          new Map(
+            courseNames.map((name) => [name.trim().toLowerCase(), name.trim()]),
+          ).values(),
+        );
+
+        setCourseOptions(
+          uniqueCourseNames.length > 0
+            ? uniqueCourseNames
+            : defaultCourseOptions,
+        );
+      } catch (error) {
+        setCourseOptions(defaultCourseOptions);
+      }
+    };
+
+    void fetchSchools();
+    void fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setFirstName(intern?.firstName ?? ""));
+    requestAnimationFrame(() => setLastName(intern?.lastName ?? ""));
+    requestAnimationFrame(() => setSchool(intern?.school ?? ""));
+    requestAnimationFrame(() => setCourse(intern?.course ?? ""));
     requestAnimationFrame(() => setOjtYear(intern?.ojtYear ?? "2026"));
+    requestAnimationFrame(() => setAdminNote(intern?.adminNote ?? ""));
     requestAnimationFrame(() => setGender(intern?.gender ?? "Female"));
-    // Normalize incoming date strings to YYYY-MM-DD which DatePicker expects
     const normalizeToYMD = (d?: string) => {
       if (!d) return "";
       try {
@@ -56,7 +332,9 @@ export const ChangeInterDetailsModal = ({
       }
     };
 
-    requestAnimationFrame(() => setDeploymentDate(normalizeToYMD(intern?.deploymentDate)));
+    requestAnimationFrame(() =>
+      setDeploymentDate(normalizeToYMD(intern?.deploymentDate)),
+    );
     requestAnimationFrame(() => setEndDate(normalizeToYMD(intern?.endDate)));
   }, [intern]);
 
@@ -64,6 +342,10 @@ export const ChangeInterDetailsModal = ({
     setIsSaving(true);
     const payload = {
       id: intern?.id,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      school: school.trim(),
+      course: course.trim(),
       ojtYear,
       adminNote,
       gender,
@@ -111,15 +393,60 @@ export const ChangeInterDetailsModal = ({
 
         {/* Content */}
         <div className="flex flex-col gap-4 px-4 pb-6 pt-4 sm:gap-6 sm:px-8 sm:pb-10 sm:pt-6">
-          {/* Intern Name */}
-          <dl className="grid w-full gap-1 border-b border-gray-50 py-4">
-            <dt className="text-base font-bold text-gray-700">Intern Name:</dt>
-            <dd className="text-base text-gray-600">{intern?.name ?? "—"}</dd>
-          </dl>
-
           {/* Form */}
-          <form className="grid gap-4 md:grid-cols-2 md:grid-rows-[102px_86px] sm:gap-6">
-            {/* Gender */}
+          <form className="grid gap-4 sm:gap-6 md:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor={firstNameId}
+                className="text-sm font-bold text-gray-700"
+              >
+                First Name
+              </label>
+              <input
+                id={firstNameId}
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor={lastNameId}
+                className="text-sm font-bold text-gray-700"
+              >
+                Last Name
+              </label>
+              <input
+                id={lastNameId}
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+              />
+            </div>
+
+            <div className="relative">
+              <SearchableField
+                id={schoolId}
+                label="School"
+                value={school}
+                options={schoolOptions}
+                onChange={setSchool}
+              />
+            </div>
+
+            <div className="relative">
+              <SearchableField
+                id={courseId}
+                label="Course"
+                value={course}
+                options={courseOptions}
+                onChange={setCourse}
+              />
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor={genderFieldId}
@@ -172,7 +499,6 @@ export const ChangeInterDetailsModal = ({
               </p>
             </div>
 
-            {/* Dates */}
             <div className="flex flex-col gap-1.5">
               <DatePicker
                 id={deploymentDateId}
