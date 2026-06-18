@@ -7,11 +7,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Res, Req } from '@nestjs/common';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import { google } from 'googleapis';
 import { CertificateService } from '../services/certificate.service';
 import { GoogleService } from '../services/google.service';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
+import type { FastifyRequestWithUser } from '../data/types';
 
 @Controller('certificates')
 export class CertificateController {
@@ -23,12 +24,12 @@ export class CertificateController {
   @Post('bulk')
   @UseGuards(AuthGuard('jwt'))
   async generateBulkCertificates(
-    @Req() req: FastifyRequest,
+    @Req() req: FastifyRequestWithUser,
     @Res() reply: FastifyReply,
     @Body() body: { ojtIds: string[] },
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
       if (!userId) {
         throw new ForbiddenException('Unauthorized');
       }

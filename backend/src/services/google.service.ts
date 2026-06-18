@@ -25,13 +25,14 @@ export class GoogleService {
   async getToken(userId: string): Promise<string> {
     const client = this.databaseService.getClient();
     try {
-      const res = await client.query(
+      const res = await client.query<{ google_refresh_token: string }>(
         `
         SELECT google_refresh_token FROM user_accounts WHERE id = $1
       `,
         [userId],
       );
-      return res.rows[0].google_refresh_token;
+      const token: string = res.rows[0].google_refresh_token;
+      return token;
     } catch (error) {
       console.error('[GoogleService] Failed to get token:', error);
       throwAppError('server_error', 'Failed to retrieve Google refresh token');
@@ -39,7 +40,7 @@ export class GoogleService {
   }
 
   async getAuthClient(userId: string) {
-    const refreshToken = await this.getToken(userId); 
+    const refreshToken = await this.getToken(userId);
 
     if (!refreshToken) {
       throw new Error('Google account not connected');

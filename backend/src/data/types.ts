@@ -1,3 +1,5 @@
+import { FastifyRequest } from 'fastify';
+
 export type AccountRegister = {
   email: string;
   password: string;
@@ -293,3 +295,13 @@ export type AuthenticatedUser = {
   email: string;
   account_type: 'admin' | 'employee' | 'user';
 };
+
+export interface JwtUser {
+  id: string;
+  email?: string;
+  [key: string]: unknown;
+}
+
+export interface FastifyRequestWithUser extends FastifyRequest {
+  user?: JwtUser;
+}

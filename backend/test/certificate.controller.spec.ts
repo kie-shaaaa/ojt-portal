@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CertificateController } from './certificate.controller';
 import { CertificateService } from '../src/services/certificate.service';
+import { CertificateController } from '../src/controllers/certificate.controller';
 
 describe('CertificateController', () => {
   let controller: CertificateController;
