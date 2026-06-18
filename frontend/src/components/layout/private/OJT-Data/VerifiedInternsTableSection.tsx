@@ -1251,6 +1251,10 @@ export const VerifiedInternsTableSection = ({
           intern={{
             id: editingIntern.id.toString(),
             name: getInternName(editingIntern),
+            firstName: editingIntern.first_name,
+            lastName: editingIntern.last_name,
+            school: editingIntern.school_name ?? "",
+            course: editingIntern.course ?? "",
             ojtYear: (() => {
               if (editingIntern.ojt_id) {
                 const parts = editingIntern.ojt_id.split("-").filter(Boolean);
@@ -1273,6 +1277,10 @@ export const VerifiedInternsTableSection = ({
           onSave={async (payload) => {
             const body = {
               id: Number(payload.id),
+              firstName: payload.firstName,
+              lastName: payload.lastName,
+              school: payload.school,
+              course: payload.course,
               ojtYear: payload.ojtYear,
               adminNote: payload.adminNote,
               gender: payload.gender,
@@ -1308,6 +1316,12 @@ export const VerifiedInternsTableSection = ({
               setEditedInterns((prev) => ({
                 ...prev,
                 [updated.id]: {
+                  first_name:
+                    updated.first_name ?? editingIntern?.first_name,
+                  last_name: updated.last_name ?? editingIntern?.last_name,
+                  school_name:
+                    updated.school_name ?? editingIntern?.school_name,
+                  course: updated.course ?? editingIntern?.course,
                   gender: updated.gender ?? editingIntern?.gender,
                   deployment_date:
                     updated.deployment_date ?? editingIntern?.deployment_date,

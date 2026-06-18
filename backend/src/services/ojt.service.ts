@@ -147,7 +147,17 @@ export class OjtService {
     const client = this.databaseService.getClient();
 
     try {
-      const { id, adminNote, gender, deploymentDate, endDate } = update;
+      const {
+        id,
+        firstName,
+        lastName,
+        school,
+        course,
+        adminNote,
+        gender,
+        deploymentDate,
+        endDate,
+      } = update;
 
       const exists = await client.query(
         `SELECT * FROM ojt_data WHERE id = $1`,
@@ -163,7 +173,28 @@ export class OjtService {
       let idx = 1;
 
       // Only update fields that exist in the ojt_data table.
-      // Fields allowed: admin_notes, gender, deployment_date, end_date
+      // Fields allowed: first_name, last_name, school_name, course,
+      // admin_notes, gender, deployment_date, end_date
+      if (firstName !== undefined) {
+        sets.push(`first_name = $${idx}`);
+        values.push(firstName);
+        idx++;
+      }
+      if (lastName !== undefined) {
+        sets.push(`last_name = $${idx}`);
+        values.push(lastName);
+        idx++;
+      }
+      if (school !== undefined) {
+        sets.push(`school_name = $${idx}`);
+        values.push(school);
+        idx++;
+      }
+      if (course !== undefined) {
+        sets.push(`course = $${idx}`);
+        values.push(course);
+        idx++;
+      }
       if (adminNote !== undefined) {
         sets.push(`admin_notes = $${idx}`);
         values.push(adminNote);
