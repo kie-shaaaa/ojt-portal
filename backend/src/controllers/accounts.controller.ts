@@ -5,11 +5,9 @@ import {
   Param,
   Patch,
   Post,
-  Req,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { AccountsService } from '../services/accounts.service';
 import type { AccountCreate } from '../data/types';
 import { AuthGuard } from '@nestjs/passport';

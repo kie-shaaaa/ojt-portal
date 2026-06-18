@@ -13,7 +13,7 @@ export class CronjobService {
     private readonly databaseService: DatabaseService,
     private readonly logsService: LogsService,
     private readonly mailerService: MailerService,
-    private readonly supabaseStorage: SupabaseStorage
+    private readonly supabaseStorage: SupabaseStorage,
   ) {}
 
   @Cron(CronExpression.EVERY_HOUR)

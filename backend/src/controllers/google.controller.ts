@@ -25,7 +25,7 @@ export class GoogleController {
       redirectUri: process.env.GOOGLE_REDIRECT_URI,
     };
   }
-  
+
   @Get('status')
   @UseGuards(AuthGuard('jwt'))
   async status(@Req() req: RequestWithUser) {

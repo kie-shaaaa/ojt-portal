@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-require-imports */
 
 import { Injectable } from '@nestjs/common';
 import { google } from 'googleapis';
@@ -189,7 +190,7 @@ export class CertificateService {
     return this.createZip(
       ojts.map((ojt, i) => ({
         name: ojt.name,
-        buffer: buffers[i] as Buffer | undefined,
+        buffer: buffers[i],
       })),
     );
   }
