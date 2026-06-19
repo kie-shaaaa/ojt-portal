@@ -45,9 +45,6 @@ export class CsrfGuard implements CanActivate {
     const csrfCookie = request.cookies?.[CSRF_TOKEN_COOKIE];
     const csrfHeader = getHeaderValue(request, CSRF_TOKEN_HEADER);
 
-    console.log('CSRF COOKIE:', csrfCookie);
-    console.log('CSRF HEADER:', csrfHeader);
-
     // 4. enforce CSRF
     if (!csrfCookie || !csrfHeader) {
       throw new ForbiddenException('CSRF missing');
