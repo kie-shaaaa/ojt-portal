@@ -5,8 +5,10 @@ import {
   Body,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { CourseService } from '../services/courses.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('courses')
 export class CoursesController {
@@ -25,6 +27,7 @@ export class CoursesController {
   }
 
   @Post('insert')
+  @UseGuards(AuthGuard('jwt'))
   async insertCourse(@Body('course') course: string) {
     try {
       return await this.courseService.insertCourse(course);

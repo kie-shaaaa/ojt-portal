@@ -7,16 +7,19 @@ import {
   Query,
   BadRequestException,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { OjtService } from '../services/ojt.service';
 import { SuccessResponse } from '../data/types';
 import type { UpdateOjtDto } from '../data/dto/update-ojt.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('ojt')
 export class OjtController {
   constructor(private readonly ojtService: OjtService) {}
 
   @Get('fetch-all')
+  @UseGuards(AuthGuard('jwt'))
   async fetchAllOjt(
     @Query('count', ParseIntPipe) count: number,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
@@ -31,6 +34,7 @@ export class OjtController {
   }
 
   @Put('edit-Ojt')
+  @UseGuards(AuthGuard('jwt'))
   async editOjt(@Body() body: UpdateOjtDto): Promise<SuccessResponse> {
     try {
       return await this.ojtService.updateOjt(body);
@@ -42,6 +46,7 @@ export class OjtController {
   }
 
   @Delete('delete')
+  @UseGuards(AuthGuard('jwt'))
   async deleteOjt(@Body() id: number): Promise<SuccessResponse> {
     try {
       return await this.ojtService.deleteOjt(id);

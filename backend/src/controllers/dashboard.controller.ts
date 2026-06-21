@@ -4,15 +4,18 @@ import {
   Get,
   Patch,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import type { ApplicationSettings } from '../data/types';
 import { DashboardService } from '../services/dashboard.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('')
+  @UseGuards(AuthGuard('jwt'))
   async getDashboardData() {
     try {
       return await this.dashboardService.getDashboardData();
@@ -26,6 +29,7 @@ export class DashboardController {
   }
 
   @Patch('settings')
+  @UseGuards(AuthGuard('jwt'))
   async updateApplicationSettings(
     @Body('settings') settings: ApplicationSettings,
   ) {

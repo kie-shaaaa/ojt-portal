@@ -46,6 +46,7 @@ export class ApplicationsController {
    * @returns array of applicants
    * */
   @Get('fetch-all')
+  @UseGuards(AuthGuard('jwt'))
   async getApplications(
     @Query('count') count?: string,
   ): Promise<SuccessResponse> {
@@ -85,6 +86,7 @@ export class ApplicationsController {
    * @returns applicants with an application status of "for_interview"
    */
   @Get('calendar')
+  @UseGuards(AuthGuard('jwt'))
   async getApplicationForInterview(): Promise<SuccessResponse> {
     try {
       return await this.applicationService.getApplicationByStatus(
@@ -105,6 +107,7 @@ export class ApplicationsController {
    * @returns array of applicants based on the sent parameter
    */
   @Get('status')
+  @UseGuards(AuthGuard('jwt'))
   async getApplicationByStatus(
     @Query('status') status?: ApplicationStatus,
   ): Promise<SuccessResponse> {
@@ -123,6 +126,7 @@ export class ApplicationsController {
    * Fetch settings for application_settings
    */
   @Get('settings')
+  @UseGuards(AuthGuard('jwt'))
   async getSettings() {
     try {
       return this.applicationService.getSettings();
@@ -137,6 +141,7 @@ export class ApplicationsController {
    * Update settings for application_settings
    */
   @Post('settings')
+  @UseGuards(AuthGuard('jwt'))
   async updateApplicationSettings(
     @Body() updateSettings: UpdateApplicationSettingsDto,
   ) {
@@ -390,6 +395,7 @@ export class ApplicationsController {
   }
 
   @Post('confirm-acceptance')
+  @UseGuards(AuthGuard('jwt'))
   async confirmAcceptance(
     @Body()
     body: {
@@ -427,6 +433,7 @@ export class ApplicationsController {
    * @returns count of pending applications
    */
   @Get('notifications')
+  @UseGuards(AuthGuard('jwt'))
   async getNotifications(): Promise<{ count: number }> {
     try {
       const count = await this.applicationService.getPendingCount();
@@ -441,6 +448,7 @@ export class ApplicationsController {
   }
 
   @Delete('delete')
+  @UseGuards(AuthGuard('jwt'))
   async deleteApplication(@Body() id: number): Promise<SuccessResponse> {
     try {
       return await this.applicationService.deleteApplication(id);
@@ -457,6 +465,7 @@ export class ApplicationsController {
    * @returns array of files with metadata and signed URLs
    */
   @Get(':id/files')
+  @UseGuards(AuthGuard('jwt'))
   async getApplicationFiles(@Param('id') id: string): Promise<
     Array<{
       id: number;

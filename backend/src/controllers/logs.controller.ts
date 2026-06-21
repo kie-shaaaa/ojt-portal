@@ -1,12 +1,14 @@
-import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { LogsService } from '../services/logs.service';
 import { FetchAllLogs } from '../data/types';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('logs')
 export class LogsController {
   constructor(private readonly logsService: LogsService) {}
 
   @Get('fetch-all')
+  @UseGuards(AuthGuard('jwt'))
   async getLogs(
     @Query('limit') limit?: number,
     @Query('page') page?: number,
