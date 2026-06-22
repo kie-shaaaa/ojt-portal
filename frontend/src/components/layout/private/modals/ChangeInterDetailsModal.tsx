@@ -88,7 +88,8 @@ const SearchableField = ({
     (option) => option.toLowerCase() === normalizedQuery,
   );
 
-  const normalizeWhitespace = (input: string) => input.replace(/\s+/g, " ").trim();
+  const normalizeWhitespace = (input: string) =>
+    input.replace(/\s+/g, " ").trim();
 
   const resolveCanonicalValue = (rawValue: string) => {
     const normalizedValue = normalizeWhitespace(rawValue);
@@ -202,6 +203,9 @@ export const ChangeInterDetailsModal = ({
     intern?.deploymentDate ?? "",
   );
   const [endDate, setEndDate] = useState(intern?.endDate ?? "");
+  const [endDateType, setEndDateType] = useState<"date" | "month" | "year">(
+    "date",
+  );
   const [schoolOptions, setSchoolOptions] = useState(defaultSchoolOptions);
   const [courseOptions, setCourseOptions] = useState(defaultCourseOptions);
   const [isSaving, setIsSaving] = useState(false);
@@ -231,7 +235,9 @@ export const ChangeInterDetailsModal = ({
                 schoolName?: string;
                 school_name?: string;
               };
-              return payload.schoolName || payload.name || payload.school_name || "";
+              return (
+                payload.schoolName || payload.name || payload.school_name || ""
+              );
             }
             return "";
           })
@@ -332,10 +338,26 @@ export const ChangeInterDetailsModal = ({
       }
     };
 
+    const parseStoredEndDate = (d?: string) => {
+      if (!d) return { value: "", type: "date" as const };
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d))
+        return { value: d, type: "date" as const };
+      if (/^\d{4}-\d{2}$/.test(d)) return { value: d, type: "month" as const };
+      if (/^\d{4}$/.test(d)) return { value: d, type: "year" as const };
+      // fallback: try parsing as Date and convert to YYYY-MM-DD
+      const dt = new Date(d);
+      if (!isNaN(dt.getTime()))
+        return { value: normalizeToYMD(d), type: "date" as const };
+      return { value: "", type: "date" as const };
+    };
+
     requestAnimationFrame(() =>
       setDeploymentDate(normalizeToYMD(intern?.deploymentDate)),
     );
-    requestAnimationFrame(() => setEndDate(normalizeToYMD(intern?.endDate)));
+
+    const parsed = parseStoredEndDate(intern?.endDate);
+    requestAnimationFrame(() => setEndDate(parsed.value));
+    requestAnimationFrame(() => setEndDateType(parsed.type));
   }, [intern]);
 
   const handleSave = async () => {
@@ -349,7 +371,7 @@ export const ChangeInterDetailsModal = ({
       ojtYear,
       adminNote,
       gender,
-      // ensure dates are sent as YYYY-MM-DD (or empty string)
+      // endDate may be in one of: YYYY, YYYY-MM, or YYYY-MM-DD
       deploymentDate: deploymentDate || null,
       endDate: endDate || null,
     };
@@ -514,15 +536,62 @@ export const ChangeInterDetailsModal = ({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <DatePicker
-                id={endDateId}
-                label="End Date"
-                labelClassName="text-gray-700"
-                value={endDate}
-                onChange={setEndDate}
-                placeholder="yyyy/mm/dd"
-              />
-              <p className="text-xs text-gray-500">
+              <label className="relative flex items-center -mt-px font-['Inter-Bold',Helvetica] font-bold text-sm tracking-normal leading-5 text-gray-700">
+                End Date
+              </label>
+
+              <div className="flex items-center gap-3">
+                <select
+                  aria-label="End date granularity"
+                  value={endDateType}
+                  onChange={(e) => setEndDateType(e.target.value as any)}
+                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-black"
+                >
+                  <option value="date">Full date</option>
+                  <option value="month">Year &amp; month</option>
+                  <option value="year">Year only</option>
+                </select>
+
+                <div className="flex-1">
+                  {endDateType === "date" ? (
+                    <DatePicker
+                      id={endDateId}
+                      labelClassName="text-gray-700"
+                      compact
+                      value={endDate}
+                      onChange={setEndDate}
+                      placeholder="yyyy/mm/dd"
+                    />
+                  ) : endDateType === "month" ? (
+                    <input
+                      id={endDateId}
+                      aria-describedby={`${endDateId}-hint`}
+                      type="month"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+                    />
+                  ) : (
+                    <input
+                      id={endDateId}
+                      aria-describedby={`${endDateId}-hint`}
+                      type="number"
+                      min={1900}
+                      max={2100}
+                      value={endDate}
+                      onChange={(e) =>
+                        setEndDate(
+                          e.target.value.replace(/[^0-9]/g, "").slice(0, 4),
+                        )
+                      }
+                      placeholder="yyyy"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <p id={`${endDateId}-hint`} className="text-xs text-gray-500">
                 Date when the internship period ends
               </p>
             </div>

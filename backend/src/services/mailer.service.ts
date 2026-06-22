@@ -364,77 +364,83 @@ export class MailerService {
     });
   }
 
-  async newApplicationAdminNotificationEmail(
-    dto: NewApplicationAdminEmailDto,
-  ): Promise<boolean> {
-    if (!contactAdminAddress) {
-      return false;
-    }
+  async newApplicationAdminNotification(dto: {
+    applicantName: string;
+    applicantEmail: string | undefined;
+  }): Promise<boolean> {
+    const { applicantName, applicantEmail } = dto;
 
-    const {
-      applicantEmail,
-      firstName,
-      lastName,
-      applicationId,
-      applicationType,
-      submittedAt,
-    } = dto;
-
-    const fullName = `${firstName} ${lastName}`;
-    const ref = refNumber(applicationId);
-    const submittedDate = submittedAt
-      ? new Date(submittedAt).toLocaleString('en-PH', {
-          dateStyle: 'long',
-          timeStyle: 'short',
-        })
-      : 'Not available';
-    const frontendBaseUrl =
-      process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
-    const loginUrl = `${frontendBaseUrl}/login`;
+    const applicationsUrl = `${process.env.FRONTEND_URL}/applications`;
 
     const html = wrapEmail(
-      ntcHeader('New Application Submitted'),
-      `<p>Hello Human Resource Team,</p>
-      <p>A new OJT application has been submitted through the portal.</p>
+      ntcHeader('OJT Application Portal'),
+      `
+    <p>Good day!</p>
 
-      ${infoBox(`
-        <strong>Applicant Name:</strong> ${escapeHtml(fullName)}<br/>
-        <strong>Applicant Email:</strong> ${escapeHtml(applicantEmail)}<br/>
-        <strong>Reference No.:</strong> ${ref}<br/>
-        <strong>Application Type:</strong> ${escapeHtml(applicationType)}<br/>
-        <strong>Submitted At:</strong> ${escapeHtml(submittedDate)}
-      `)}
+    <p>
+      A new OJT application has been submitted through the
+      <strong>NTC OJT Application Portal</strong> and requires review.
+    </p>
 
-      <p>Please review the application in the admin portal.</p>
-      <div style="text-align:center;margin:28px 0;">
-        <a href="${escapeHtml(loginUrl)}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;">Go to Admin Login</a>
-      </div>
+    ${infoBox(`
+      <strong>Applicant:</strong> ${applicantName}<br/>
+      <strong>Email:</strong> ${applicantEmail}<br/>
+      <strong>Status:</strong> Under Review
+    `)}
 
-      <p style="margin-top:28px;">
-        Thank you,<br/>
-        <strong>NTC OJT Application Portal</strong>
-      </p>`,
+    <p>
+      Please access the Applications page to review the submitted
+      requirements and proceed with the evaluation process.
+    </p>
+
+    <div style="margin:24px 0;">
+      <a
+        href="${applicationsUrl}"
+        style="
+          background:#003366;
+          color:#ffffff;
+          text-decoration:none;
+          padding:12px 20px;
+          border-radius:6px;
+          display:inline-block;
+          font-weight:600;
+        "
+      >
+        View Applications
+      </a>
+    </div>
+
+    <p>
+      This is an automated notification from the
+      <strong>NTC OJT Application Portal</strong>.
+    </p>
+
+    <p style="margin-top:28px;">
+      Sincerely,<br/>
+      <strong>NTC OJT Application Portal</strong>
+    </p>
+    `,
     );
 
     const text = [
       'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
       '='.repeat(60),
-      'A new application has been submitted and requires admin review.',
       '',
-      `Applicant Name : ${fullName}`,
-      `Applicant Email: ${applicantEmail}`,
-      `Reference No.  : ${ref}`,
-      `Application Type: ${applicationType}`,
-      `Submitted At   : ${submittedDate}`,
+      'A new OJT application has been submitted.',
       '',
-      `Review it here: ${loginUrl}`,
+      `Applicant     : ${applicantName}`,
+      `Email         : ${applicantEmail}`,
+      `Status        : Under Review`,
+      '',
+      'Review the application here:',
+      applicationsUrl,
       '',
       '(Automated message — do not reply.)',
     ].join('\n');
 
     return this.send({
-      to: contactAdminAddress,
-      subject: `NTC Portal – New Application Received [${ref}]`,
+      to: process.env.ADMIN_EMAIL!,
+      subject: `New OJT Application Submitted [${applicantName}]`,
       html,
       text,
     });
