@@ -99,7 +99,8 @@ export class AppointmentsService {
             SET
               appointment_date = $1,
               is_cancelled = FALSE,
-              is_done = FALSE
+              is_done = FALSE,
+              is_tentative = TRUE
             WHERE type = $2 AND
               application_id = $3
             RETURNING *
@@ -129,8 +130,8 @@ export class AppointmentsService {
 
       const result = await client.query(
         `
-      INSERT INTO appointments (type, appointment_date, application_id)
-      VALUES ($1, $2, $3)
+      INSERT INTO appointments (type, appointment_date, application_id, is_tentative)
+      VALUES ($1, $2, $3, TRUE)
       RETURNING *
       `,
         [type, appointmentDate, applicationId],
@@ -854,6 +855,20 @@ export class AppointmentsService {
           console.error('Failed to log appointment confirmation', err),
         );
 
+      // Mark appointment as confirmed (no longer tentative)
+      await client.query(
+        `
+          UPDATE appointments
+          SET is_tentative = FALSE
+          WHERE application_id = $1
+            AND type = $2
+            AND COALESCE(is_cancelled, FALSE) = FALSE
+        `,
+        [applicationId, kind || appointment.type],
+      ).catch((err) =>
+        console.error('Failed to mark appointment as confirmed', err),
+      );
+
       // If kind is specified, it's the schedule confirmation (not acceptance confirmation)
       if (kind === 'orientation') {
         // Send orientation schedule email with reschedule option
@@ -1043,6 +1058,7 @@ export class AppointmentsService {
         AND a.appointment_date < $2
         AND a.is_done = FALSE
         AND COALESCE(a.is_cancelled, FALSE) = FALSE
+        AND COALESCE(a.is_tentative, FALSE) = FALSE
         AND (a.type != 'orientation' OR ap.status = 'accepted')
       ORDER BY a.appointment_date ASC
     `;

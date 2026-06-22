@@ -97,21 +97,6 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      await this.mailerService
-        .newApplicationAdminNotificationEmail({
-          applicantEmail: data.email,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          applicationId: data.id,
-          applicationType: data.application_type,
-          submittedAt: data.submission_date,
-        })
-        .catch((err) =>
-          console.error(
-            '[APPLICATION] Failed to send admin new-application notification',
-            err,
-          ),
-        );
 
       return SuccessHandler('Application submitted successfully', res.rows[0]);
     } catch (error) {
@@ -206,21 +191,7 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      await this.mailerService
-        .newApplicationAdminNotificationEmail({
-          applicantEmail: data.email,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          applicationId: data.id,
-          applicationType: data.application_type,
-          submittedAt: data.submission_date,
-        })
-        .catch((err) =>
-          console.error(
-            '[APPLICATION] Failed to send admin new-application notification',
-            err,
-          ),
-        );
+      
 
       return SuccessHandler(
         'Application submitted successfully',
@@ -828,6 +799,16 @@ export class ApplicationsService {
         })
         .catch((err) =>
           console.error('Failed to log acceptance confirmation', err),
+        );
+
+      // Send the orientation schedule to the applicant and notify admin
+      // by delegating to the appointments service. This ensures the same
+      // responseEmail (applicant-facing) and appointmentActionNotificationEmail
+      // (admin-facing) logic are used and avoids duplicate implementations.
+      await this.appointmentsService
+        .confirmAppointment(applicationId, 'orientation')
+        .catch((err) =>
+          console.error('Failed to dispatch orientation schedule', err),
         );
 
       return SuccessHandler(

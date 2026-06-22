@@ -38,6 +38,7 @@ export async function createAppointment(client: Pool) {
         ADD COLUMN IF NOT EXISTS reschedule_count INT DEFAULT 0,
         ADD COLUMN IF NOT EXISTS pending_reschedule_date TIMESTAMP NULL,
         ADD COLUMN IF NOT EXISTS pending_reschedule_status reschedule_status NULL,
-        ADD COLUMN IF NOT EXISTS pending_reschedule_requested_at TIMESTAMP NULL
+        ADD COLUMN IF NOT EXISTS pending_reschedule_requested_at TIMESTAMP NULL,
+        ADD COLUMN IF NOT EXISTS is_tentative BOOLEAN DEFAULT TRUE
     `);
 }
