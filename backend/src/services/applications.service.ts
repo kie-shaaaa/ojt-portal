@@ -97,21 +97,6 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      await this.mailerService
-        .newApplicationAdminNotificationEmail({
-          applicantEmail: data.email,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          applicationId: data.id,
-          applicationType: data.application_type,
-          submittedAt: data.submission_date,
-        })
-        .catch((err) =>
-          console.error(
-            '[APPLICATION] Failed to send admin new-application notification',
-            err,
-          ),
-        );
 
       return SuccessHandler('Application submitted successfully', res.rows[0]);
     } catch (error) {
@@ -206,21 +191,7 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-      await this.mailerService
-        .newApplicationAdminNotificationEmail({
-          applicantEmail: data.email,
-          firstName: data.first_name,
-          lastName: data.last_name,
-          applicationId: data.id,
-          applicationType: data.application_type,
-          submittedAt: data.submission_date,
-        })
-        .catch((err) =>
-          console.error(
-            '[APPLICATION] Failed to send admin new-application notification',
-            err,
-          ),
-        );
+      
 
       return SuccessHandler(
         'Application submitted successfully',
@@ -404,8 +375,15 @@ export class ApplicationsService {
   async updateApplicationSettings(settings: UpdateApplicationSettingsDto) {
     const client = this.databaseService.getClient();
     try {
-      const { portal_status, opening_date, closing_date, created_by } =
-        settings;
+      const {
+        portal_status,
+        opening_date,
+        closing_date,
+        office_hours_open_time,
+        office_hours_close_time,
+        office_hours_closed_days,
+        created_by,
+      } = settings;
 
       const res = await client.query(
         `
@@ -413,19 +391,33 @@ export class ApplicationsService {
               portal_status,
               opening_date,
               closing_date,
+              office_hours_open_time,
+              office_hours_close_time,
+              office_hours_closed_days,
               created_by
             )
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING
               id,
               portal_status,
               opening_date,
               closing_date,
+              office_hours_open_time,
+              office_hours_close_time,
+              office_hours_closed_days,
               created_by,
               created_at,
               updated_at;
             `,
-        [portal_status, opening_date || null, closing_date || null, created_by],
+        [
+          portal_status,
+          opening_date || null,
+          closing_date || null,
+          office_hours_open_time || '07:00',
+          office_hours_close_time || '19:00',
+          office_hours_closed_days || 'Fri,Sat,Sun',
+          created_by,
+        ],
       );
 
       return SuccessHandler('Settings updated successfully', res.rows[0]);
@@ -794,15 +786,6 @@ export class ApplicationsService {
         throwAppError('not_found', 'Orientation schedule not found');
       }
 
-      const appointmentDate = orientationAppointment.rows[0].appointment_date;
-      const orientationDate = appointmentDate.toLocaleDateString('en-PH', {
-        dateStyle: 'long',
-      });
-      const orientationTime = appointmentDate.toLocaleTimeString('en-PH', {
-        hour: 'numeric',
-        minute: '2-digit',
-      });
-
       await client.query('BEGIN');
 
       const updated = await client.query<Application>(
@@ -828,6 +811,16 @@ export class ApplicationsService {
         })
         .catch((err) =>
           console.error('Failed to log acceptance confirmation', err),
+        );
+
+      // Send the orientation schedule to the applicant and notify admin
+      // by delegating to the appointments service. This ensures the same
+      // responseEmail (applicant-facing) and appointmentActionNotificationEmail
+      // (admin-facing) logic are used and avoids duplicate implementations.
+      await this.appointmentsService
+        .confirmAppointment(applicationId, 'orientation')
+        .catch((err) =>
+          console.error('Failed to dispatch orientation schedule', err),
         );
 
       return SuccessHandler(

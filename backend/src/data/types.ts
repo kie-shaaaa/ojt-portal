@@ -189,6 +189,9 @@ export type UpdateApplicationSettingsDto = {
   portal_status: boolean;
   opening_date?: Date;
   closing_date?: Date;
+  office_hours_open_time?: string;
+  office_hours_close_time?: string;
+  office_hours_closed_days?: string;
   created_by: number;
 };
 
