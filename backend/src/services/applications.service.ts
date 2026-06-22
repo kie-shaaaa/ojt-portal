@@ -786,8 +786,6 @@ export class ApplicationsService {
         throwAppError('not_found', 'Orientation schedule not found');
       }
 
-      const appointmentDate = orientationAppointment.rows[0].appointment_date;
-
       await client.query('BEGIN');
 
       const updated = await client.query<Application>(
