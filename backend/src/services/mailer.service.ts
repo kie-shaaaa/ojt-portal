@@ -357,6 +357,88 @@ export class MailerService {
     });
   }
 
+  async newApplicationAdminNotification(dto: {
+    applicantName: string;
+    applicantEmail: string | undefined;
+  }): Promise<boolean> {
+    const { applicantName, applicantEmail } = dto;
+
+    const applicationsUrl = `${process.env.FRONTEND_URL}/applications`;
+
+    const html = wrapEmail(
+      ntcHeader('OJT Application Portal'),
+      `
+    <p>Good day!</p>
+
+    <p>
+      A new OJT application has been submitted through the
+      <strong>NTC OJT Application Portal</strong> and requires review.
+    </p>
+
+    ${infoBox(`
+      <strong>Applicant:</strong> ${applicantName}<br/>
+      <strong>Email:</strong> ${applicantEmail}<br/>
+      <strong>Status:</strong> Under Review
+    `)}
+
+    <p>
+      Please access the Applications page to review the submitted
+      requirements and proceed with the evaluation process.
+    </p>
+
+    <div style="margin:24px 0;">
+      <a
+        href="${applicationsUrl}"
+        style="
+          background:#003366;
+          color:#ffffff;
+          text-decoration:none;
+          padding:12px 20px;
+          border-radius:6px;
+          display:inline-block;
+          font-weight:600;
+        "
+      >
+        View Applications
+      </a>
+    </div>
+
+    <p>
+      This is an automated notification from the
+      <strong>NTC OJT Application Portal</strong>.
+    </p>
+
+    <p style="margin-top:28px;">
+      Sincerely,<br/>
+      <strong>NTC OJT Application Portal</strong>
+    </p>
+    `,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      '',
+      'A new OJT application has been submitted.',
+      '',
+      `Applicant     : ${applicantName}`,
+      `Email         : ${applicantEmail}`,
+      `Status        : Under Review`,
+      '',
+      'Review the application here:',
+      applicationsUrl,
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to: process.env.ADMIN_EMAIL!,
+      subject: `New OJT Application Submitted [${applicantName}]`,
+      html,
+      text,
+    });
+  }
+
   async acceptanceConfirmationEmail(
     dto: AcceptanceConfirmationEmailDto,
   ): Promise<boolean> {

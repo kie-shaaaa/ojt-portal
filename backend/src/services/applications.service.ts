@@ -180,6 +180,11 @@ export class ApplicationsService {
         applicationType: data.application_type,
       };
 
+      await this.mailerService.newApplicationAdminNotification({
+        applicantName: `${application.first_name} ${application.last_name}`,
+        applicantEmail: application.email,
+      });
+
       const mailed =
         await this.mailerService.confirmationEmail(confirmationDto);
 
