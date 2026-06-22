@@ -31,6 +31,7 @@ type ApplicationStatus =
   | "pending"
   | "under_review"
   | "for_interview"
+  | "for_orientation"
   | "rejected"
   | "accepted"
   | "pending accept";
@@ -252,6 +253,15 @@ const statusMeta: Record<
     description:
       "Your application has been shortlisted for an interview. Please check your email for the schedule details.",
   },
+  for_orientation: {
+    label: "For Orientation",
+    badgeClassName: "bg-teal-100 text-teal-800",
+    panelClassName: "border-teal-200 bg-teal-50 text-teal-900",
+    icon: CalendarClock,
+    title: "For Orientation",
+    description:
+      "Your application has been accepted. Please check your email for the orientation schedule details.",
+  },
   rejected: {
     label: "Rejected",
     badgeClassName: "bg-rose-100 text-rose-800",
@@ -380,6 +390,88 @@ function StatusPanel({ application }: { application: ApplicationRecord }) {
   );
 }
 
+function AcceptanceConfirmationModal({
+  open,
+  application,
+  onClose,
+  onConfirm,
+  isSubmitting,
+}: {
+  open: boolean;
+  application: ApplicationRecord | null;
+  onClose: () => void;
+  onConfirm: () => void;
+  isSubmitting: boolean;
+}) {
+  if (!open || !application) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/70 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="acceptance-confirm-title"
+        className="w-full max-w-lg max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:rounded-3xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start gap-4">
+          <div className="rounded-2xl bg-amber-100 p-3 text-amber-700">
+            <BadgeCheck className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2
+              id="acceptance-confirm-title"
+              className="text-xl font-semibold text-slate-900"
+            >
+              Confirm Internship Acceptance
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Please confirm that you are accepting the internship. This will mark your application as accepted and send your orientation email.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="font-semibold text-slate-900">
+            {application.firstName} {application.lastName}
+          </p>
+          <p className="mt-1">
+            Application ID: {formatApplicationId(application.id)}
+          </p>
+          <p>Email: {application.email}</p>
+          <p className="mt-1 text-amber-700">
+            Status: Pending Accept
+          </p>
+        </div>
+
+        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+            className="inline-flex items-center justify-center rounded-xl bg-linear-to-r from-blue-800 to-blue-500 px-5 py-3 text-sm font-semibold text-white shadow-[0px_10px_20px_-8px_rgba(37,99,235,0.7)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? "Confirming..." : "Yes, confirm acceptance"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppointmentActionModal({
   open,
   application,
@@ -417,14 +509,14 @@ function AppointmentActionModal({
   const isConfirmAction = action === "confirm";
   const title = isConfirmAction
     ? isOrientation
-      ? "Confirm Internship Acceptance"
+      ? "Confirm Orientation Schedule"
       : "Confirm Interview Schedule"
     : isOrientation
       ? "Reschedule Orientation"
       : "Reschedule Interview";
   const description = isConfirmAction
     ? isOrientation
-      ? "Please confirm that you are accepting the internship. This will mark your application as accepted and send your orientation email."
+      ? "Please confirm that you received the orientation schedule."
       : "Please confirm that you received the interview schedule."
     : isOrientation
       ? "Choose a new orientation date and time below."
@@ -469,7 +561,7 @@ function AppointmentActionModal({
           </p>
           <p>Email: {application.email}</p>
           <p className="mt-1 text-amber-700">
-            Status: {isOrientation ? "Pending Accept" : "Pending Accept"}
+            Status: {statusLabel(application.status)}
           </p>
         </div>
 
@@ -640,25 +732,6 @@ function ResultSection({
 
       <StatusPanel application={application} />
 
-      {application.status === "pending accept" ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
-          <p className="font-semibold">Action required</p>
-          <p className="mt-1">
-            Your internship is waiting for your confirmation. Open the email
-            link to review and confirm your acceptance.
-          </p>
-          {onRequestAcceptanceConfirmation ? (
-            <button
-              type="button"
-              onClick={onRequestAcceptanceConfirmation}
-              className="mt-4 inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700"
-            >
-              Confirm Acceptance
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="space-y-4 border-t border-slate-200 pt-6">
         <h3 className="text-lg font-semibold text-slate-900">
           Application Timeline
@@ -689,6 +762,7 @@ function TrackPageContent(): JSX.Element {
   const [result, setResult] = useState<ApplicationRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAcceptanceModalOpen, setIsAcceptanceModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isConfirmingAcceptance, setIsConfirmingAcceptance] = useState(false);
   const [appointmentAction, setAppointmentAction] = useState<
     "confirm" | "reschedule"
@@ -797,18 +871,24 @@ function TrackPageContent(): JSX.Element {
 
       setResult(matchedApplication);
 
+      // For acceptance confirmation (confirm=1), use acceptance modal.
       if (
-        openConfirmationModal &&
+        confirmParam === "1" &&
         matchedApplication.status === "pending accept"
       ) {
         setIsAcceptanceModalOpen(true);
       }
 
-      if (
-        openConfirmationModal &&
-        matchedApplication.status === "for_interview"
-      ) {
-        setIsAcceptanceModalOpen(true);
+      // For schedule confirmation and reschedule links, use the schedule modal.
+      if (actionParam === "confirm" || actionParam === "reschedule") {
+        const allowedStatuses =
+          kindParam === "interview"
+            ? ["pending accept", "for_interview"]
+            : ["pending accept", "for_orientation", "accepted"];
+
+        if (allowedStatuses.includes(matchedApplication.status)) {
+          setIsScheduleModalOpen(true);
+        }
       }
     } catch (fetchError) {
       setResult(null);
@@ -865,18 +945,55 @@ function TrackPageContent(): JSX.Element {
         method: "POST",
         body: JSON.stringify({
           applicationId: Number(numericId),
-          type: "interview",
+          kind: "interview",
         }),
       });
 
       setResult((current) =>
         current ? { ...current, status: "for_interview" } : current,
       );
-      setIsAcceptanceModalOpen(false);
+      setIsScheduleModalOpen(false);
       toast.success("Interview confirmed. The admin has been notified.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to confirm interview";
+      toast.error(message);
+    } finally {
+      setIsConfirmingAcceptance(false);
+    }
+  };
+
+  const handleConfirmOrientation = async () => {
+    if (!result) {
+      return;
+    }
+
+    const numericId = normalizeApplicationId(applicationId);
+
+    if (!numericId || !email.trim()) {
+      showTrackError("Please load your application before confirming.");
+      return;
+    }
+
+    setIsConfirmingAcceptance(true);
+
+    try {
+      await apiCall("/appointments/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          applicationId: Number(numericId),
+          kind: "orientation",
+        }),
+      });
+
+      setResult((current) =>
+        current ? { ...current, status: "accepted" } : current,
+      );
+      setIsScheduleModalOpen(false);
+      toast.success("Orientation confirmed. The admin has been notified.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to confirm orientation";
       toast.error(message);
     } finally {
       setIsConfirmingAcceptance(false);
@@ -930,7 +1047,7 @@ function TrackPageContent(): JSX.Element {
         );
       }
 
-      setIsAcceptanceModalOpen(false);
+      setIsScheduleModalOpen(false);
       toast.success("Your reschedule request was submitted successfully.");
     } catch (error) {
       const message =
@@ -1098,15 +1215,29 @@ function TrackPageContent(): JSX.Element {
             />
           ) : null}
 
-          <AppointmentActionModal
+          <AcceptanceConfirmationModal
             open={isAcceptanceModalOpen}
+            application={result}
+            onClose={() => {
+              setIsAcceptanceModalOpen(false);
+            }}
+            onConfirm={handleConfirmAcceptance}
+            isSubmitting={isConfirmingAcceptance}
+          />
+
+          <AppointmentActionModal
+            open={isScheduleModalOpen}
             application={result}
             kind={appointmentKind}
             action={appointmentAction}
-            onClose={() => setIsAcceptanceModalOpen(false)}
+            onClose={() => {
+              setIsScheduleModalOpen(false);
+              setRescheduleDate("");
+              setRescheduleTime("");
+            }}
             onConfirm={
               appointmentKind === "orientation"
-                ? handleConfirmAcceptance
+                ? handleConfirmOrientation
                 : handleConfirmInterview
             }
             onReschedule={handleRescheduleAppointment}

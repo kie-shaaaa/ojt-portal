@@ -395,7 +395,6 @@ export class ApplicationsController {
   }
 
   @Post('confirm-acceptance')
-  @UseGuards(AuthGuard('jwt'))
   async confirmAcceptance(
     @Body()
     body: {
