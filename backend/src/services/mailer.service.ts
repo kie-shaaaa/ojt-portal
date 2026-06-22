@@ -2,9 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ApplicationStatus } from '../data/types';
 import {
   AcceptanceConfirmationEmailDto,
+  AppointmentRescheduleAdminEmailDto,
+  AppointmentRescheduleDecisionEmailDto,
   ContactMessageDto,
   ConfirmationEmailDto,
   DeletionEmailDto,
+  NewApplicationAdminEmailDto,
   ResubmissionEmailDto,
   ResponseEmailDto,
   StatusUpdateEmailDto,
@@ -171,6 +174,10 @@ const wrapEmail = (header: string, body: string) =>
 const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
 
 const contactAdminAddress = process.env.CONTACT_ADMIN_EMAIL?.trim() || '';
+const backendBaseUrl =
+  process.env.BACKEND_URL?.trim() ||
+  process.env.FRONTEND_URL?.trim() ||
+  'http://localhost:5000';
 
 // clearer fallback text used when date/time details are not yet available
 const tbaText = 'To be announced — details will be sent in a follow-up email.';
@@ -357,6 +364,82 @@ export class MailerService {
     });
   }
 
+  async newApplicationAdminNotificationEmail(
+    dto: NewApplicationAdminEmailDto,
+  ): Promise<boolean> {
+    if (!contactAdminAddress) {
+      return false;
+    }
+
+    const {
+      applicantEmail,
+      firstName,
+      lastName,
+      applicationId,
+      applicationType,
+      submittedAt,
+    } = dto;
+
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const submittedDate = submittedAt
+      ? new Date(submittedAt).toLocaleString('en-PH', {
+          dateStyle: 'long',
+          timeStyle: 'short',
+        })
+      : 'Not available';
+    const frontendBaseUrl =
+      process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+    const loginUrl = `${frontendBaseUrl}/login`;
+
+    const html = wrapEmail(
+      ntcHeader('New Application Submitted'),
+      `<p>Hello Human Resource Team,</p>
+      <p>A new OJT application has been submitted through the portal.</p>
+
+      ${infoBox(`
+        <strong>Applicant Name:</strong> ${escapeHtml(fullName)}<br/>
+        <strong>Applicant Email:</strong> ${escapeHtml(applicantEmail)}<br/>
+        <strong>Reference No.:</strong> ${ref}<br/>
+        <strong>Application Type:</strong> ${escapeHtml(applicationType)}<br/>
+        <strong>Submitted At:</strong> ${escapeHtml(submittedDate)}
+      `)}
+
+      <p>Please review the application in the admin portal.</p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${escapeHtml(loginUrl)}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;">Go to Admin Login</a>
+      </div>
+
+      <p style="margin-top:28px;">
+        Thank you,<br/>
+        <strong>NTC OJT Application Portal</strong>
+      </p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      'A new application has been submitted and requires admin review.',
+      '',
+      `Applicant Name : ${fullName}`,
+      `Applicant Email: ${applicantEmail}`,
+      `Reference No.  : ${ref}`,
+      `Application Type: ${applicationType}`,
+      `Submitted At   : ${submittedDate}`,
+      '',
+      `Review it here: ${loginUrl}`,
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to: contactAdminAddress,
+      subject: `NTC Portal – New Application Received [${ref}]`,
+      html,
+      text,
+    });
+  }
+
   async acceptanceConfirmationEmail(
     dto: AcceptanceConfirmationEmailDto,
   ): Promise<boolean> {
@@ -398,9 +481,6 @@ export class MailerService {
       )}
 
       ${actionButtons}
-
-      <p>If the button does not work, copy and paste this link into your browser:</p>
-      <p style="word-break:break-all;"><a href="${safeConfirmUrl}" style="color:#0038A8;">${safeConfirmUrl}</a></p>
 
       <p style="margin-top:28px;">
         Sincerely,<br/>
@@ -989,6 +1069,188 @@ export class MailerService {
       subject: `NTC Portal – ${typeLabel} Appointment ${actionLabel} [${ref}]`,
       html,
       text,
+    });
+  }
+
+  async appointmentRescheduleReviewEmail(
+    dto: AppointmentRescheduleAdminEmailDto,
+  ): Promise<boolean> {
+    if (!contactAdminAddress) {
+      return false;
+    }
+
+    const {
+      applicantEmail,
+      firstName,
+      lastName,
+      applicationId,
+      appointmentType,
+      requestedDate,
+      requestedTime,
+      approveUrl,
+      rejectUrl,
+    } = dto;
+
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const typeLabel =
+      appointmentType === 'interview' ? 'Interview' : 'Orientation';
+
+    const html = wrapEmail(
+      ntcHeader('NTC Appointment Reschedule Request'),
+      `<p>Hello Human Resource Team,</p>
+      <p>An applicant has requested to reschedule their <strong>${typeLabel}</strong> appointment.</p>
+
+      ${infoBox(`
+        <strong>Applicant:</strong> ${escapeHtml(fullName)}<br/>
+        <strong>Email:</strong> ${escapeHtml(applicantEmail)}<br/>
+        <strong>Reference No.:</strong> ${ref}<br/>
+        <strong>Requested Date:</strong> ${escapeHtml(requestedDate)}<br/>
+        <strong>Requested Time:</strong> ${escapeHtml(requestedTime)}
+      `)}
+
+      <p>Please review and approve or reject the new schedule.</p>
+
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${escapeHtml(approveUrl)}" style="display:inline-block;background:#1a7f37;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Approve Reschedule</a>
+        <a href="${escapeHtml(rejectUrl)}" style="display:inline-block;background:#ffffff;color:#1a7f37;padding:12px 28px;text-decoration:none;border:1px solid #1a7f37;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Reject Reschedule</a>
+      </div>
+
+      <p style="margin-top:28px;">This message was generated automatically by the portal.</p>`,
+    );
+
+    const text = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      `${typeLabel.toUpperCase()} RESCHEDULE REQUEST`,
+      '='.repeat(60),
+      '',
+      `Applicant : ${fullName}`,
+      `Email     : ${applicantEmail}`,
+      `Ref       : ${ref}`,
+      `Type      : ${typeLabel}`,
+      `Requested : ${requestedDate} ${requestedTime}`,
+      '',
+      `Approve: ${approveUrl}`,
+      `Reject : ${rejectUrl}`,
+      '',
+      '(Automated message — do not reply.)',
+    ].join('\n');
+
+    return this.send({
+      to: contactAdminAddress,
+      subject: `NTC Portal – ${typeLabel} Reschedule Request Pending Approval [${ref}]`,
+      html,
+      text,
+    });
+  }
+
+  async appointmentRescheduleDecisionEmail(
+    dto: AppointmentRescheduleDecisionEmailDto,
+  ): Promise<boolean> {
+    const {
+      to,
+      firstName,
+      lastName,
+      applicationId,
+      appointmentType,
+      decision,
+      originalDate,
+      originalTime,
+      requestedDate,
+      requestedTime,
+      canRescheduleAgain,
+      rescheduleUrl,
+    } = dto;
+
+    const fullName = `${firstName} ${lastName}`;
+    const ref = refNumber(applicationId);
+    const typeLabel =
+      appointmentType === 'interview' ? 'Interview' : 'Orientation';
+    const actionLabel = decision === 'approved' ? 'Approved' : 'Rejected';
+
+    const details = [
+      `<strong>Applicant:</strong> ${escapeHtml(fullName)}<br/>`,
+      `<strong>Reference No.:</strong> ${ref}<br/>`,
+      `<strong>Appointment Type:</strong> ${typeLabel}<br/>`,
+      `<strong>Current Date:</strong> ${escapeHtml(originalDate)}<br/>`,
+      `<strong>Current Time:</strong> ${escapeHtml(originalTime)}<br/>`,
+    ];
+
+    if (requestedDate && requestedTime) {
+      details.push(
+        `<strong>Requested Date:</strong> ${escapeHtml(requestedDate)}<br/>`,
+        `<strong>Requested Time:</strong> ${escapeHtml(requestedTime)}<br/>`,
+      );
+    }
+
+    const decisionMessage =
+      decision === 'approved'
+        ? `Your requested ${typeLabel.toLowerCase()} reschedule has been <strong>approved</strong>. The new appointment will be set on the date below.`
+        : `Your requested ${typeLabel.toLowerCase()} reschedule has been <strong>rejected</strong>. You may keep the original appointment or request a new reschedule if needed.`;
+
+    const actionButtons =
+      rescheduleUrl && canRescheduleAgain
+        ? `<div style="text-align:center;margin:32px 0;">
+            <a href="${escapeHtml(rescheduleUrl)}" style="display:inline-block;background:#0038A8;color:#fff;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:bold;margin:0 8px 12px;">Request Another Reschedule</a>
+          </div>`
+        : '';
+
+    const reminder =
+      decision === 'approved'
+        ? `<p>Please confirm the new appointment details and plan to arrive 15 minutes early.</p>`
+        : `<p>If you choose not to reschedule, please keep the original appointment date and time.</p>`;
+
+    const html = wrapEmail(
+      ntcHeader('NTC Appointment Reschedule Update'),
+      `<p>Dear <strong>${fullName}</strong>,</p>
+      <p>Good day!</p>
+      <p>${decisionMessage}</p>
+      ${infoBox(details.join(''))}
+      ${actionButtons}
+      ${reminder}
+      <p style="margin-top:28px;">
+        Sincerely,<br/>
+        <strong>David M. Zaldua</strong><br/>
+        Administrative Officer IV<br/>
+        Human Resource Division
+      </p>`,
+    );
+
+    const textLines = [
+      'NATIONAL TELECOMMUNICATIONS COMMISSION — OJT Application Portal',
+      '='.repeat(60),
+      `APPOINTMENT RESCHEDULE ${actionLabel.toUpperCase()}`,
+      '='.repeat(60),
+      '',
+      `Dear ${fullName},`,
+      '',
+      decisionMessage.replace(/<[^>]+>/g, ''),
+      '',
+      `Reference No.: ${ref}`,
+      `Appointment Type: ${typeLabel}`,
+      `Current Date : ${originalDate}`,
+      `Current Time : ${originalTime}`,
+    ];
+
+    if (requestedDate && requestedTime) {
+      textLines.push(
+        `Requested Date : ${requestedDate}`,
+        `Requested Time : ${requestedTime}`,
+      );
+    }
+
+    if (rescheduleUrl && canRescheduleAgain) {
+      textLines.push('', `Request another reschedule: ${rescheduleUrl}`);
+    }
+
+    textLines.push('', '(Automated message — do not reply.)');
+
+    return this.send({
+      to,
+      subject: `NTC Application – Reschedule ${actionLabel} [${ref}]`,
+      html,
+      text: textLines.join('\n'),
     });
   }
 

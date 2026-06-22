@@ -97,6 +97,22 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
+      await this.mailerService
+        .newApplicationAdminNotificationEmail({
+          applicantEmail: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: data.id,
+          applicationType: data.application_type,
+          submittedAt: data.submission_date,
+        })
+        .catch((err) =>
+          console.error(
+            '[APPLICATION] Failed to send admin new-application notification',
+            err,
+          ),
+        );
+
       return SuccessHandler('Application submitted successfully', res.rows[0]);
     } catch (error) {
       console.error('[APPLICATION] Error submitting application', error);
@@ -184,6 +200,22 @@ export class ApplicationsService {
         await this.mailerService.confirmationEmail(confirmationDto);
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
+
+      await this.mailerService
+        .newApplicationAdminNotificationEmail({
+          applicantEmail: data.email,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          applicationId: data.id,
+          applicationType: data.application_type,
+          submittedAt: data.submission_date,
+        })
+        .catch((err) =>
+          console.error(
+            '[APPLICATION] Failed to send admin new-application notification',
+            err,
+          ),
+        );
 
       return SuccessHandler(
         'Application submitted successfully',
@@ -778,36 +810,11 @@ export class ApplicationsService {
         [applicationId],
       );
 
-      await client.query(
-        `
-          UPDATE ojt_data
-          SET confirmed_at = CURRENT_TIMESTAMP
-          WHERE email = $1
-        `,
-        [email],
-      );
-
-      const frontendBaseUrl =
-        process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
-      const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${applicationId}&email=${encodeURIComponent(application.email)}`;
-
-      const mailed = await this.mailerService.responseEmail({
-        to: application.email,
-        firstName: application.first_name,
-        lastName: application.last_name,
-        applicationId,
-        status: 'orientation',
-        acceptedDate: orientationDate,
-        acceptedTime: orientationTime,
-        rescheduleUrl,
-      });
-
-      if (!mailed) {
-        throwAppError('server_error', 'Orientation mailing failed');
-      }
-
       await client.query('COMMIT');
 
+      // Acceptance confirmation does not re-trigger appointment confirmation.
+      // The applicant already received the acceptance/orientation email when the
+      // orientation schedule was created, so we only update the application status.
       await this.logsService
         .logApplicationStatusChange({
           userId: 0,

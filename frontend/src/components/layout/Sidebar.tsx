@@ -13,9 +13,10 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { JSX } from "react/jsx-dev-runtime";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
+import { apiCall } from "@/lib/api";
 
 const navigationItems = [
   { label: "Dashboard", icon: House, href: "/dashboard" },
@@ -38,12 +39,27 @@ export const AsideSidebar = ({
   const pathname = usePathname();
   const router = useRouter();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [hasUnreadApplications, setHasUnreadApplications] = useState(false);
   const { logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
     router.push("/");
   };
+
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const response = await apiCall("/applications/notifications");
+        const count = typeof response?.count === "number" ? response.count : 0;
+        setHasUnreadApplications(count > 0);
+      } catch (error) {
+        console.error("Failed to load application notification count", error);
+      }
+    };
+
+    void fetchPendingCount();
+  }, []);
 
   return (
     <>
@@ -106,6 +122,9 @@ export const AsideSidebar = ({
                     {item.label}
                   </span>
                 </div>
+                {item.href === "/applications" && hasUnreadApplications && (
+                  <span className="ml-auto inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                )}
               </Link>
             );
           })}
@@ -139,11 +158,14 @@ export const AsideSidebar = ({
                 key={item.label}
                 href={item.href ?? "#"}
                 aria-current={isActive ? "page" : undefined}
-                className="flex flex-1 flex-col items-center justify-center py-2 text-xs text-white"
+                className="relative flex flex-1 flex-col items-center justify-center py-2 text-xs text-white"
               >
                 <Icon
                   className={`w-6 h-6 ${isActive ? "text-white" : "text-white/80"}`}
                 />
+                {item.href === "/applications" && hasUnreadApplications && (
+                  <span className="absolute top-2 right-[26%] h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[#0038a8]" />
+                )}
                 <span
                   className={`mt-1 text-[10px] leading-tight text-center ${isActive ? "text-white" : "text-white/80"}`}
                 >

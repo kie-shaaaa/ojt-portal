@@ -4,10 +4,20 @@ export async function createApplications(client: Pool) {
   await client.query(`
         DO $$
         BEGIN
-            CREATE TYPE application_status AS ENUM ('pending', 'under_review', 'rejected', 'for_interview', 'pending accept', 'accepted');
+            CREATE TYPE application_status AS ENUM ('pending', 'under_review', 'rejected', 'for_interview', 'for_orientation', 'pending accept', 'accepted');
         EXCEPTION WHEN duplicate_object THEN null;
         END $$;
     `);
+
+  // Alter existing enum to add 'for_orientation' if it doesn't exist
+  try {
+    await client.query(`ALTER TYPE application_status ADD VALUE 'for_orientation' BEFORE 'pending accept'`);
+  } catch (err) {
+    // Ignore error if value already exists
+    if (err instanceof Error && !err.message.includes('already exists')) {
+      console.error('Failed to add for_orientation to enum:', err);
+    }
+  }
 
   await client.query(`
         CREATE TABLE IF NOT EXISTS applications (

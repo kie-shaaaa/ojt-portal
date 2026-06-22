@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { HttpException, Injectable } from '@nestjs/common';
+import { Pool } from 'pg';
 import { DatabaseService } from './database/database.service';
 import { AppointmentType } from '../data/types';
 import { LogsService } from './logs.service';
@@ -36,6 +37,17 @@ export class AppointmentsService {
     private readonly logsService: LogsService,
     private readonly mailerService: MailerService,
   ) {}
+
+  private getBackendBaseUrl(): string {
+    const backendUrl = process.env.BACKEND_URL?.trim();
+    if (!backendUrl) {
+      console.warn(
+        'BACKEND_URL is not configured. Reschedule review links will use http://localhost:5000. Set BACKEND_URL in production to the backend server URL.',
+      );
+    }
+
+    return backendUrl || 'http://localhost:5000';
+  }
 
   private async updateAppointmentStatus(
     id: number,
@@ -281,57 +293,87 @@ export class AppointmentsService {
     }
   }
 
+  private async findAppointmentRecord(
+    client: Pool,
+    applicationId: number,
+    appointmentType: AppointmentType,
+  ) {
+    const appointmentInfo = await client.query<{
+      type: AppointmentType;
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+      reschedule_count: number | null;
+      pending_reschedule_status: 'pending' | 'approved' | 'rejected' | null;
+      pending_reschedule_date: Date | null;
+      appointment_date: Date;
+    }>(
+      `
+          SELECT a.type,
+                 ap.first_name,
+                 ap.last_name,
+                 ap.email,
+                 COALESCE(a.reschedule_count, 0) AS reschedule_count,
+                 a.pending_reschedule_status,
+                 a.pending_reschedule_date,
+                 a.appointment_date
+          FROM appointments a
+          LEFT JOIN applications ap ON ap.id = a.application_id
+          WHERE a.application_id = $1
+            AND a.type = $2
+            AND COALESCE(a.is_cancelled, FALSE) = FALSE
+          ORDER BY a.appointment_date DESC
+          LIMIT 1
+        `,
+      [applicationId, appointmentType],
+    );
+
+    return appointmentInfo.rows[0] ?? null;
+  }
+
   async updateAppointment(
     applicationId: number,
     appointmentDate: Date,
     appointmentType: AppointmentType,
   ) {
     const client = this.databaseService.getClient();
-    console.log(applicationId, appointmentDate);
-    try {
-      const appointmentInfo = await client.query<{
-        type: AppointmentType;
-        first_name: string | null;
-        last_name: string | null;
-        email: string | null;
-        has_rescheduled: boolean;
-      }>(
-        `
-          SELECT a.type, ap.first_name, ap.last_name, ap.email, a.has_rescheduled
-          FROM appointments a
-          LEFT JOIN applications ap ON ap.id = a.application_id
-          WHERE a.application_id = $1
-            AND a.type = $2
-          ORDER BY a.appointment_date DESC
-          LIMIT 1
-        `,
-        [applicationId, appointmentType],
-      );
 
-      const appointmentRecord = appointmentInfo.rows[0] ?? null;
+    try {
+      const appointmentRecord = await this.findAppointmentRecord(
+        client,
+        applicationId,
+        appointmentType,
+      );
 
       if (!appointmentRecord) {
         throwAppError('not_found', 'No appointment found for this application');
       }
 
-      // Check if appointment has already been rescheduled
-      if (appointmentRecord.has_rescheduled) {
+      if (appointmentRecord.pending_reschedule_status === 'pending') {
         throwAppError(
           'bad_request',
-          'You have already used your one-time reschedule for this appointment. Please contact the Human Resource Division if you need further assistance.',
+          'A reschedule request is already pending approval. Please wait for admin review before submitting another request.',
+        );
+      }
+
+      if ((appointmentRecord.reschedule_count ?? 0) >= 3) {
+        throwAppError(
+          'bad_request',
+          'You have reached the maximum of three reschedules for this appointment.',
         );
       }
 
       await client.query('BEGIN');
 
-      // Update appointment date and set has_rescheduled to true
       const result = await client.query(
         `
           UPDATE appointments
-          SET appointment_date = $1,
-              has_rescheduled = TRUE
+          SET pending_reschedule_date = $1,
+              pending_reschedule_status = 'pending',
+              pending_reschedule_requested_at = CURRENT_TIMESTAMP
           WHERE application_id = $2
             AND type = $3
+            AND COALESCE(is_cancelled, FALSE) = FALSE
           RETURNING *
         `,
         [appointmentDate, applicationId, appointmentType],
@@ -342,70 +384,51 @@ export class AppointmentsService {
         throwAppError('not_found', 'No appointment found for this application');
       }
 
-      // For orientation, also confirm the acceptance
-      if (appointmentType === 'orientation') {
-        await client.query(
-          `
-            UPDATE applications
-            SET status = 'accepted'
-            WHERE id = $1
-              AND status = 'pending accept'
-          `,
-          [applicationId],
-        );
-      }
-
-      // For interview, also confirm the appointment
-      if (appointmentType === 'interview') {
-        await client.query(
-          `
-            UPDATE applications
-            SET status = 'for_interview'
-            WHERE id = $1
-              AND status = 'pending accept'
-          `,
-          [applicationId],
-        );
-      }
+      const backendBaseUrl = this.getBackendBaseUrl();
+      const approveUrl = `${backendBaseUrl}/appointments/review-reschedule?decision=approve&applicationId=${applicationId}&type=${appointmentType}`;
+      const rejectUrl = `${backendBaseUrl}/appointments/review-reschedule?decision=reject&applicationId=${applicationId}&type=${appointmentType}`;
 
       await client.query('COMMIT');
 
-      // Log appointment update
+      // Log reschedule request
       await this.logsService
         .logOther({
-          action: 'Appointment Rescheduled',
-          details: `Appointment for application ${applicationId} rescheduled to ${appointmentDate.toISOString()}`,
+          action: 'Appointment Reschedule Requested',
+          details: `Appointment reschedule requested for application ${applicationId} to ${appointmentDate.toISOString()}`,
         })
-        .catch((err) => console.error('Failed to log appointment update', err));
+        .catch((err) => console.error('Failed to log reschedule request', err));
 
-      // Send confirmation email (not rescheduled email, since rescheduling = confirmation)
-      if (appointmentRecord?.email) {
+      if (appointmentRecord.email) {
+        const requestedDate = appointmentDate.toLocaleDateString('en-PH', {
+          dateStyle: 'long',
+        });
+        const requestedTime = appointmentDate.toLocaleTimeString('en-PH', {
+          hour: 'numeric',
+          minute: '2-digit',
+        });
+
         await this.mailerService
-          .appointmentActionNotificationEmail({
-            action: 'confirmed',
-            appointmentType: appointmentRecord.type,
-            applicationId,
+          .appointmentRescheduleReviewEmail({
+            applicantEmail: appointmentRecord.email,
             firstName: appointmentRecord.first_name ?? '',
             lastName: appointmentRecord.last_name ?? '',
-            email: appointmentRecord.email,
-            appointmentDate: appointmentDate.toLocaleDateString('en-PH', {
-              dateStyle: 'long',
-            }),
-            appointmentTime: appointmentDate.toLocaleTimeString('en-PH', {
-              hour: 'numeric',
-              minute: '2-digit',
-            }),
+            applicationId,
+            appointmentType,
+            requestedDate,
+            requestedTime,
+            approveUrl,
+            rejectUrl,
           })
           .catch((err) =>
             console.error(
-              'Failed to send appointment confirmation notification',
+              'Failed to send reschedule review email to admin',
               err,
             ),
           );
       }
 
       return SuccessHandler(
-        'Your appointment has been rescheduled and confirmed. Note: You have used your one-time reschedule for this appointment.',
+        'Your reschedule request has been submitted for admin approval.',
         result.rows[0],
       );
     } catch (error) {
@@ -414,7 +437,258 @@ export class AppointmentsService {
       if (error instanceof HttpException) {
         throw error;
       }
-      throwAppError('server_error', 'Failed to update appointment');
+      throwAppError('server_error', 'Failed to submit reschedule request');
+    }
+  }
+
+  async approveReschedule(
+    applicationId: number,
+    appointmentType: AppointmentType,
+  ) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const appointmentRecord = await this.findAppointmentRecord(
+        client,
+        applicationId,
+        appointmentType,
+      );
+
+      if (!appointmentRecord) {
+        throwAppError('not_found', 'No appointment found for this application');
+      }
+
+      if (appointmentRecord.pending_reschedule_status !== 'pending') {
+        throwAppError(
+          'bad_request',
+          'No pending reschedule request found for this appointment.',
+        );
+      }
+
+      if (!appointmentRecord.pending_reschedule_date) {
+        throwAppError(
+          'bad_request',
+          'No requested reschedule date is available.',
+        );
+      }
+
+      console.log('[APPOINTMENT] Approving reschedule:', {
+        applicationId,
+        appointmentType,
+        pendingDate: appointmentRecord.pending_reschedule_date,
+        currentDate: appointmentRecord.appointment_date,
+      });
+
+      await client.query('BEGIN');
+
+      const result = await client.query(
+        `
+          UPDATE appointments
+          SET appointment_date = pending_reschedule_date,
+              pending_reschedule_date = NULL,
+              pending_reschedule_status = 'approved',
+              pending_reschedule_requested_at = NULL,
+              reschedule_count = COALESCE(reschedule_count, 0) + 1
+          WHERE application_id = $1
+            AND type = $2
+            AND COALESCE(is_cancelled, FALSE) = FALSE
+          RETURNING *
+        `,
+        [applicationId, appointmentType],
+      );
+
+      if (result.rowCount === 0) {
+        await client.query('ROLLBACK');
+        throwAppError('not_found', 'Failed to approve reschedule request');
+      }
+
+      const updatedAppointment = result.rows[0];
+
+      console.log('[APPOINTMENT] Updated appointment:', updatedAppointment);
+
+      // Update application status based on appointment type
+      // For interview appointments, set to 'for_interview'
+      // For orientation appointments, keep as 'accepted'
+      if (appointmentType === 'interview') {
+        await client.query(
+          `
+            UPDATE applications
+            SET status = 'for_interview'
+            WHERE id = $1
+          `,
+          [applicationId],
+        );
+      }
+      // For orientation, do not change status - keep it as 'accepted'
+
+      await client.query('COMMIT');
+
+      await this.logsService
+        .logOther({
+          action: 'Appointment Reschedule Approved',
+          details: `Reschedule approved for application ${applicationId}`,
+        })
+        .catch((err) => console.error('Failed to log reschedule approval', err));
+
+      if (appointmentRecord.email) {
+        const originalDate = appointmentRecord.appointment_date.toLocaleDateString(
+          'en-PH',
+          { dateStyle: 'long' },
+        );
+        const originalTime = appointmentRecord.appointment_date.toLocaleTimeString(
+          'en-PH',
+          { hour: 'numeric', minute: '2-digit' },
+        );
+        const requestedDate = updatedAppointment.appointment_date.toLocaleDateString(
+          'en-PH',
+          { dateStyle: 'long' },
+        );
+        const requestedTime = updatedAppointment.appointment_date.toLocaleTimeString(
+          'en-PH',
+          { hour: 'numeric', minute: '2-digit' },
+        );
+
+        const canRescheduleAgain = (updatedAppointment.reschedule_count ?? 0) < 3;
+        const frontendBaseUrl =
+          process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+        const rescheduleUrl = canRescheduleAgain
+          ? `${frontendBaseUrl}/track?action=reschedule&kind=${appointmentType}&id=${applicationId}&email=${encodeURIComponent(appointmentRecord.email)}`
+          : undefined;
+
+        await this.mailerService
+          .appointmentRescheduleDecisionEmail({
+            to: appointmentRecord.email,
+            firstName: appointmentRecord.first_name ?? '',
+            lastName: appointmentRecord.last_name ?? '',
+            applicationId,
+            appointmentType,
+            decision: 'approved',
+            originalDate,
+            originalTime,
+            requestedDate,
+            requestedTime,
+            canRescheduleAgain,
+            rescheduleUrl,
+          })
+          .catch((err) =>
+            console.error('Failed to send reschedule approval email', err),
+          );
+      }
+
+      return SuccessHandler('Reschedule request approved successfully', updatedAppointment);
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      console.error('[APPOINTMENT] Error approving reschedule request:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throwAppError('server_error', 'Failed to approve reschedule request');
+    }
+  }
+
+  async rejectReschedule(
+    applicationId: number,
+    appointmentType: AppointmentType,
+  ) {
+    const client = this.databaseService.getClient();
+
+    try {
+      const appointmentRecord = await this.findAppointmentRecord(
+        client,
+        applicationId,
+        appointmentType,
+      );
+
+      if (!appointmentRecord) {
+        throwAppError('not_found', 'No appointment found for this application');
+      }
+
+      if (appointmentRecord.pending_reschedule_status !== 'pending') {
+        throwAppError(
+          'bad_request',
+          'No pending reschedule request found for this appointment.',
+        );
+      }
+
+      if (!appointmentRecord.pending_reschedule_date) {
+        throwAppError(
+          'bad_request',
+          'No requested reschedule date is available.',
+        );
+      }
+
+      await client.query(
+        `
+          UPDATE appointments
+          SET pending_reschedule_date = NULL,
+              pending_reschedule_status = 'rejected',
+              pending_reschedule_requested_at = NULL
+          WHERE application_id = $1
+            AND type = $2
+            AND COALESCE(is_cancelled, FALSE) = FALSE
+        `,
+        [applicationId, appointmentType],
+      );
+
+      await this.logsService
+        .logOther({
+          action: 'Appointment Reschedule Rejected',
+          details: `Reschedule rejected for application ${applicationId}`,
+        })
+        .catch((err) => console.error('Failed to log reschedule rejection', err));
+
+      if (appointmentRecord.email) {
+        const originalDate = appointmentRecord.appointment_date.toLocaleDateString(
+          'en-PH',
+          { dateStyle: 'long' },
+        );
+        const originalTime = appointmentRecord.appointment_date.toLocaleTimeString(
+          'en-PH',
+          { hour: 'numeric', minute: '2-digit' },
+        );
+        const requestedDate = appointmentRecord.pending_reschedule_date.toLocaleDateString(
+          'en-PH',
+          { dateStyle: 'long' },
+        );
+        const requestedTime = appointmentRecord.pending_reschedule_date.toLocaleTimeString(
+          'en-PH',
+          { hour: 'numeric', minute: '2-digit' },
+        );
+
+        const canRescheduleAgain = (appointmentRecord.reschedule_count ?? 0) < 3;
+        const frontendBaseUrl =
+          process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+        const rescheduleUrl = canRescheduleAgain
+          ? `${frontendBaseUrl}/track?action=reschedule&kind=${appointmentType}&id=${applicationId}&email=${encodeURIComponent(appointmentRecord.email)}`
+          : undefined;
+
+        await this.mailerService
+          .appointmentRescheduleDecisionEmail({
+            to: appointmentRecord.email,
+            firstName: appointmentRecord.first_name ?? '',
+            lastName: appointmentRecord.last_name ?? '',
+            applicationId,
+            appointmentType,
+            decision: 'rejected',
+            originalDate,
+            originalTime,
+            requestedDate,
+            requestedTime,
+            canRescheduleAgain,
+            rescheduleUrl,
+          })
+          .catch((err) =>
+            console.error('Failed to send reschedule rejection email', err),
+          );
+      }
+
+      return SuccessHandler('Reschedule request rejected successfully');
+    } catch (error) {
+      console.error('[APPOINTMENT] Error rejecting reschedule request:', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throwAppError('server_error', 'Failed to reject reschedule request');
     }
   }
 
@@ -532,11 +806,11 @@ export class AppointmentsService {
     }
   }
 
-  async confirmAppointment(applicationId: number) {
+  async confirmAppointment(applicationId: number, kind?: 'orientation' | 'interview') {
     const client = this.databaseService.getClient();
 
     try {
-      const appointmentResult = await client.query<AppointmentCompletionRow>(
+      const appointmentQueryParts = [
         `
           SELECT a.type, a.application_id, ap.first_name, ap.last_name, ap.email,
                  ap.school_name, ap.hours_needed, ap.course, ap.deployment_date, ap.application_type,
@@ -544,12 +818,21 @@ export class AppointmentsService {
           FROM appointments a
           LEFT JOIN applications ap ON ap.id = a.application_id
           WHERE a.application_id = $1
-            AND a.type = 'interview'
             AND a.is_cancelled = FALSE
-          ORDER BY a.appointment_date DESC
-          LIMIT 1
         `,
-        [applicationId],
+      ];
+      const appointmentParams: Array<number | string> = [applicationId];
+
+      if (kind) {
+        appointmentQueryParts.push(`AND a.type = $2`);
+        appointmentParams.push(kind);
+      }
+
+      appointmentQueryParts.push(`ORDER BY a.appointment_date DESC LIMIT 1`);
+
+      const appointmentResult = await client.query<AppointmentCompletionRow>(
+        appointmentQueryParts.join('\n'),
+        appointmentParams,
       );
 
       if (appointmentResult.rowCount === 0) {
@@ -571,20 +854,117 @@ export class AppointmentsService {
           console.error('Failed to log appointment confirmation', err),
         );
 
-      await client.query(
-        `
-          UPDATE applications
-          SET status = 'for_interview'
-          WHERE id = $1
-            AND status = 'pending accept'
-        `,
-        [applicationId],
-      );
+      // If kind is specified, it's the schedule confirmation (not acceptance confirmation)
+      if (kind === 'orientation') {
+        // Send orientation schedule email with reschedule option
+        const frontendBaseUrl =
+          process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+        const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
+        const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
+
+        await this.mailerService.responseEmail({
+          to: appointment.email,
+          firstName: appointment.first_name ?? '',
+          lastName: appointment.last_name ?? '',
+          applicationId,
+          status: 'orientation',
+          acceptedDate: appointment.appointment_date.toLocaleDateString('en-PH', {
+            dateStyle: 'long',
+          }),
+          acceptedTime: appointment.appointment_date.toLocaleTimeString('en-PH', {
+            hour: 'numeric',
+            minute: '2-digit',
+          }),
+          interviewLocation: undefined,
+          confirmUrl,
+          rescheduleUrl,
+          adminNote: undefined,
+        }).catch((err) =>
+          console.error('Failed to send orientation schedule email', err),
+        );
+      } else if (kind === 'interview') {
+        await client.query(
+          `
+            UPDATE applications
+            SET status = 'for_interview'
+            WHERE id = $1
+              AND status = 'pending accept'
+          `,
+          [applicationId],
+        );
+      } else {
+        // Default behavior: acceptance confirmation (no kind parameter)
+        if (appointment.type === 'orientation') {
+          // Send orientation schedule email with reschedule option
+          const frontendBaseUrl =
+            process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+          const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
+          const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
+
+          await this.mailerService.responseEmail({
+            to: appointment.email,
+            firstName: appointment.first_name ?? '',
+            lastName: appointment.last_name ?? '',
+            applicationId,
+            status: 'orientation',
+            acceptedDate: appointment.appointment_date.toLocaleDateString('en-PH', {
+              dateStyle: 'long',
+            }),
+            acceptedTime: appointment.appointment_date.toLocaleTimeString('en-PH', {
+              hour: 'numeric',
+              minute: '2-digit',
+            }),
+            interviewLocation: undefined,
+            confirmUrl,
+            rescheduleUrl,
+            adminNote: undefined,
+          }).catch((err) =>
+            console.error('Failed to send orientation schedule email', err),
+          );
+        } else if (appointment.type === 'interview') {
+          await client.query(
+            `
+              UPDATE applications
+              SET status = 'for_interview'
+              WHERE id = $1
+                AND status = 'pending accept'
+            `,
+            [applicationId],
+          );
+
+          // Send interview schedule email with reschedule option
+          const frontendBaseUrl =
+            process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
+          const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=interview&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
+          const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=interview&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
+
+          await this.mailerService.responseEmail({
+            to: appointment.email,
+            firstName: appointment.first_name ?? '',
+            lastName: appointment.last_name ?? '',
+            applicationId,
+            status: 'scheduled',
+            interviewDate: appointment.appointment_date.toLocaleDateString('en-PH', {
+              dateStyle: 'long',
+            }),
+            interviewTime: appointment.appointment_date.toLocaleTimeString('en-PH', {
+              hour: 'numeric',
+              minute: '2-digit',
+            }),
+            interviewLocation: 'NTC Main Office, Quezon City',
+            confirmUrl,
+            rescheduleUrl,
+            adminNote: undefined,
+          }).catch((err) =>
+            console.error('Failed to send interview schedule email', err),
+          );
+        }
+      }
 
       await this.mailerService
         .appointmentActionNotificationEmail({
           action: 'confirmed',
-          appointmentType: appointment.type,
+          appointmentType: kind ?? appointment.type,
           applicationId,
           firstName: appointment.first_name ?? '',
           lastName: appointment.last_name ?? '',
@@ -636,11 +1016,11 @@ export class AppointmentsService {
         throwAppError('bad_request', 'Invalid month or year');
       }
 
-      // Start of month (e.g. 2026-05-01 00:00:00)
-      const startDate = new Date(yearNumber, monthNumber - 1, 1);
+      // Start of month (e.g. 2026-05-01 00:00:00) - use UTC to avoid timezone issues
+      const startDate = new Date(Date.UTC(yearNumber, monthNumber - 1, 1));
 
-      // Start of next month (exclusive upper bound)
-      const endDate = new Date(yearNumber, monthNumber, 1);
+      // Start of next month (exclusive upper bound) - use UTC to avoid timezone issues
+      const endDate = new Date(Date.UTC(yearNumber, monthNumber, 1));
 
       const query = `
       SELECT
@@ -663,6 +1043,7 @@ export class AppointmentsService {
         AND a.appointment_date < $2
         AND a.is_done = FALSE
         AND COALESCE(a.is_cancelled, FALSE) = FALSE
+        AND (a.type != 'orientation' OR ap.status = 'accepted')
       ORDER BY a.appointment_date ASC
     `;
 

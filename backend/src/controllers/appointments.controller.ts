@@ -6,8 +6,9 @@ import {
   Post,
   Query,
   Patch,
+  Header,
 } from '@nestjs/common';
-import { AppointmentType } from '../data/types';
+import type { AppointmentType } from '../data/types';
 import { AppointmentsService } from '../services/appointments.service';
 
 @Controller('appointments')
@@ -159,27 +160,85 @@ export class AppointmentsController {
     @Body()
     body: {
       applicationId: number;
-      type?: AppointmentType;
+      kind?: 'orientation' | 'interview';
     },
   ) {
     try {
-      const { applicationId, type } = body;
+      const { applicationId, kind } = body;
 
       if (!applicationId) {
         throw new BadRequestException('applicationId is required');
       }
 
-      if (type && type !== 'interview') {
-        throw new BadRequestException('Invalid appointment type');
-      }
-
-      return await this.appointmentService.confirmAppointment(applicationId);
+      return await this.appointmentService.confirmAppointment(applicationId, kind);
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error
           ? error.message
           : 'Failed to confirm appointment',
       );
+    }
+  }
+
+  @Get('review-reschedule')
+  @Header('Content-Type', 'text/html')
+  async reviewReschedulePage(
+    @Query('applicationId') applicationId?: string,
+    @Query('type') type?: AppointmentType,
+    @Query('decision') decision?: 'approve' | 'reject',
+  ) {
+    try {
+      const parsedApplicationId = applicationId ? Number(applicationId) : undefined;
+
+      if (!parsedApplicationId || !type || !decision) {
+        return `<!DOCTYPE html>
+<html>
+<head><title>Invalid Request</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+  <h1 style="color: #cf222e;">Invalid Request</h1>
+  <p>Missing required parameters: applicationId, type, and decision are required.</p>
+</body>
+</html>`;
+      }
+
+      let result;
+      if (decision === 'approve') {
+        result = await this.appointmentService.approveReschedule(
+          parsedApplicationId,
+          type,
+        );
+      } else {
+        result = await this.appointmentService.rejectReschedule(
+          parsedApplicationId,
+          type,
+        );
+      }
+
+      const actionLabel = decision === 'approve' ? 'Approved' : 'Rejected';
+      const color = decision === 'approve' ? '#1a7f37' : '#cf222e';
+
+      return `<!DOCTYPE html>
+<html>
+<head><title>Reschedule ${actionLabel}</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+  <div style="background: ${color}; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h1 style="margin: 0;">Reschedule Request ${actionLabel}</h1>
+  </div>
+  <p>The reschedule request has been successfully ${actionLabel.toLowerCase()}.</p>
+  <p><strong>Application ID:</strong> ${parsedApplicationId}</p>
+  <p><strong>Appointment Type:</strong> ${type}</p>
+  <p style="margin-top: 30px; color: #666;">This page can be closed. You may also receive a confirmation email.</p>
+</body>
+</html>`;
+    } catch (error) {
+      return `<!DOCTYPE html>
+<html>
+<head><title>Error</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+  <h1 style="color: #cf222e;">Error</h1>
+  <p>${error instanceof Error ? error.message : 'Failed to review reschedule'}</p>
+</body>
+</html>`;
     }
   }
 }

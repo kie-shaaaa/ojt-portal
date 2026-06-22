@@ -1,4 +1,4 @@
-import { ApplicationStatus, ResponseStatus } from './types';
+import { ApplicationStatus, AppointmentType, ResponseStatus } from './types';
 
 export interface DeletionEmailDto {
   to: string;
@@ -15,6 +15,15 @@ export interface ConfirmationEmailDto {
   applicationId: number;
   applicationType: string;
   submittedAt?: Date;
+}
+
+export interface NewApplicationAdminEmailDto {
+  applicantEmail: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  applicationType: string;
+  submittedAt?: string | Date;
 }
 
 export interface AcceptanceConfirmationEmailDto {
@@ -41,6 +50,43 @@ export interface ResponseEmailDto {
   interviewLocation?: string;
   adminNote?: string;
   confirmUrl?: string;
+  rescheduleUrl?: string;
+}
+
+export interface AppointmentReschedulePendingEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  appointmentType: AppointmentType;
+  requestedDate: string;
+  requestedTime: string;
+}
+
+export interface AppointmentRescheduleAdminEmailDto {
+  applicantEmail: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  appointmentType: AppointmentType;
+  requestedDate: string;
+  requestedTime: string;
+  approveUrl: string;
+  rejectUrl: string;
+}
+
+export interface AppointmentRescheduleDecisionEmailDto {
+  to: string;
+  firstName: string;
+  lastName: string;
+  applicationId: number;
+  appointmentType: AppointmentType;
+  decision: 'approved' | 'rejected';
+  originalDate: string;
+  originalTime: string;
+  requestedDate?: string;
+  requestedTime?: string;
+  canRescheduleAgain: boolean;
   rescheduleUrl?: string;
 }
 
