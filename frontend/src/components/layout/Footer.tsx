@@ -2,14 +2,43 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { JSX } from "react";
-import { Home, HelpCircle, Mail, MapPin, Phone, FileText, BookOpen } from "lucide-react";
+import { useState, JSX } from "react";
+import PrivacyPolicyModal from "./privacy-policy/PrivacyPolicyModal";
+import {
+  Home,
+  HelpCircle,
+  Mail,
+  MapPin,
+  Phone,
+  FileText,
+  BookOpen,
+} from "lucide-react";
 
 const quickLinks = [
-  { label: "Home", icon: Home, iconClassName: "w-4 h-4 text-slate-200", href: "#top" },
-  { label: "How to Apply", icon: FileText, iconClassName: "w-4 h-4 text-slate-200", href: "#process" },
-  { label: "FAQs", icon: HelpCircle, iconClassName: "w-4 h-4 text-slate-200", href: "#faqs" },
-  { label: "Contact", icon: Mail, iconClassName: "w-4 h-4 text-slate-200", href: "#contact" },
+  {
+    label: "Home",
+    icon: Home,
+    iconClassName: "w-4 h-4 text-slate-200",
+    href: "#top",
+  },
+  {
+    label: "How to Apply",
+    icon: FileText,
+    iconClassName: "w-4 h-4 text-slate-200",
+    href: "#process",
+  },
+  {
+    label: "FAQs",
+    icon: HelpCircle,
+    iconClassName: "w-4 h-4 text-slate-200",
+    href: "#faqs",
+  },
+  {
+    label: "Contact",
+    icon: Mail,
+    iconClassName: "w-4 h-4 text-slate-200",
+    href: "#contact",
+  },
 ];
 
 const contactItems = [
@@ -55,6 +84,7 @@ const legalLinks = [
 ];
 
 export const Footer = (): JSX.Element => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -101,7 +131,9 @@ export const Footer = (): JSX.Element => {
           </div>
           <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
             <p className="relative self-stretch mt-[-1.00px] [font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-xs md:text-sm tracking-[0] leading-5 md:leading-6">
-              Official application portal for internship opportunities or on-the-job training programs at the National Telecommunications Commission of the Philippines.
+              Official application portal for internship opportunities or
+              on-the-job training programs at the National Telecommunications
+              Commission of the Philippines.
             </p>
           </div>
         </section>
@@ -123,7 +155,10 @@ export const Footer = (): JSX.Element => {
               >
                 <div className="inline-flex flex-col items-start relative flex-[0_0_auto] flex-shrink-0">
                   {item.icon && (
-                    <item.icon className={`relative w-3 md:w-4 h-3 md:h-4 text-slate-200`} aria-hidden="true" />
+                    <item.icon
+                      className={`relative w-3 md:w-4 h-3 md:h-4 text-slate-200`}
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
                 <button
@@ -153,7 +188,10 @@ export const Footer = (): JSX.Element => {
                 <div className="inline-flex flex-col items-start justify-center pt-0.5 pb-0 px-0 relative flex-[0_0_auto] flex-shrink-0">
                   <div className="inline-flex flex-col items-start relative">
                     {item.icon && (
-                      <item.icon className={`relative w-4 md:w-5 h-4 md:h-5 text-slate-200`} aria-hidden="true" />
+                      <item.icon
+                        className={`relative w-4 md:w-5 h-4 md:h-5 text-slate-200`}
+                        aria-hidden="true"
+                      />
                     )}
                   </div>
                 </div>
@@ -191,7 +229,10 @@ export const Footer = (): JSX.Element => {
               >
                 <div className="inline-flex flex-col items-start relative flex-[0_0_auto] flex-shrink-0">
                   {item.icon && (
-                    <item.icon className={`relative w-4 md:w-5 h-4 md:h-5 text-slate-200`} aria-hidden="true" />
+                    <item.icon
+                      className={`relative w-4 md:w-5 h-4 md:h-5 text-slate-200`}
+                      aria-hidden="true"
+                    />
                   )}
                 </div>
                 <a
@@ -209,26 +250,49 @@ export const Footer = (): JSX.Element => {
       <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6 text-center md:text-left">
         <div className="flex flex-col gap-1 md:max-w-2xl">
           <p className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-300 text-[10px] md:text-[11px] tracking-[0] leading-4 md:leading-[15px]">
-            © 2026 National Telecommunications Commission - Philippines. All rights reserved.
+            © 2026 National Telecommunications Commission - Philippines. All
+            rights reserved.
           </p>
           <p className="[font-family:'Inter-Italic',Helvetica] font-normal italic text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px]">
-            This is an official OJT application portal of NTC. Unauthorized access is prohibited.
+            This is an official OJT application portal of NTC. Unauthorized
+            access is prohibited.
           </p>
         </div>
 
-        <nav aria-label="Legal" className="flex flex-nowrap items-center justify-center md:justify-end gap-2 md:gap-4 overflow-x-auto pb-1 whitespace-nowrap">
+        <nav
+          aria-label="Legal"
+          className="flex flex-nowrap items-center justify-center md:justify-end gap-2 md:gap-4 overflow-x-auto pb-1 whitespace-nowrap"
+        >
           {legalLinks.map((item, index) => (
             <div key={item.label} className="flex items-center gap-2 md:gap-4">
-              <Link
-                href={item.href}
-                className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] whitespace-nowrap hover:underline focus:outline-none focus:underline"
-              >
-                {item.label}
-              </Link>
-              {index < legalLinks.length - 1 && <span className="text-slate-400 text-[9px] md:text-[10px]">|</span>}
+              {item.label === "Privacy Policy" ? (
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] whitespace-nowrap hover:underline focus:outline-none focus:underline"
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  href={item.href}
+                  className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] whitespace-nowrap hover:underline focus:outline-none focus:underline"
+                >
+                  {item.label}
+                </Link>
+              )}
+              {index < legalLinks.length - 1 && (
+                <span className="text-slate-400 text-[9px] md:text-[10px]">
+                  |
+                </span>
+              )}
             </div>
           ))}
         </nav>
+        <PrivacyPolicyModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </div>
     </footer>
   );

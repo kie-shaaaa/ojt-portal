@@ -17,6 +17,7 @@ interface DatePickerProps {
   placeholder?: string;
   minDate?: string;
   dropdownPlacement?: "up" | "down";
+  compact?: boolean;
 }
 
 export default function DatePicker({
@@ -31,6 +32,7 @@ export default function DatePicker({
   minDate,
   placeholder = "yyyy/mm/dd",
   dropdownPlacement = "down",
+  compact = false,
 }: DatePickerProps): JSX.Element {
   const pickerRootRef = useRef<HTMLDivElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -104,9 +106,9 @@ export default function DatePicker({
 
       <div className="relative self-stretch w-full" ref={pickerRootRef}>
         <div
-          className={`flex items-center justify-between gap-3 px-4 py-3 relative self-stretch w-full flex-[0_0_auto] rounded-lg overflow-visible border shadow-[0px_1px_2px_#0000000d] ${
+          className={`flex items-center justify-between gap-3 ${compact ? "px-3 py-2 rounded-md" : "px-4 py-3 rounded-lg"} relative self-stretch w-full flex-[0_0_auto] overflow-visible border shadow-[0px_1px_2px_#0000000d] ${
             disabled
-              ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60" // ✅
+              ? "bg-gray-100 border-gray-200 cursor-not-allowed opacity-60"
               : "bg-white"
           } ${error ? "border-red-500 border-2" : "border-gray-300 border"}`}
         >
@@ -148,7 +150,7 @@ export default function DatePicker({
               setShowPicker(!showPicker);
             }}
             disabled={disabled}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-blue-50 hover:text-gray-600"
+            className={`flex ${compact ? "h-8 w-8" : "h-8 w-8"} shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-blue-50 hover:text-gray-600`}
             aria-label="Open calendar picker"
           >
             <Calendar size={20} />
