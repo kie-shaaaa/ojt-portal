@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { JSX } from "react";
 import { Home, HelpCircle, Mail, MapPin, Phone, FileText, BookOpen } from "lucide-react";
 
@@ -49,7 +50,7 @@ const resourceItems = [
 ];
 
 const legalLinks = [
-  { label: "Privacy Policy", href: "#" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
   { label: "Admin Login", href: "/login" },
 ];
 
@@ -218,12 +219,12 @@ export const Footer = (): JSX.Element => {
         <nav aria-label="Legal" className="flex flex-nowrap items-center justify-center md:justify-end gap-2 md:gap-4 overflow-x-auto pb-1 whitespace-nowrap">
           {legalLinks.map((item, index) => (
             <div key={item.label} className="flex items-center gap-2 md:gap-4">
-              <a
+              <Link
                 href={item.href}
                 className="[font-family:'Inter-Regular',Helvetica] font-normal text-slate-400 text-[9px] md:text-[10px] tracking-[0] leading-3 md:leading-[15px] whitespace-nowrap hover:underline focus:outline-none focus:underline"
               >
                 {item.label}
-              </a>
+              </Link>
               {index < legalLinks.length - 1 && <span className="text-slate-400 text-[9px] md:text-[10px]">|</span>}
             </div>
           ))}
