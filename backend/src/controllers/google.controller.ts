@@ -16,16 +16,6 @@ import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 export class GoogleController {
   constructor(private readonly googleService: GoogleService) {}
 
-  @Get('debug')
-  debug() {
-    return {
-      clientId: process.env.GOOGLE_CLIENT_ID?.slice(0, 20) + '...',
-      clientIdLength: process.env.GOOGLE_CLIENT_ID?.length,
-      secret: process.env.GOOGLE_CLIENT_SECRET?.slice(0, 10) + '...',
-      redirectUri: process.env.GOOGLE_REDIRECT_URI,
-    };
-  }
-
   @Get('status')
   @UseGuards(AuthGuard('jwt'))
   async status(@Req() req: RequestWithUser) {
