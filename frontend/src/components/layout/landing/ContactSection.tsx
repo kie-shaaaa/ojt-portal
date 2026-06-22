@@ -6,6 +6,28 @@ import { Phone, Mail, Clock, Send, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { apiCall } from "@/lib/api";
 
+interface OfficeHours {
+  openTime: string;
+  closeTime: string;
+  closedDays: string[];
+}
+
+const defaultOfficeHours: OfficeHours = {
+  openTime: "07:00",
+  closeTime: "19:00",
+  closedDays: ["Fri", "Sat", "Sun"],
+};
+
+const formatTime12h = (value: string) => {
+  if (!value) return "";
+  const [hourPart, minutePart] = value.split(":");
+  const hour = Number(hourPart);
+  if (Number.isNaN(hour) || !minutePart) return value;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;
+  return `${normalizedHour}:${minutePart} ${suffix}`;
+};
+
 const contactCards = [
   {
     title: "Call Us",
@@ -33,21 +55,6 @@ const contactCards = [
       },
     ],
   },
-  {
-    title: "Office Hours",
-    icon: Clock,
-    iconClassName: "relative w-4 h-4 text-white",
-    lines: [
-      {
-        label: "Mon - Thurs:",
-        value: "7:00 AM - 7:00 PM",
-      },
-      {
-        label: "Closed:",
-        value: "Fri - Sun & Holidays",
-      },
-    ],
-  },
 ];
 
 const subjectOptions = [
@@ -68,12 +75,41 @@ export const ContactSection = (): JSX.Element => {
   const subjectId = useId();
   const messageId = useId();
   const pathname = usePathname();
+  const [officeHours, setOfficeHours] = useState<OfficeHours>(defaultOfficeHours);
 
   useEffect(() => {
     if (pathname === "/contact") {
       document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
     }
   }, [pathname]);
+
+  useEffect(() => {
+    const fetchOfficeHours = async () => {
+      try {
+        const data = await apiCall("/applications/settings", { method: "GET" });
+        const settings = data.data ?? data;
+        
+        if (settings.office_hours_open_time && settings.office_hours_close_time) {
+          const openTime = settings.office_hours_open_time.substring(0, 5);
+          const closeTime = settings.office_hours_close_time.substring(0, 5);
+          const closedDays = settings.office_hours_closed_days
+            ? settings.office_hours_closed_days.split(",").map((d: string) => d.trim())
+            : ["Fri", "Sat", "Sun"];
+          
+          setOfficeHours({
+            openTime,
+            closeTime,
+            closedDays,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch office hours:", error);
+        // Use defaults on error
+      }
+    };
+
+    fetchOfficeHours();
+  }, []);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -190,6 +226,32 @@ export const ContactSection = (): JSX.Element => {
                 </div>
               </div>
             ))}
+            
+            {/* Dynamic Office Hours Card */}
+            <div className="flex items-start gap-4 md:gap-5 p-4 md:p-6 lg:p-7 min-h-[96px] md:min-h-[112px] relative self-stretch w-full flex-[0_0_auto] bg-[#1e4197] rounded-xl border border-solid border-[#ffffff1a] shadow-[0px_10px_24px_-18px_rgba(0,0,0,0.55)]">
+              <div className="inline-flex flex-col items-center justify-center p-3 md:p-4 relative flex-[0_0_auto] bg-[#3b82f633] rounded-xl min-w-12 min-h-12 md:min-w-14 md:min-h-14">
+                <Clock className="relative w-5 h-5 md:w-6 md:h-6 text-white" aria-hidden="true" />
+              </div>
+              <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+                <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
+                  <h3 className="flex items-center mt-[-1.00px] [font-family:'Inter-Bold',Helvetica] font-bold text-white text-base md:text-lg tracking-[0] leading-6 md:leading-7 relative w-fit">
+                    Office Hours
+                  </h3>
+                </div>
+                <p className="flex items-center mt-2 [font-family:'Inter-SemiBold',Helvetica] font-normal text-transparent text-sm md:text-base tracking-[0] leading-5 md:leading-6 relative w-fit">
+                  <span className="font-semibold text-white">Open:</span>
+                  <span className="[font-family:'Inter-Regular',Helvetica] text-slate-200">
+                    {" "}{formatTime12h(officeHours.openTime)} - {formatTime12h(officeHours.closeTime)}
+                  </span>
+                </p>
+                <p className="flex items-center mt-1 [font-family:'Inter-SemiBold',Helvetica] font-normal text-transparent text-sm md:text-base tracking-[0] leading-5 md:leading-6 relative w-fit">
+                  <span className="font-semibold text-white">Closed:</span>
+                  <span className="[font-family:'Inter-Regular',Helvetica] text-slate-200">
+                    {" "}{officeHours.closedDays.join(", ")}
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
         

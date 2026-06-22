@@ -23,18 +23,27 @@ export const ApplicationDetailsSection = (): JSX.Element => {
   const [closingDate, setClosingDate] = useState("");
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [scheduledDate, setScheduledDate] = useState("");
+  const [officeHoursOpenTime, setOfficeHoursOpenTime] = useState("07:00");
+  const [officeHoursCloseTime, setOfficeHoursCloseTime] = useState("19:00");
+  const [officeHoursClosedDays, setOfficeHoursClosedDays] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<{
     isOpen: boolean;
     scheduledDate: string;
     closingDate: string;
+    officeHoursOpenTime: string;
+    officeHoursCloseTime: string;
+    officeHoursClosedDays: string;
   } | null>(null);
   const isLoading = originalSettings === null;
   const hasChanges =
     originalSettings === null ||
     isOpen !== originalSettings.isOpen ||
     scheduledDate !== originalSettings.scheduledDate ||
-    closingDate !== originalSettings.closingDate;
+    closingDate !== originalSettings.closingDate ||
+    officeHoursOpenTime !== originalSettings.officeHoursOpenTime ||
+    officeHoursCloseTime !== originalSettings.officeHoursCloseTime ||
+    officeHoursClosedDays !== originalSettings.officeHoursClosedDays;
   // Load saved settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
@@ -51,10 +60,16 @@ export const ApplicationDetailsSection = (): JSX.Element => {
         setClosingDate(fetchedClosingDate);
         setIsOpen(settings.portal_status);
         setScheduledDate(fetchedDate);
+        setOfficeHoursOpenTime(settings.office_hours_open_time || '07:00');
+        setOfficeHoursCloseTime(settings.office_hours_close_time || '19:00');
+        setOfficeHoursClosedDays(settings.office_hours_closed_days || '');
         setOriginalSettings({
           isOpen: settings.portal_status,
           scheduledDate: fetchedDate,
           closingDate: fetchedClosingDate,
+          officeHoursOpenTime: settings.office_hours_open_time || '07:00',
+          officeHoursCloseTime: settings.office_hours_close_time || '19:00',
+          officeHoursClosedDays: settings.office_hours_closed_days || 'Fri,Sat,Sun',
         });
         lastSavedClosingDate.current = fetchedClosingDate;
         lastSavedDate.current = fetchedDate;
@@ -82,21 +97,30 @@ export const ApplicationDetailsSection = (): JSX.Element => {
           portal_status: isOpen,
           opening_date: scheduledDate || null,
           closing_date: closingDate || null,
+          office_hours_open_time: officeHoursOpenTime || '07:00',
+          office_hours_close_time: officeHoursCloseTime || '19:00',
+          office_hours_closed_days: officeHoursClosedDays || null,
           ...(userId !== undefined && { created_by: userId }),
         }),
       });
 
       const saved = response.data;
       const savedDate = saved.opening_date
-        ? saved.opening_date.split("T")[0] // ✅ keep as YYYY-MM-DD
+        ? saved.opening_date.split("T")[0]
         : "";
 
       setIsOpen(saved.portal_status);
       setScheduledDate(savedDate);
+      setOfficeHoursOpenTime(saved.office_hours_open_time || '07:00');
+      setOfficeHoursCloseTime(saved.office_hours_close_time || '19:00');
+      setOfficeHoursClosedDays(saved.office_hours_closed_days || '');
       setOriginalSettings({
         isOpen: saved.portal_status,
         scheduledDate: savedDate,
         closingDate: closingDate,
+        officeHoursOpenTime: saved.office_hours_open_time || '07:00',
+        officeHoursCloseTime: saved.office_hours_close_time || '19:00',
+        officeHoursClosedDays: saved.office_hours_closed_days || '',
       });
       lastSavedDate.current = savedDate;
 
@@ -107,6 +131,8 @@ export const ApplicationDetailsSection = (): JSX.Element => {
           scheduledDate: savedDate,
         }),
       );
+
+      toast.success('Office hours updated successfully');
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -265,6 +291,56 @@ export const ApplicationDetailsSection = (): JSX.Element => {
                     Leave empty for manual control only. Portal will auto-close
                     on this date.
                   </p>
+                </div>
+
+                <div className="border-t border-slate-200 pt-4 mt-4">
+                  <h3 className="text-sm font-bold text-slate-700 mb-4">Office Hours</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="office-open-time" className="block text-xs font-semibold text-slate-600">
+                        Opening Time
+                      </label>
+                      <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
+                        <input
+                          id="office-open-time"
+                          type="time"
+                          value={officeHoursOpenTime}
+                          onChange={(e) => setOfficeHoursOpenTime(e.target.value)}
+                          className="relative w-full border-0 bg-transparent px-4 py-3 text-sm font-['Inter-Regular',Helvetica] text-slate-900 outline-none transition-colors duration-200 placeholder:text-slate-300"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="office-close-time" className="block text-xs font-semibold text-slate-600">
+                        Closing Time
+                      </label>
+                      <div className="group relative self-stretch w-full overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm transition-colors duration-200 focus-within:border-[#3b66f5] focus-within:ring-4 focus-within:ring-[#3b66f51a] hover:border-slate-400">
+                        <input
+                          id="office-close-time"
+                          type="time"
+                          value={officeHoursCloseTime}
+                          onChange={(e) => setOfficeHoursCloseTime(e.target.value)}
+                          className="relative w-full border-0 bg-transparent px-4 py-3 text-sm font-['Inter-Regular',Helvetica] text-slate-900 outline-none transition-colors duration-200 placeholder:text-slate-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <label htmlFor="office-closed-days" className="block text-xs font-semibold text-slate-600">
+                      Closed Days (comma-separated, e.g., &quot;Fri,Sat,Sun&quot;)
+                    </label>
+                    <input
+                      id="office-closed-days"
+                      type="text"
+                      value={officeHoursClosedDays}
+                      onChange={(e) => setOfficeHoursClosedDays(e.target.value)}
+                      placeholder="e.g., Fri,Sat,Sun"
+                      className="w-full px-3 py-2 text-sm text-slate-900 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0038a8] placeholder:text-slate-600"
+                    />
+                    <p className="text-[12px] text-slate-400">
+                      Specify the days when the office is closed
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

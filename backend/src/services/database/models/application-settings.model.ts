@@ -8,11 +8,21 @@ export async function createApplicationSettings(client: Pool) {
             portal_status BOOLEAN DEFAULT FALSE,
             opening_date TIMESTAMPTZ,
             closing_date TIMESTAMP,
+            office_hours_open_time VARCHAR(5) DEFAULT '07:00',
+            office_hours_close_time VARCHAR(5) DEFAULT '19:00',
+            office_hours_closed_days VARCHAR(50) DEFAULT 'Fri,Sat,Sun',
             created_by INTEGER REFERENCES user_accounts(id) ON DELETE SET NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    `);
+    `); 
+
+  await client.query(`
+    ALTER TABLE application_settings
+    ADD COLUMN IF NOT EXISTS office_hours_open_time VARCHAR(5) DEFAULT '07:00',
+    ADD COLUMN IF NOT EXISTS office_hours_close_time VARCHAR(5) DEFAULT '19:00',
+    ADD COLUMN IF NOT EXISTS office_hours_closed_days VARCHAR(50) DEFAULT 'Fri,Sat,Sun';
+  `);
 
   await client.query(
     `DROP INDEX IF EXISTS idx_application_settings_singleton;`,
