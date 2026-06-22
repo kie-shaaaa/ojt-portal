@@ -201,14 +201,13 @@ export class AppointmentsController {
 </html>`;
       }
 
-      let result;
       if (decision === 'approve') {
-        result = await this.appointmentService.approveReschedule(
+        await this.appointmentService.approveReschedule(
           parsedApplicationId,
           type,
         );
       } else {
-        result = await this.appointmentService.rejectReschedule(
+        await this.appointmentService.rejectReschedule(
           parsedApplicationId,
           type,
         );

@@ -787,13 +787,6 @@ export class ApplicationsService {
       }
 
       const appointmentDate = orientationAppointment.rows[0].appointment_date;
-      const orientationDate = appointmentDate.toLocaleDateString('en-PH', {
-        dateStyle: 'long',
-      });
-      const orientationTime = appointmentDate.toLocaleTimeString('en-PH', {
-        hour: 'numeric',
-        minute: '2-digit',
-      });
 
       await client.query('BEGIN');
 

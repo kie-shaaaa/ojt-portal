@@ -7,7 +7,6 @@ import {
   ContactMessageDto,
   ConfirmationEmailDto,
   DeletionEmailDto,
-  NewApplicationAdminEmailDto,
   ResubmissionEmailDto,
   ResponseEmailDto,
   StatusUpdateEmailDto,
@@ -174,10 +173,6 @@ const wrapEmail = (header: string, body: string) =>
 const refNumber = (id: number) => `NTC-APP-${String(id).padStart(6, '0')}`;
 
 const contactAdminAddress = process.env.CONTACT_ADMIN_EMAIL?.trim() || '';
-const backendBaseUrl =
-  process.env.BACKEND_URL?.trim() ||
-  process.env.FRONTEND_URL?.trim() ||
-  'http://localhost:5000';
 
 // clearer fallback text used when date/time details are not yet available
 const tbaText = 'To be announced — details will be sent in a follow-up email.';

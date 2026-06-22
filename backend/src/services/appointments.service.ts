@@ -30,6 +30,17 @@ interface AppointmentCompletionRow {
   application_type: string | null;
 }
 
+interface AppointmentRecord {
+  type: AppointmentType;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  reschedule_count: number | null;
+  pending_reschedule_status: 'pending' | 'approved' | 'rejected' | null;
+  pending_reschedule_date: Date | null;
+  appointment_date: Date;
+}
+
 @Injectable()
 export class AppointmentsService {
   constructor(
@@ -298,17 +309,8 @@ export class AppointmentsService {
     client: Pool,
     applicationId: number,
     appointmentType: AppointmentType,
-  ) {
-    const appointmentInfo = await client.query<{
-      type: AppointmentType;
-      first_name: string | null;
-      last_name: string | null;
-      email: string | null;
-      reschedule_count: number | null;
-      pending_reschedule_status: 'pending' | 'approved' | 'rejected' | null;
-      pending_reschedule_date: Date | null;
-      appointment_date: Date;
-    }>(
+  ): Promise<AppointmentRecord | null> {
+    const appointmentInfo = await client.query<AppointmentRecord>(
       `
           SELECT a.type,
                  ap.first_name,
@@ -482,7 +484,10 @@ export class AppointmentsService {
 
       await client.query('BEGIN');
 
-      const result = await client.query(
+      const result = await client.query<{
+        appointment_date: Date;
+        reschedule_count: number | null;
+      }>(
         `
           UPDATE appointments
           SET appointment_date = pending_reschedule_date,
