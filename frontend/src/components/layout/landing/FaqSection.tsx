@@ -67,10 +67,6 @@ export const FaqSection = (): JSX.Element => {
           <br />
           4. Vaccine Card or Medical Certificate
           <br />
-          5. (Draft) Memorandum of Agreement
-          <br />
-          6. 1x1 ID Photo
-          <br />
           <i>
             Draft means that the document does not require a signature.
             Incomplete requirements will not be entertained.

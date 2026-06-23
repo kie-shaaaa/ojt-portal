@@ -30,6 +30,7 @@ The Dashboard serves as the main overview page for authenticated users. It provi
 - **Header:** Displays a quick stats, and notifications.
 - **Applications Widgets:** Displays weekly, monthly, and status distribution analytics. 
 - **Application Control:** Displays the current portal status. Authorized users open, close, or schedule application availability.
+- **Office Hours:** Display the office hours and closed days. Authorized users can change the office hours and closed days that reflect on the contact section of the landing page of OJT Portal. 
 - **Recent Activity:** Displays recent activities performed by admins and employees.
 - **Applicant's School:** Displays the schools of recent applicants.
 
@@ -125,6 +126,8 @@ Allows authorized users to manage applicant applications by viewing, editing, an
 - Confirmation modals to prevent accidental deletion of records.
 - Table layout maintains proper spacing and alignment for readability.
 
+---
+
 ## Calendar Page 
 
 ### Purpose
@@ -153,6 +156,7 @@ Allows authorized users to manage interview and orientation schedules by viewing
 6. The system displays appointment details and available actions.
 7. The user may:
     - Change the appointment date and time
+    - Approve the appointment 
     - Mark the appointment as completed
     - Clear or remove the appointment
 8. The system validates and saves the updated schedule information.
@@ -177,6 +181,8 @@ Allows authorized users to manage interview and orientation schedules by viewing
 - Consistent spacing and typography improve readability.
 - Calendar interactions are designed to minimize scheduling errors.
 
+---
+
 ## OJT Data
 
 ### Purpose
@@ -191,6 +197,7 @@ Allows authorized users to manage verified interns by viewing, editing, and dele
 - **Verified Interns Table:** Displays all verified interns records.
 - **Search Bar:** Allows users to search applicants by name or applicant ID.
 - **Export Button:** Exports application records for reporting or documentation in .xlsx format.
+- **Generate Certificate Button:** Creates certificates and export in zip file.
 - **Action Buttons:**
     - **View Button:** Opens full intern details.
     - **Edit Button:** Updates intern details.
@@ -306,6 +313,8 @@ Allows authorized users to manage accounts by editing, changing, and deleting ac
 - Consistent spacing and alignment improve readability and reduce visual clutter.
 - Search and filtering actions update results quickly to maintain smooth user interaction.
 
+---
+
 ## Logs
 
 ### Purpose
@@ -345,7 +354,6 @@ Tracks and monitors all actions performed by authorized users within the system 
     - Action type
     - Modified data
     - Timestamp
-    - IP address
 - Role-based access control restricts unauthorized access to logs.
 - Log data is connected to secured backend API endpoints.
 - System actions are stored persistently for monitoring and security auditing.

@@ -17,6 +17,7 @@ interface DatePickerProps {
   placeholder?: string;
   minDate?: string;
   dropdownPlacement?: "up" | "down";
+  pickerMode?: "day" | "month";
   compact?: boolean;
 }
 
@@ -30,8 +31,9 @@ export default function DatePicker({
   required = false,
   disabled = false,
   minDate,
-  placeholder = "yyyy/mm/dd",
+  placeholder,
   dropdownPlacement = "down",
+  pickerMode = "day",
   compact = false,
 }: DatePickerProps): JSX.Element {
   const pickerRootRef = useRef<HTMLDivElement | null>(null);
@@ -43,6 +45,8 @@ export default function DatePicker({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const isMonthMode = pickerMode === "month";
+  const resolvedPlaceholder = placeholder ?? (isMonthMode ? "yyyy/mm" : "yyyy/mm/dd");
 
   // Format date as YYYY-MM-DD for storage
   const formatDate = (date: Date): string => {
@@ -50,6 +54,11 @@ export default function DatePicker({
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  };
+
+  const formatMonthKey = (year: number, month: number): string => {
+    const monthValue = String(month + 1).padStart(2, "0");
+    return `${year}-${monthValue}`;
   };
 
   // Format title for display
@@ -93,6 +102,23 @@ export default function DatePicker({
     setShowPicker(false);
   };
 
+  const handleMonthClick = (monthIndex: number) => {
+    onChange(formatMonthKey(activeYear, monthIndex));
+    setShowPicker(false);
+  };
+
+  const displayValue = (() => {
+    if (isMonthMode && /^\d{4}-\d{2}$/.test(value)) {
+      return value.replace("-", "/");
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value.replace(/-/g, "/");
+    }
+
+    return "";
+  })();
+
   return (
     <div className="flex flex-col items-start gap-2 relative self-stretch w-full flex-[0_0_auto]">
       {label ? (
@@ -129,14 +155,8 @@ export default function DatePicker({
             aria-required={required || undefined}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
-            placeholder={placeholder}
-            value={(() => {
-              // Show selected date only; date is chosen from the calendar.
-              if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-                return value.replace(/-/g, "/");
-              }
-              return "";
-            })()}
+            placeholder={resolvedPlaceholder}
+            value={displayValue}
             className="relative flex min-w-0 flex-1 items-center border-0 bg-transparent font-['Inter-Regular',Helvetica] font-normal text-gray-700 text-base tracking-normal leading-6 outline-none placeholder:text-gray-400"
           />
 
@@ -167,7 +187,9 @@ export default function DatePicker({
               <button
                 type="button"
                 onClick={() => {
-                  if (activeMonth === 0) {
+                  if (isMonthMode) {
+                    setActiveYear(activeYear - 1);
+                  } else if (activeMonth === 0) {
                     setActiveMonth(11);
                     setActiveYear(activeYear - 1);
                   } else {
@@ -179,12 +201,14 @@ export default function DatePicker({
                 <ChevronLeft size={18} className="text-[#0047ab]" />
               </button>
               <div className="text-center font-bold text-[#0047ab]">
-                {formatTitle(activeYear, activeMonth)}
+                {isMonthMode ? activeYear : formatTitle(activeYear, activeMonth)}
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  if (activeMonth === 11) {
+                  if (isMonthMode) {
+                    setActiveYear(activeYear + 1);
+                  } else if (activeMonth === 11) {
                     setActiveMonth(0);
                     setActiveYear(activeYear + 1);
                   } else {
@@ -197,52 +221,80 @@ export default function DatePicker({
               </button>
             </div>
 
-            {/* Weekday row */}
-            <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-600">
-              {dayNames.map((day) => (
-                <div key={day}>{day}</div>
-              ))}
-            </div>
+            {isMonthMode ? (
+              <div className="grid grid-cols-3 gap-2">
+                {Array.from({ length: 12 }).map((_, index) => {
+                  const monthKey = formatMonthKey(activeYear, index);
+                  const isSelected = value === monthKey;
 
-            {/* Days grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {/* Empty cells for days before month starts */}
-              {Array.from({ length: firstDay }).map((_, index) => (
-                <button
-                  key={`empty-${index}`}
-                  type="button"
-                  disabled
-                  className="h-8 cursor-default rounded text-sm"
-                />
-              ))}
+                  return (
+                    <button
+                      key={monthKey}
+                      type="button"
+                      onClick={() => handleMonthClick(index)}
+                      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "bg-[#0047ab] text-white"
+                          : "text-gray-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      {new Date(activeYear, index, 1).toLocaleString("en-US", {
+                        month: "short",
+                      })}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <>
+                {/* Weekday row */}
+                <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-600">
+                  {dayNames.map((day) => (
+                    <div key={day}>{day}</div>
+                  ))}
+                </div>
 
-              {/* Days of month */}
-              {Array.from({ length: daysInMonth }).map((_, index) => {
-                const day = index + 1;
-                const date = new Date(activeYear, activeMonth, day);
-                const dateStr = formatDate(date);
-                const disabled = isDisabledDate(dateStr);
-                const isSelected = value === dateStr;
+                {/* Days grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {/* Empty cells for days before month starts */}
+                  {Array.from({ length: firstDay }).map((_, index) => (
+                    <button
+                      key={`empty-${index}`}
+                      type="button"
+                      disabled
+                      className="h-8 cursor-default rounded text-sm"
+                    />
+                  ))}
 
-                return (
-                  <button
-                    key={dateStr}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => handleDayClick(day)}
-                    className={`h-8 rounded text-sm font-medium transition-colors ${
-                      isSelected
-                        ? "bg-[#0047ab] text-white"
-                        : disabled
-                          ? "cursor-not-allowed bg-gray-50 text-gray-300"
-                          : "hover:bg-blue-100 text-gray-700"
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
+                  {/* Days of month */}
+                  {Array.from({ length: daysInMonth }).map((_, index) => {
+                    const day = index + 1;
+                    const date = new Date(activeYear, activeMonth, day);
+                    const dateStr = formatDate(date);
+                    const disabled = isDisabledDate(dateStr);
+                    const isSelected = value === dateStr;
+
+                    return (
+                      <button
+                        key={dateStr}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => handleDayClick(day)}
+                        className={`h-8 rounded text-sm font-medium transition-colors ${
+                          isSelected
+                            ? "bg-[#0047ab] text-white"
+                            : disabled
+                              ? "cursor-not-allowed bg-gray-50 text-gray-300"
+                              : "hover:bg-blue-100 text-gray-700"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

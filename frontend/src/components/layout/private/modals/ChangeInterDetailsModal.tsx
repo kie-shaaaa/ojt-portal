@@ -199,12 +199,25 @@ export const ChangeInterDetailsModal = ({
   const [ojtYear, setOjtYear] = useState(intern?.ojtYear ?? "2026");
   const [adminNote, setAdminNote] = useState(intern?.adminNote ?? "");
   const [gender, setGender] = useState(intern?.gender ?? "Female");
+  const genderOptions = ["Female", "Male", "Non-binary"];
   const [deploymentDate, setDeploymentDate] = useState(
     intern?.deploymentDate ?? "",
   );
+  const [deploymentDateMode, setDeploymentDateMode] = useState<"month" | "day">(
+    intern?.deploymentDate && /^\d{4}-\d{2}$/.test(intern.deploymentDate)
+      ? "month"
+      : "day",
+  );
   const [endDate, setEndDate] = useState(intern?.endDate ?? "");
-  const [endDateType, setEndDateType] = useState<"date" | "month" | "year">(
-    "date",
+  const [endDateMode, setEndDateMode] = useState<"month" | "day">(
+    intern?.endDate && /^\d{4}-\d{2}$/.test(intern.endDate) ? "month" : "day",
+  );
+  const [dateMode, setDateMode] = useState<"month" | "day">(
+    intern?.deploymentDate && /^\d{4}-\d{2}$/.test(intern.deploymentDate)
+      ? "month"
+      : intern?.endDate && /^\d{4}-\d{2}$/.test(intern.endDate)
+        ? "month"
+        : "day",
   );
   const [schoolOptions, setSchoolOptions] = useState(defaultSchoolOptions);
   const [courseOptions, setCourseOptions] = useState(defaultCourseOptions);
@@ -351,14 +364,75 @@ export const ChangeInterDetailsModal = ({
       return { value: "", type: "date" as const };
     };
 
-    requestAnimationFrame(() =>
-      setDeploymentDate(normalizeToYMD(intern?.deploymentDate)),
-    );
+    const normalizeToYM = (d?: string) => {
+      if (!d) return "";
+      const trimmed = d.trim();
+      if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
+      const dt = new Date(trimmed);
+      if (isNaN(dt.getTime())) return "";
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      return `${y}-${m}`;
+    };
 
-    const parsed = parseStoredEndDate(intern?.endDate);
-    requestAnimationFrame(() => setEndDate(parsed.value));
-    requestAnimationFrame(() => setEndDateType(parsed.type));
+    requestAnimationFrame(() => {
+      const nextDeploymentDate = normalizeToYMD(intern?.deploymentDate);
+      const nextDeploymentMonth = normalizeToYM(intern?.deploymentDate);
+      setDeploymentDate(nextDeploymentDate || nextDeploymentMonth || "");
+      setDeploymentDateMode(
+        intern?.deploymentDate && /^\d{4}-\d{2}$/.test(intern.deploymentDate)
+          ? "month"
+          : "day",
+      );
+    });
+    requestAnimationFrame(() => {
+      const nextEndDate = normalizeToYMD(intern?.endDate);
+      const nextEndMonth = normalizeToYM(intern?.endDate);
+      setEndDate(nextEndDate || nextEndMonth || "");
+      setEndDateMode(
+        intern?.endDate && /^\d{4}-\d{2}$/.test(intern.endDate)
+          ? "month"
+          : "day",
+      );
+    });
   }, [intern]);
+
+  const handleDateModeChange = (mode: "month" | "day") => {
+    setDateMode(mode);
+    setDeploymentDateMode(mode);
+    setEndDateMode(mode);
+
+    if (mode === "month") {
+      setDeploymentDate((current) => {
+        if (/^\d{4}-\d{2}$/.test(current)) return current;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
+          return current.slice(0, 7);
+        }
+        return current;
+      });
+      setEndDate((current) => {
+        if (/^\d{4}-\d{2}$/.test(current)) return current;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
+          return current.slice(0, 7);
+        }
+        return current;
+      });
+      return;
+    }
+
+    setDeploymentDate((current) => {
+      if (/^\d{4}-\d{2}$/.test(current)) {
+        return `${current}-01`;
+      }
+      return current;
+    });
+    setEndDate((current) => {
+      if (/^\d{4}-\d{2}$/.test(current)) {
+        return `${current}-01`;
+      }
+      return current;
+    });
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -371,9 +445,14 @@ export const ChangeInterDetailsModal = ({
       ojtYear,
       adminNote,
       gender,
-      // endDate may be in one of: YYYY, YYYY-MM, or YYYY-MM-DD
-      deploymentDate: deploymentDate || null,
-      endDate: endDate || null,
+      deploymentDate:
+        deploymentDateMode === "month" && deploymentDate.length === 10
+          ? deploymentDate.slice(0, 7)
+          : deploymentDate || null,
+      endDate:
+        endDateMode === "month" && endDate.length === 10
+          ? endDate.slice(0, 7)
+          : endDate || null,
     };
     try {
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -480,11 +559,11 @@ export const ChangeInterDetailsModal = ({
                 <select
                   id={genderFieldId}
                   aria-describedby={`${genderFieldId}-hint`}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-black appearance-none"
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-black appearance-none"
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
                 >
-                  {["Female", "Male"].map((option) => (
+                  {genderOptions.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
@@ -495,7 +574,7 @@ export const ChangeInterDetailsModal = ({
                 </div>
               </div>
               <p id={`${genderFieldId}-hint`} className="text-xs text-gray-500">
-                Used for certificate generation (Mr./Ms., he/she, his/her)
+                Used for certificate generation (Mr./Ms./Mx., he/she, his/her, they/them)
               </p>
             </div>
 
@@ -521,78 +600,68 @@ export const ChangeInterDetailsModal = ({
               </p>
             </div>
 
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold text-gray-700">
+                  Date Format
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDateModeChange(dateMode === "month" ? "day" : "month")
+                  }
+                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  {dateMode === "month" ? "Month only" : "Month + day"}
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor={deploymentDateId}
+                className="text-sm font-bold text-gray-700"
+              >
+                Deployment Date
+              </label>
               <DatePicker
                 id={deploymentDateId}
-                label="Deployment Date"
+                label=""
                 labelClassName="text-gray-700"
                 value={deploymentDate}
                 onChange={setDeploymentDate}
-                placeholder="yyyy/mm/dd"
+                pickerMode={deploymentDateMode === "month" ? "month" : "day"}
+                placeholder={
+                  deploymentDateMode === "month" ? "yyyy/mm" : "yyyy/mm/dd"
+                }
               />
               <p className="text-xs text-gray-500">
-                Date when the internship starts
+                {deploymentDateMode === "month"
+                  ? "Select the month only when the internship starts"
+                  : "Select the exact month and day when the internship starts"}
               </p>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="relative flex items-center -mt-px font-['Inter-Bold',Helvetica] font-bold text-sm tracking-normal leading-5 text-gray-700">
+              <label
+                htmlFor={endDateId}
+                className="text-sm font-bold text-gray-700"
+              >
                 End Date
               </label>
-
-              <div className="flex items-center gap-3">
-                <select
-                  aria-label="End date granularity"
-                  value={endDateType}
-                  onChange={(e) => setEndDateType(e.target.value as any)}
-                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-black"
-                >
-                  <option value="date">Full date</option>
-                  <option value="month">Year &amp; month</option>
-                  <option value="year">Year only</option>
-                </select>
-
-                <div className="flex-1">
-                  {endDateType === "date" ? (
-                    <DatePicker
-                      id={endDateId}
-                      labelClassName="text-gray-700"
-                      compact
-                      value={endDate}
-                      onChange={setEndDate}
-                      placeholder="yyyy/mm/dd"
-                    />
-                  ) : endDateType === "month" ? (
-                    <input
-                      id={endDateId}
-                      aria-describedby={`${endDateId}-hint`}
-                      type="month"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
-                    />
-                  ) : (
-                    <input
-                      id={endDateId}
-                      aria-describedby={`${endDateId}-hint`}
-                      type="number"
-                      min={1900}
-                      max={2100}
-                      value={endDate}
-                      onChange={(e) =>
-                        setEndDate(
-                          e.target.value.replace(/[^0-9]/g, "").slice(0, 4),
-                        )
-                      }
-                      placeholder="yyyy"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <p id={`${endDateId}-hint`} className="text-xs text-gray-500">
-                Date when the internship period ends
+              <DatePicker
+                id={endDateId}
+                label=""
+                labelClassName="text-gray-700"
+                value={endDate}
+                onChange={setEndDate}
+                pickerMode={endDateMode === "month" ? "month" : "day"}
+                placeholder={endDateMode === "month" ? "yyyy/mm" : "yyyy/mm/dd"}
+              />
+              <p className="text-xs text-gray-500">
+                {endDateMode === "month"
+                  ? "Select the month only when the internship period ends"
+                  : "Select the exact month and day when the internship period ends"}
               </p>
             </div>
           </form>
