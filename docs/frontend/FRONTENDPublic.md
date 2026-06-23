@@ -193,6 +193,99 @@ Allow users to monitor the status and progress of their submitted application us
 * Clearly display the application and status and progress
 * Ensure responsive layout accross devices
 
+---
+
+# Resubmit Application
+
+## Purpose
+
+Allow applicants to resubmit documents that were marked as rejected during the application review process.
+
+## Process Overview
+
+* Reviewer rejects one or more submitted documents and provides remarks.
+* System sends an email notification to the applicant containing a secure resubmission link.
+* Applicant opens the link and accesses the Resubmit Application page.
+* Applicant reviews the rejected document(s) and corresponding remarks.
+* Applicant uploads the corrected document(s).
+* Applicant submits the revised document(s).
+* System stores the new files and updates the application for re-evaluation.
+
+## Step-by-Step
+
+1. Applicant receives an email notification regarding the rejected document(s).
+2. Applicant clicks the resubmission link provided in the email.
+3. Applicant reviews the rejected document(s) and reviewer remarks.
+4. Applicant uploads the corrected file(s).
+5. Applicant clicks the Submit button.
+6. System confirms successful resubmission.
+7. Application returns to the review process.
+
+## Validation Rules
+
+* Resubmission page is accessible only through a valid resubmission link.
+* Only documents marked as rejected can be replaced.
+* Uploaded files must follow the allowed file formats and size limits.
+* All required rejected documents must be uploaded before submission.
+
+## Error Handling
+
+* Display an error message when the resubmission link is invalid or expired.
+* Display an error message when uploaded files exceed the allowed size.
+* Display an error message when unsupported file formats are uploaded.
+* Prevent submission when required rejected documents are missing.
+* Display server or network error messages when upload fails.
+
+## Security Considerations
+
+* Restrict access to only the applicant associated with the application.
+* Validate and sanitize uploaded files.
+* Prevent unauthorized modification of approved documents.
+
+---
+
+# Schedule Rescheduling
+
+## Purpose 
+
+* Allow applicants to accept or request changes to scheduled activities, such as interviews and orientations, when a schedule is updated by the administrator.
+
+## Applicable Activities
+
+* Interview Schedule
+* Orientation Schedule
+
+## Process Overview
+
+* System sends an email notification containing the schedule details and a secure scheduling link.
+* Applicant chooses to either accept the schedule or request a reschedule.
+    * If the applicant accepts, the schedule is confirmed.
+    * If the applicant requests a reschedule, the system notifies the admin.
+* Administrator reviews the request and either approves or reschedule it.
+
+## Step-by-Step
+
+1. System sends an email notification to the applicant.
+2. Applicant reviews the scheduled activity details.
+3. Applicant selects one of the following actions:
+    * Accept Schedule
+    * Request Reschedule
+4. If Request Reschedule is selected:
+    * Applicant selects a preferred date and time.
+    * Applicant submits the request.
+    * System notifies the admin.
+    * Admin reviews the request.
+    * Admin approves or reschedule the appointment.
+
+## Validation Rules
+
+* Scheduling must be accessible only through a valid scheduling link.
+* Applicants can only respond to active schedules.
+* Requested schedules must fall within available dates and times.
+* Past dates and times are not allowed.
+
+---
+V
 # Login
 
 ## Purpose
