@@ -9,6 +9,11 @@ import pLimit from 'p-limit';
 import { PassThrough } from 'stream';
 import { DatabaseService } from './database/database.service';
 import { throwAppError } from '../utils/handlers';
+import {
+  formatCertificateName,
+  formatCertificateSurname,
+  getPronounSet,
+} from './certificate-name.utils';
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -44,6 +49,7 @@ export class CertificateService {
       SELECT 
         first_name,
         last_name,
+        gender,
         school_name,
         course,
         hours_needed,
@@ -56,7 +62,9 @@ export class CertificateService {
       );
 
       return res.rows.map((row) => ({
-        name: `${row.first_name} ${row.last_name}`,
+        name: formatCertificateName(row.first_name, row.last_name, row.gender),
+        surname: formatCertificateSurname(row.last_name, row.gender),
+        pronouns: getPronounSet(row.gender),
         program: row.course,
         school: row.school_name,
         hours: row.hours_needed,
@@ -75,6 +83,13 @@ export class CertificateService {
   async generateCertificatePdf(
     data: {
       name: string;
+      surname?: string;
+      pronouns?: {
+        subject: string;
+        object: string;
+        possessive: string;
+        reflexive: string;
+      };
       program: string;
       school: string;
       hours: number;
@@ -112,6 +127,42 @@ export class CertificateService {
               replaceAllText: {
                 containsText: { text: '{{NAME}}', matchCase: true },
                 replaceText: data.name,
+              },
+            },
+            {
+              replaceAllText: {
+                containsText: { text: '{{HONORIFIC_NAME}}', matchCase: true },
+                replaceText: data.name,
+              },
+            },
+            {
+              replaceAllText: {
+                containsText: { text: '{{SURNAME}}', matchCase: true },
+                replaceText: data.surname ?? '',
+              },
+            },
+            {
+              replaceAllText: {
+                containsText: { text: '{{PRONOUN_SUBJECT}}', matchCase: true },
+                replaceText: data.pronouns?.subject ?? 'they',
+              },
+            },
+            {
+              replaceAllText: {
+                containsText: { text: '{{PRONOUN_OBJECT}}', matchCase: true },
+                replaceText: data.pronouns?.object ?? 'them',
+              },
+            },
+            {
+              replaceAllText: {
+                containsText: { text: '{{PRONOUN_POSSESSIVE}}', matchCase: true },
+                replaceText: data.pronouns?.possessive ?? 'their',
+              },
+            },
+            {
+              replaceAllText: {
+                containsText: { text: '{{PRONOUN_REFLEXIVE}}', matchCase: true },
+                replaceText: data.pronouns?.reflexive ?? 'themself',
               },
             },
             {
@@ -170,6 +221,13 @@ export class CertificateService {
   async generateBulkCertificates(
     ojts: {
       name: string;
+      surname?: string;
+      pronouns?: {
+        subject: string;
+        object: string;
+        possessive: string;
+        reflexive: string;
+      };
       program: string;
       school: string;
       hours: number;

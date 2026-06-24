@@ -6,6 +6,28 @@ import { SuccessHandler, throwAppError } from '../utils/handlers';
 import { LogsService } from './logs.service';
 import type { UpdateOjtDto } from '../data/dto/update-ojt.dto';
 
+function normalizeGenderValue(gender?: string | null): 'Male' | 'Female' | 'Not Set' | 'Non-binary' | undefined {
+  if (typeof gender !== 'string') return undefined;
+
+  const normalized = gender.trim().toLowerCase();
+
+  switch (normalized) {
+    case 'male':
+      return 'Male';
+    case 'female':
+      return 'Female';
+    case 'non-binary':
+    case 'nonbinary':
+    case 'non binary':
+    case 'they':
+    case 'they/them':
+    case 'they them':
+      return 'Non-binary';
+    default:
+      return 'Not Set';
+  }
+}
+
 @Injectable()
 export class OjtService {
   constructor(
@@ -202,7 +224,7 @@ export class OjtService {
       }
       if (gender !== undefined) {
         sets.push(`gender = $${idx}`);
-        values.push(gender);
+        values.push(normalizeGenderValue(gender));
         idx++;
       }
       if (deploymentDate !== undefined) {

@@ -6,7 +6,7 @@ export type UpdateOjtDto = {
   course?: string;
   ojtYear?: string;
   adminNote?: string;
-  gender?: 'Male' | 'Female' | 'Not Set';
+  gender?: 'Male' | 'Female' | 'Not Set' | 'Non-binary';
   deploymentDate?: string;
   endDate?: string;
 };
