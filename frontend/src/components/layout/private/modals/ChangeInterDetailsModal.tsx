@@ -200,6 +200,26 @@ export const ChangeInterDetailsModal = ({
   const [adminNote, setAdminNote] = useState(intern?.adminNote ?? "");
   const [gender, setGender] = useState(intern?.gender ?? "Female");
   const genderOptions = ["Female", "Male", "Non-binary"];
+
+  const normalizeGenderValue = (value: string) => {
+    const normalized = value.trim().toLowerCase();
+
+    switch (normalized) {
+      case "male":
+        return "Male";
+      case "female":
+        return "Female";
+      case "non-binary":
+      case "nonbinary":
+      case "non binary":
+      case "they":
+      case "they/them":
+      case "they them":
+        return "Non-binary";
+      default:
+        return "Not Set";
+    }
+  };
   const [deploymentDate, setDeploymentDate] = useState(
     intern?.deploymentDate ?? "",
   );
@@ -444,7 +464,7 @@ export const ChangeInterDetailsModal = ({
       course: course.trim(),
       ojtYear,
       adminNote,
-      gender,
+      gender: normalizeGenderValue(gender),
       deploymentDate:
         deploymentDateMode === "month" && deploymentDate.length === 10
           ? deploymentDate.slice(0, 7)

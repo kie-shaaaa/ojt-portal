@@ -4,8 +4,23 @@ export async function createOjtData(client: Pool) {
   await client.query(`
         DO $$
         BEGIN
-            CREATE TYPE gender AS ENUM ('Male', 'Female', 'Not Set');
-        EXCEPTION WHEN duplicate_object THEN null;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gender') THEN
+                CREATE TYPE gender AS ENUM ('Male', 'Female', 'Non-binary', 'Not Set');
+            END IF;
+        END $$;
+    `);
+
+  await client.query(`
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_enum e
+                JOIN pg_type t ON t.oid = e.enumtypid
+                WHERE t.typname = 'gender' AND e.enumlabel = 'Non-binary'
+            ) THEN
+                ALTER TYPE gender ADD VALUE 'Non-binary';
+            END IF;
         END $$;
     `);
 
