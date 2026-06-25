@@ -26,7 +26,7 @@ export class CertificateController {
   async generateBulkCertificates(
     @Req() req: FastifyRequestWithUser,
     @Res() reply: FastifyReply,
-    @Body() body: { ojtIds: string[] },
+    @Body() body: { ojtIds: string[]; monthYearOnly?: boolean },
   ) {
     try {
       const userId = req.user?.id;
@@ -55,6 +55,7 @@ export class CertificateController {
       const zipStream = await this.certificateService.generateFromOjtIds(
         body.ojtIds,
         authClient,
+        !!body.monthYearOnly,
       );
 
       // 4. Fastify headers
