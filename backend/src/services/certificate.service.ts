@@ -19,12 +19,32 @@ function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat('en-US', {
+function formatDate(date?: Date | null, monthYearOnly = false) {
+  if (date === null || date === undefined) return '';
+
+  // Accept strings or Date objects
+  const parsedDate = date instanceof Date ? date : new Date(String(date));
+  if (Number.isNaN(parsedDate.getTime())) {
+    console.warn('[formatDate] Invalid date:', date);
+    return '';
+  }
+
+  if (monthYearOnly) {
+    const formatted = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+    }).format(parsedDate);
+    console.log('[formatDate] Month+Year format:', date, '->', formatted);
+    return formatted;
+  }
+
+  const formatted = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(date);
+  }).format(parsedDate);
+  console.log('[formatDate] Full format:', date, '->', formatted);
+  return formatted;
 }
 
 const templateId = process.env.GOOGLE_TEMPLATE_ID;
@@ -53,13 +73,22 @@ export class CertificateService {
         school_name,
         course,
         hours_needed,
-        confirmed_at,
+        deployment_date,
         end_date
       FROM ojt_data
       WHERE id = ANY($1)
       `,
         [ojtIds],
       );
+
+      console.log('[getOjtInfo] Raw DB rows:', JSON.stringify(res.rows, null, 2));
+
+      const parseDate = (dateStr: string | null): Date | null => {
+        if (!dateStr) return null;
+        const date = new Date(dateStr);
+        console.log('[parseDate] Input:', dateStr, '-> Date:', date, '-> Valid:', !Number.isNaN(date.getTime()));
+        return Number.isNaN(date.getTime()) ? null : date;
+      };
 
       return res.rows.map((row) => ({
         name: formatCertificateName(row.first_name, row.last_name, row.gender),
@@ -68,8 +97,8 @@ export class CertificateService {
         program: row.course,
         school: row.school_name,
         hours: row.hours_needed,
-        startDate: row.confirmed_at,
-        endDate: row.end_date,
+        startDate: parseDate(row.deployment_date),
+        endDate: parseDate(row.end_date),
       }));
     } catch (error) {
       console.error('[CertificateService] Failed to get OJT info:', error);
@@ -93,11 +122,12 @@ export class CertificateService {
       program: string;
       school: string;
       hours: number;
-      startDate: Date;
-      endDate: Date;
+      startDate: Date | null;
+      endDate: Date | null;
     },
     templateId: string,
     authClient: any,
+    monthYearOnly = false,
   ) {
     const drive = google.drive({ version: 'v3', auth: authClient });
     const slides = google.slides({ version: 'v1', auth: authClient });
@@ -186,13 +216,13 @@ export class CertificateService {
             {
               replaceAllText: {
                 containsText: { text: '{{STARTDATE}}', matchCase: true },
-                replaceText: formatDate(data.startDate),
+                replaceText: formatDate(data.startDate, monthYearOnly),
               },
             },
             {
               replaceAllText: {
                 containsText: { text: '{{ENDDATE}}', matchCase: true },
-                replaceText: formatDate(data.endDate),
+                replaceText: formatDate(data.endDate, monthYearOnly),
               },
             },
           ],
@@ -231,17 +261,18 @@ export class CertificateService {
       program: string;
       school: string;
       hours: number;
-      startDate: Date;
-      endDate: Date;
+      startDate: Date | null;
+      endDate: Date | null;
     }[],
     templateId: string,
     authClient: any,
+    monthYearOnly = false,
   ) {
     const limit = pLimit(2);
 
     const buffers = await Promise.all(
       ojts.map((ojt) =>
-        limit(() => this.generateCertificatePdf(ojt, templateId, authClient)),
+        limit(() => this.generateCertificatePdf(ojt, templateId, authClient, monthYearOnly)),
       ),
     );
 
@@ -276,9 +307,9 @@ export class CertificateService {
   // =========================
   // 5. ORCHESTRATION ENTRY
   // =========================
-  async generateFromOjtIds(ojtIds: string[], authClient: any) {
+  async generateFromOjtIds(ojtIds: string[], authClient: any, monthYearOnly = false) {
     const ojts = await this.getOjtInfo(ojtIds);
 
-    return this.generateBulkCertificates(ojts, templateId!, authClient);
+    return this.generateBulkCertificates(ojts, templateId!, authClient, monthYearOnly);
   }
 }

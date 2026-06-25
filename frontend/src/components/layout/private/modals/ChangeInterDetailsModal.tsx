@@ -223,22 +223,8 @@ export const ChangeInterDetailsModal = ({
   const [deploymentDate, setDeploymentDate] = useState(
     intern?.deploymentDate ?? "",
   );
-  const [deploymentDateMode, setDeploymentDateMode] = useState<"month" | "day">(
-    intern?.deploymentDate && /^\d{4}-\d{2}$/.test(intern.deploymentDate)
-      ? "month"
-      : "day",
-  );
   const [endDate, setEndDate] = useState(intern?.endDate ?? "");
-  const [endDateMode, setEndDateMode] = useState<"month" | "day">(
-    intern?.endDate && /^\d{4}-\d{2}$/.test(intern.endDate) ? "month" : "day",
-  );
-  const [dateMode, setDateMode] = useState<"month" | "day">(
-    intern?.deploymentDate && /^\d{4}-\d{2}$/.test(intern.deploymentDate)
-      ? "month"
-      : intern?.endDate && /^\d{4}-\d{2}$/.test(intern.endDate)
-        ? "month"
-        : "day",
-  );
+  // always use full date (YYYY-MM-DD) in this modal
   const [schoolOptions, setSchoolOptions] = useState(defaultSchoolOptions);
   const [courseOptions, setCourseOptions] = useState(defaultCourseOptions);
   const [isSaving, setIsSaving] = useState(false);
@@ -371,92 +357,21 @@ export const ChangeInterDetailsModal = ({
       }
     };
 
-    const parseStoredEndDate = (d?: string) => {
-      if (!d) return { value: "", type: "date" as const };
-      if (/^\d{4}-\d{2}-\d{2}$/.test(d))
-        return { value: d, type: "date" as const };
-      if (/^\d{4}-\d{2}$/.test(d)) return { value: d, type: "month" as const };
-      if (/^\d{4}$/.test(d)) return { value: d, type: "year" as const };
-      // fallback: try parsing as Date and convert to YYYY-MM-DD
-      const dt = new Date(d);
-      if (!isNaN(dt.getTime()))
-        return { value: normalizeToYMD(d), type: "date" as const };
-      return { value: "", type: "date" as const };
-    };
-
-    const normalizeToYM = (d?: string) => {
-      if (!d) return "";
-      const trimmed = d.trim();
-      if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
-      const dt = new Date(trimmed);
-      if (isNaN(dt.getTime())) return "";
-      const y = dt.getFullYear();
-      const m = String(dt.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`;
-    };
-
     requestAnimationFrame(() => {
       const nextDeploymentDate = normalizeToYMD(intern?.deploymentDate);
-      const nextDeploymentMonth = normalizeToYM(intern?.deploymentDate);
-      setDeploymentDate(nextDeploymentDate || nextDeploymentMonth || "");
-      setDeploymentDateMode(
-        intern?.deploymentDate && /^\d{4}-\d{2}$/.test(intern.deploymentDate)
-          ? "month"
-          : "day",
-      );
+      setDeploymentDate(nextDeploymentDate || "");
     });
     requestAnimationFrame(() => {
       const nextEndDate = normalizeToYMD(intern?.endDate);
-      const nextEndMonth = normalizeToYM(intern?.endDate);
-      setEndDate(nextEndDate || nextEndMonth || "");
-      setEndDateMode(
-        intern?.endDate && /^\d{4}-\d{2}$/.test(intern.endDate)
-          ? "month"
-          : "day",
-      );
+      setEndDate(nextEndDate || "");
     });
   }, [intern]);
 
-  const handleDateModeChange = (mode: "month" | "day") => {
-    setDateMode(mode);
-    setDeploymentDateMode(mode);
-    setEndDateMode(mode);
-
-    if (mode === "month") {
-      setDeploymentDate((current) => {
-        if (/^\d{4}-\d{2}$/.test(current)) return current;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
-          return current.slice(0, 7);
-        }
-        return current;
-      });
-      setEndDate((current) => {
-        if (/^\d{4}-\d{2}$/.test(current)) return current;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
-          return current.slice(0, 7);
-        }
-        return current;
-      });
-      return;
-    }
-
-    setDeploymentDate((current) => {
-      if (/^\d{4}-\d{2}$/.test(current)) {
-        return `${current}-01`;
-      }
-      return current;
-    });
-    setEndDate((current) => {
-      if (/^\d{4}-\d{2}$/.test(current)) {
-        return `${current}-01`;
-      }
-      return current;
-    });
-  };
+  // date mode removed — always use full date
 
   const handleSave = async () => {
     setIsSaving(true);
-    const payload = {
+      const payload = {
       id: intern?.id,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -465,14 +380,8 @@ export const ChangeInterDetailsModal = ({
       ojtYear,
       adminNote,
       gender: normalizeGenderValue(gender),
-      deploymentDate:
-        deploymentDateMode === "month" && deploymentDate.length === 10
-          ? deploymentDate.slice(0, 7)
-          : deploymentDate || null,
-      endDate:
-        endDateMode === "month" && endDate.length === 10
-          ? endDate.slice(0, 7)
-          : endDate || null,
+      deploymentDate: deploymentDate || null,
+      endDate: endDate || null,
     };
     try {
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -620,22 +529,7 @@ export const ChangeInterDetailsModal = ({
               </p>
             </div>
 
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-bold text-gray-700">
-                  Date Format
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleDateModeChange(dateMode === "month" ? "day" : "month")
-                  }
-                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                >
-                  {dateMode === "month" ? "Month only" : "Month + day"}
-                </button>
-              </div>
-            </div>
+            {/* Date format: removed — always use full date */}
 
             <div className="flex flex-col gap-1.5">
               <label
@@ -650,16 +544,11 @@ export const ChangeInterDetailsModal = ({
                 labelClassName="text-gray-700"
                 value={deploymentDate}
                 onChange={setDeploymentDate}
-                pickerMode={deploymentDateMode === "month" ? "month" : "day"}
-                placeholder={
-                  deploymentDateMode === "month" ? "yyyy/mm" : "yyyy/mm/dd"
-                }
+                pickerMode={"day"}
+                placeholder={"yyyy/mm/dd"}
+                allowPast={true}
               />
-              <p className="text-xs text-gray-500">
-                {deploymentDateMode === "month"
-                  ? "Select the month only when the internship starts"
-                  : "Select the exact month and day when the internship starts"}
-              </p>
+              <p className="text-xs text-gray-500">Select the exact month and day when the internship starts</p>
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -675,14 +564,10 @@ export const ChangeInterDetailsModal = ({
                 labelClassName="text-gray-700"
                 value={endDate}
                 onChange={setEndDate}
-                pickerMode={endDateMode === "month" ? "month" : "day"}
-                placeholder={endDateMode === "month" ? "yyyy/mm" : "yyyy/mm/dd"}
+                pickerMode={"day"}
+                placeholder={"yyyy/mm/dd"}
               />
-              <p className="text-xs text-gray-500">
-                {endDateMode === "month"
-                  ? "Select the month only when the internship period ends"
-                  : "Select the exact month and day when the internship period ends"}
-              </p>
+              <p className="text-xs text-gray-500">Select the exact month and day when the internship period ends</p>
             </div>
           </form>
         </div>

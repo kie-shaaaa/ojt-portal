@@ -19,6 +19,7 @@ interface DatePickerProps {
   dropdownPlacement?: "up" | "down";
   pickerMode?: "day" | "month";
   compact?: boolean;
+  allowPast?: boolean;
 }
 
 export default function DatePicker({
@@ -35,6 +36,7 @@ export default function DatePicker({
   dropdownPlacement = "down",
   pickerMode = "day",
   compact = false,
+  allowPast = false,
 }: DatePickerProps): JSX.Element {
   const pickerRootRef = useRef<HTMLDivElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -85,7 +87,8 @@ export default function DatePicker({
 
   const isDisabledDate = (dateStr: string): boolean => {
     if (minDate && dateStr <= minDate) return true;
-    return isPastDate(dateStr) || isWeekend(dateStr);
+    if (!allowPast && isPastDate(dateStr)) return true;
+    return isWeekend(dateStr);
   };
   // Close picker when clicking outside either the input wrapper or calendar popup.
   useOutsidePointerDown(pickerRootRef, () => setShowPicker(false), showPicker);

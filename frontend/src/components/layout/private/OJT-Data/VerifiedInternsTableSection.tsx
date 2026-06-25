@@ -279,6 +279,7 @@ export const VerifiedInternsTableSection = ({
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
   const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
+  const [monthYearOnly, setMonthYearOnly] = useState(false);
 
   const rows = useMemo(
     () =>
@@ -414,7 +415,7 @@ export const VerifiedInternsTableSection = ({
       const response = await apiCallRaw("/certificates/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ojtIds: selectedInterns }),
+        body: JSON.stringify({ ojtIds: selectedInterns, monthYearOnly }),
       });
 
       if (response.status === 403) {
@@ -1092,6 +1093,15 @@ export const VerifiedInternsTableSection = ({
               {selectedInterns.length !== 1 ? "s" : ""} selected
             </p>
             <div className="flex items-center gap-2 max-[767px]:flex-col max-[767px]:items-stretch max-[767px]:w-full">
+              <label className="flex items-center gap-2 mr-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={monthYearOnly}
+                  onChange={(e) => setMonthYearOnly(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                Month &amp; Year only
+              </label>
               <button
                 onClick={handleExportExcel}
                 className="px-4 py-2 text-sm font-semibold text-blue-700 bg-white rounded-lg hover:bg-blue-50 border border-blue-300 transition-all shadow-sm hover:shadow-md max-[767px]:w-full"
