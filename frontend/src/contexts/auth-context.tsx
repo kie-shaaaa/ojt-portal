@@ -117,10 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore network/logout errors
     }
-        setAuthToken(null); 
-        setToken(null);
-        setUser(null);
-        clearCsrfCache();
+    setAuthToken(null);
+    setToken(null);
+    setUser(null);
+    setError(null);
+    clearCsrfCache();
   }, []);
 
   const value = useMemo(
