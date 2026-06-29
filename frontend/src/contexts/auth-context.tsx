@@ -1,6 +1,6 @@
 "use client";
 
-import { apiCall } from "@/lib/api";
+import { apiCall, clearCsrfCache } from "@/lib/api";
 import React, {
   createContext,
   useState,
@@ -117,9 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore network/logout errors
     }
-    setToken(null);
-    setUser(null);
-    setError(null);
+        setAuthToken(null); 
+        setToken(null);
+        setUser(null);
+        clearCsrfCache();
   }, []);
 
   const value = useMemo(
