@@ -9,11 +9,7 @@ import pLimit from 'p-limit';
 import { PassThrough } from 'stream';
 import { DatabaseService } from './database/database.service';
 import { throwAppError } from '../utils/handlers';
-import {
-  formatCertificateName,
-  formatCertificateSurname,
-  getPronounSet,
-} from './certificate-name.utils';
+import { formatCertificateName, formatCertificateSurname, getPronounSet } from '../../test/certificate-name.utils';
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
