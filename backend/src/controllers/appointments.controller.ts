@@ -170,7 +170,10 @@ export class AppointmentsController {
         throw new BadRequestException('applicationId is required');
       }
 
-      return await this.appointmentService.confirmAppointment(applicationId, kind);
+      return await this.appointmentService.confirmAppointment(
+        applicationId,
+        kind,
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error
@@ -188,7 +191,9 @@ export class AppointmentsController {
     @Query('decision') decision?: 'approve' | 'reject',
   ) {
     try {
-      const parsedApplicationId = applicationId ? Number(applicationId) : undefined;
+      const parsedApplicationId = applicationId
+        ? Number(applicationId)
+        : undefined;
 
       if (!parsedApplicationId || !type || !decision) {
         return `<!DOCTYPE html>

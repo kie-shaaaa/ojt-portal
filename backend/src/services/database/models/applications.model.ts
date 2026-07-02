@@ -11,7 +11,9 @@ export async function createApplications(client: Pool) {
 
   // Alter existing enum to add 'for_orientation' if it doesn't exist
   try {
-    await client.query(`ALTER TYPE application_status ADD VALUE 'for_orientation' BEFORE 'pending accept'`);
+    await client.query(
+      `ALTER TYPE application_status ADD VALUE 'for_orientation' BEFORE 'pending accept'`,
+    );
   } catch (err) {
     // Ignore error if value already exists
     if (err instanceof Error && !err.message.includes('already exists')) {

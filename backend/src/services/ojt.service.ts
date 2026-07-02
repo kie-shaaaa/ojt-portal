@@ -6,7 +6,9 @@ import { SuccessHandler, throwAppError } from '../utils/handlers';
 import { LogsService } from './logs.service';
 import type { UpdateOjtDto } from '../data/dto/update-ojt.dto';
 
-function normalizeGenderValue(gender?: string | null): 'Male' | 'Female' | 'Not Set' | 'Non-binary' | undefined {
+function normalizeGenderValue(
+  gender?: string | null,
+): 'Male' | 'Female' | 'Not Set' | 'Non-binary' | undefined {
   if (typeof gender !== 'string') return undefined;
 
   const normalized = gender.trim().toLowerCase();

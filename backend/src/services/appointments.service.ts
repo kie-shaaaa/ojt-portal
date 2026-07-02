@@ -534,27 +534,32 @@ export class AppointmentsService {
           action: 'Appointment Reschedule Approved',
           details: `Reschedule approved for application ${applicationId}`,
         })
-        .catch((err) => console.error('Failed to log reschedule approval', err));
+        .catch((err) =>
+          console.error('Failed to log reschedule approval', err),
+        );
 
       if (appointmentRecord.email) {
-        const originalDate = appointmentRecord.appointment_date.toLocaleDateString(
-          'en-PH',
-          { dateStyle: 'long' },
-        );
-        const originalTime = appointmentRecord.appointment_date.toLocaleTimeString(
-          'en-PH',
-          { hour: 'numeric', minute: '2-digit' },
-        );
-        const requestedDate = updatedAppointment.appointment_date.toLocaleDateString(
-          'en-PH',
-          { dateStyle: 'long' },
-        );
-        const requestedTime = updatedAppointment.appointment_date.toLocaleTimeString(
-          'en-PH',
-          { hour: 'numeric', minute: '2-digit' },
-        );
+        const originalDate =
+          appointmentRecord.appointment_date.toLocaleDateString('en-PH', {
+            dateStyle: 'long',
+          });
+        const originalTime =
+          appointmentRecord.appointment_date.toLocaleTimeString('en-PH', {
+            hour: 'numeric',
+            minute: '2-digit',
+          });
+        const requestedDate =
+          updatedAppointment.appointment_date.toLocaleDateString('en-PH', {
+            dateStyle: 'long',
+          });
+        const requestedTime =
+          updatedAppointment.appointment_date.toLocaleTimeString('en-PH', {
+            hour: 'numeric',
+            minute: '2-digit',
+          });
 
-        const canRescheduleAgain = (updatedAppointment.reschedule_count ?? 0) < 3;
+        const canRescheduleAgain =
+          (updatedAppointment.reschedule_count ?? 0) < 3;
         const frontendBaseUrl =
           process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
         const rescheduleUrl = canRescheduleAgain
@@ -581,7 +586,10 @@ export class AppointmentsService {
           );
       }
 
-      return SuccessHandler('Reschedule request approved successfully', updatedAppointment);
+      return SuccessHandler(
+        'Reschedule request approved successfully',
+        updatedAppointment,
+      );
     } catch (error) {
       await client.query('ROLLBACK').catch(() => undefined);
       console.error('[APPOINTMENT] Error approving reschedule request:', error);
@@ -641,27 +649,33 @@ export class AppointmentsService {
           action: 'Appointment Reschedule Rejected',
           details: `Reschedule rejected for application ${applicationId}`,
         })
-        .catch((err) => console.error('Failed to log reschedule rejection', err));
+        .catch((err) =>
+          console.error('Failed to log reschedule rejection', err),
+        );
 
       if (appointmentRecord.email) {
-        const originalDate = appointmentRecord.appointment_date.toLocaleDateString(
-          'en-PH',
-          { dateStyle: 'long' },
-        );
-        const originalTime = appointmentRecord.appointment_date.toLocaleTimeString(
-          'en-PH',
-          { hour: 'numeric', minute: '2-digit' },
-        );
-        const requestedDate = appointmentRecord.pending_reschedule_date.toLocaleDateString(
-          'en-PH',
-          { dateStyle: 'long' },
-        );
-        const requestedTime = appointmentRecord.pending_reschedule_date.toLocaleTimeString(
-          'en-PH',
-          { hour: 'numeric', minute: '2-digit' },
-        );
+        const originalDate =
+          appointmentRecord.appointment_date.toLocaleDateString('en-PH', {
+            dateStyle: 'long',
+          });
+        const originalTime =
+          appointmentRecord.appointment_date.toLocaleTimeString('en-PH', {
+            hour: 'numeric',
+            minute: '2-digit',
+          });
+        const requestedDate =
+          appointmentRecord.pending_reschedule_date.toLocaleDateString(
+            'en-PH',
+            { dateStyle: 'long' },
+          );
+        const requestedTime =
+          appointmentRecord.pending_reschedule_date.toLocaleTimeString(
+            'en-PH',
+            { hour: 'numeric', minute: '2-digit' },
+          );
 
-        const canRescheduleAgain = (appointmentRecord.reschedule_count ?? 0) < 3;
+        const canRescheduleAgain =
+          (appointmentRecord.reschedule_count ?? 0) < 3;
         const frontendBaseUrl =
           process.env.FRONTEND_URL?.trim() || 'https://ojt.ntc.gov.ph';
         const rescheduleUrl = canRescheduleAgain
@@ -812,7 +826,10 @@ export class AppointmentsService {
     }
   }
 
-  async confirmAppointment(applicationId: number, kind?: 'orientation' | 'interview') {
+  async confirmAppointment(
+    applicationId: number,
+    kind?: 'orientation' | 'interview',
+  ) {
     const client = this.databaseService.getClient();
 
     try {
@@ -861,18 +878,20 @@ export class AppointmentsService {
         );
 
       // Mark appointment as confirmed (no longer tentative)
-      await client.query(
-        `
+      await client
+        .query(
+          `
           UPDATE appointments
           SET is_tentative = FALSE
           WHERE application_id = $1
             AND type = $2
             AND COALESCE(is_cancelled, FALSE) = FALSE
         `,
-        [applicationId, kind || appointment.type],
-      ).catch((err) =>
-        console.error('Failed to mark appointment as confirmed', err),
-      );
+          [applicationId, kind || appointment.type],
+        )
+        .catch((err) =>
+          console.error('Failed to mark appointment as confirmed', err),
+        );
 
       // If kind is specified, it's the schedule confirmation (not acceptance confirmation)
       if (kind === 'orientation') {
@@ -882,26 +901,34 @@ export class AppointmentsService {
         const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
         const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
 
-        await this.mailerService.responseEmail({
-          to: appointment.email,
-          firstName: appointment.first_name ?? '',
-          lastName: appointment.last_name ?? '',
-          applicationId,
-          status: 'orientation',
-          acceptedDate: appointment.appointment_date.toLocaleDateString('en-PH', {
-            dateStyle: 'long',
-          }),
-          acceptedTime: appointment.appointment_date.toLocaleTimeString('en-PH', {
-            hour: 'numeric',
-            minute: '2-digit',
-          }),
-          interviewLocation: undefined,
-          confirmUrl,
-          rescheduleUrl,
-          adminNote: undefined,
-        }).catch((err) =>
-          console.error('Failed to send orientation schedule email', err),
-        );
+        await this.mailerService
+          .responseEmail({
+            to: appointment.email,
+            firstName: appointment.first_name ?? '',
+            lastName: appointment.last_name ?? '',
+            applicationId,
+            status: 'orientation',
+            acceptedDate: appointment.appointment_date.toLocaleDateString(
+              'en-PH',
+              {
+                dateStyle: 'long',
+              },
+            ),
+            acceptedTime: appointment.appointment_date.toLocaleTimeString(
+              'en-PH',
+              {
+                hour: 'numeric',
+                minute: '2-digit',
+              },
+            ),
+            interviewLocation: undefined,
+            confirmUrl,
+            rescheduleUrl,
+            adminNote: undefined,
+          })
+          .catch((err) =>
+            console.error('Failed to send orientation schedule email', err),
+          );
       } else if (kind === 'interview') {
         await client.query(
           `
@@ -921,26 +948,34 @@ export class AppointmentsService {
           const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
           const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=orientation&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
 
-          await this.mailerService.responseEmail({
-            to: appointment.email,
-            firstName: appointment.first_name ?? '',
-            lastName: appointment.last_name ?? '',
-            applicationId,
-            status: 'orientation',
-            acceptedDate: appointment.appointment_date.toLocaleDateString('en-PH', {
-              dateStyle: 'long',
-            }),
-            acceptedTime: appointment.appointment_date.toLocaleTimeString('en-PH', {
-              hour: 'numeric',
-              minute: '2-digit',
-            }),
-            interviewLocation: undefined,
-            confirmUrl,
-            rescheduleUrl,
-            adminNote: undefined,
-          }).catch((err) =>
-            console.error('Failed to send orientation schedule email', err),
-          );
+          await this.mailerService
+            .responseEmail({
+              to: appointment.email,
+              firstName: appointment.first_name ?? '',
+              lastName: appointment.last_name ?? '',
+              applicationId,
+              status: 'orientation',
+              acceptedDate: appointment.appointment_date.toLocaleDateString(
+                'en-PH',
+                {
+                  dateStyle: 'long',
+                },
+              ),
+              acceptedTime: appointment.appointment_date.toLocaleTimeString(
+                'en-PH',
+                {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                },
+              ),
+              interviewLocation: undefined,
+              confirmUrl,
+              rescheduleUrl,
+              adminNote: undefined,
+            })
+            .catch((err) =>
+              console.error('Failed to send orientation schedule email', err),
+            );
         } else if (appointment.type === 'interview') {
           await client.query(
             `
@@ -958,26 +993,34 @@ export class AppointmentsService {
           const confirmUrl = `${frontendBaseUrl}/track?action=confirm&kind=interview&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
           const rescheduleUrl = `${frontendBaseUrl}/track?action=reschedule&kind=interview&id=${applicationId}&email=${encodeURIComponent(appointment.email)}`;
 
-          await this.mailerService.responseEmail({
-            to: appointment.email,
-            firstName: appointment.first_name ?? '',
-            lastName: appointment.last_name ?? '',
-            applicationId,
-            status: 'scheduled',
-            interviewDate: appointment.appointment_date.toLocaleDateString('en-PH', {
-              dateStyle: 'long',
-            }),
-            interviewTime: appointment.appointment_date.toLocaleTimeString('en-PH', {
-              hour: 'numeric',
-              minute: '2-digit',
-            }),
-            interviewLocation: 'NTC Main Office, Quezon City',
-            confirmUrl,
-            rescheduleUrl,
-            adminNote: undefined,
-          }).catch((err) =>
-            console.error('Failed to send interview schedule email', err),
-          );
+          await this.mailerService
+            .responseEmail({
+              to: appointment.email,
+              firstName: appointment.first_name ?? '',
+              lastName: appointment.last_name ?? '',
+              applicationId,
+              status: 'scheduled',
+              interviewDate: appointment.appointment_date.toLocaleDateString(
+                'en-PH',
+                {
+                  dateStyle: 'long',
+                },
+              ),
+              interviewTime: appointment.appointment_date.toLocaleTimeString(
+                'en-PH',
+                {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                },
+              ),
+              interviewLocation: 'NTC Main Office, Quezon City',
+              confirmUrl,
+              rescheduleUrl,
+              adminNote: undefined,
+            })
+            .catch((err) =>
+              console.error('Failed to send interview schedule email', err),
+            );
         }
       }
 

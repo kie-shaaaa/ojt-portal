@@ -9,7 +9,11 @@ import pLimit from 'p-limit';
 import { PassThrough } from 'stream';
 import { DatabaseService } from './database/database.service';
 import { throwAppError } from '../utils/handlers';
-import { formatCertificateName, formatCertificateSurname, getPronounSet } from '../../test/certificate-name.utils';
+import {
+  formatCertificateName,
+  formatCertificateSurname,
+  getPronounSet,
+} from '../../test/certificate-name.utils';
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -77,12 +81,22 @@ export class CertificateService {
         [ojtIds],
       );
 
-      console.log('[getOjtInfo] Raw DB rows:', JSON.stringify(res.rows, null, 2));
+      console.log(
+        '[getOjtInfo] Raw DB rows:',
+        JSON.stringify(res.rows, null, 2),
+      );
 
       const parseDate = (dateStr: string | null): Date | null => {
         if (!dateStr) return null;
         const date = new Date(dateStr);
-        console.log('[parseDate] Input:', dateStr, '-> Date:', date, '-> Valid:', !Number.isNaN(date.getTime()));
+        console.log(
+          '[parseDate] Input:',
+          dateStr,
+          '-> Date:',
+          date,
+          '-> Valid:',
+          !Number.isNaN(date.getTime()),
+        );
         return Number.isNaN(date.getTime()) ? null : date;
       };
 
@@ -181,13 +195,19 @@ export class CertificateService {
             },
             {
               replaceAllText: {
-                containsText: { text: '{{PRONOUN_POSSESSIVE}}', matchCase: true },
+                containsText: {
+                  text: '{{PRONOUN_POSSESSIVE}}',
+                  matchCase: true,
+                },
                 replaceText: data.pronouns?.possessive ?? 'their',
               },
             },
             {
               replaceAllText: {
-                containsText: { text: '{{PRONOUN_REFLEXIVE}}', matchCase: true },
+                containsText: {
+                  text: '{{PRONOUN_REFLEXIVE}}',
+                  matchCase: true,
+                },
                 replaceText: data.pronouns?.reflexive ?? 'themself',
               },
             },
@@ -268,7 +288,14 @@ export class CertificateService {
 
     const buffers = await Promise.all(
       ojts.map((ojt) =>
-        limit(() => this.generateCertificatePdf(ojt, templateId, authClient, monthYearOnly)),
+        limit(() =>
+          this.generateCertificatePdf(
+            ojt,
+            templateId,
+            authClient,
+            monthYearOnly,
+          ),
+        ),
       ),
     );
 
@@ -303,9 +330,18 @@ export class CertificateService {
   // =========================
   // 5. ORCHESTRATION ENTRY
   // =========================
-  async generateFromOjtIds(ojtIds: string[], authClient: any, monthYearOnly = false) {
+  async generateFromOjtIds(
+    ojtIds: string[],
+    authClient: any,
+    monthYearOnly = false,
+  ) {
     const ojts = await this.getOjtInfo(ojtIds);
 
-    return this.generateBulkCertificates(ojts, templateId!, authClient, monthYearOnly);
+    return this.generateBulkCertificates(
+      ojts,
+      templateId!,
+      authClient,
+      monthYearOnly,
+    );
   }
 }

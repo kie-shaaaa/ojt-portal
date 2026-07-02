@@ -97,7 +97,6 @@ export class ApplicationsService {
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
 
-
       return SuccessHandler('Application submitted successfully', res.rows[0]);
     } catch (error) {
       console.error('[APPLICATION] Error submitting application', error);
@@ -190,8 +189,6 @@ export class ApplicationsService {
         await this.mailerService.confirmationEmail(confirmationDto);
 
       if (!mailed) throwAppError('server_error', 'Failed to email user');
-
-      
 
       return SuccessHandler(
         'Application submitted successfully',

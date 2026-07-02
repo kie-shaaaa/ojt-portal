@@ -1,4 +1,10 @@
-import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { LogsService } from '../services/logs.service';
 import { FetchAllLogs } from '../data/types';
 import { AuthGuard } from '@nestjs/passport';

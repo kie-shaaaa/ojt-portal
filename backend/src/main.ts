@@ -20,7 +20,6 @@ async function bootstrap() {
     }),
   );
 
- 
   // MUST register plugins BEFORE app.listen
 
   await app.register(cookie);

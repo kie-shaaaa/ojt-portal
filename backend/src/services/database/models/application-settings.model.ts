@@ -15,7 +15,7 @@ export async function createApplicationSettings(client: Pool) {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    `); 
+    `);
 
   await client.query(`
     ALTER TABLE application_settings
