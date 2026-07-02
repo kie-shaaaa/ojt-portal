@@ -351,7 +351,6 @@ export const VerifiedInternsTableSection = ({
 
       if (!url) {
         toast.error("Failed to get Google authorization URL.");
-        setIsConnectingGoogle(false);
         return;
       }
 
@@ -362,25 +361,15 @@ export const VerifiedInternsTableSection = ({
         return;
       }
 
-      const handleMessage = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-
-        if (
-          event.data?.type !== "GOOGLE_OAUTH_SUCCESS" &&
-          event.data?.type !== "GOOGLE_OAUTH_FAILED"
-        ) {
-          return;
-        }
-
-        window.removeEventListener("message", handleMessage);
-        setIsConnectingGoogle(false);
-
-        if (event.data.type === "GOOGLE_OAUTH_FAILED") {
-          toast.error("Google connection failed.");
-          return;
-        }
-
+      // Wait for OAuth to complete in backend
+      const pollInterval = setInterval(async () => {
         try {
+          // If popup is still open, just wait
+          if (!popup.closed) return;
+
+          clearInterval(pollInterval);
+
+          // IMPORTANT: verify real backend state
           const res = await apiCall("/google/status");
           const { connected } = res as { connected: boolean };
 
@@ -389,14 +378,15 @@ export const VerifiedInternsTableSection = ({
           if (connected) {
             toast.success("Google account connected successfully.");
           } else {
-            toast.error("Google connection failed.");
+            toast.error("Google connection failed. Please try again.");
           }
-        } catch {
+        } catch (err) {
+          clearInterval(pollInterval);
           toast.error("Failed to verify Google connection.");
+        } finally {
+          setIsConnectingGoogle(false);
         }
-      };
-
-      window.addEventListener("message", handleMessage);
+      }, 1000);
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "Failed to connect Google.";
@@ -1336,7 +1326,8 @@ export const VerifiedInternsTableSection = ({
               setEditedInterns((prev) => ({
                 ...prev,
                 [updated.id]: {
-                  first_name: updated.first_name ?? editingIntern?.first_name,
+                  first_name:
+                    updated.first_name ?? editingIntern?.first_name,
                   last_name: updated.last_name ?? editingIntern?.last_name,
                   school_name:
                     updated.school_name ?? editingIntern?.school_name,

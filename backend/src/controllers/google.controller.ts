@@ -6,11 +6,13 @@ import {
   BadRequestException,
   InternalServerErrorException,
   UseGuards,
+  Res,
 } from '@nestjs/common';
 import { google } from 'googleapis';
 import { GoogleService } from '../services/google.service';
 import type { RequestWithUser } from '../data/interfaces';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
+import type { FastifyReply } from 'fastify';
 
 @Controller('google')
 export class GoogleController {
@@ -49,7 +51,11 @@ export class GoogleController {
   }
 
   @Get('callback')
-  async callback(@Query('code') code: string, @Query('state') userId: string) {
+  async callback(
+    @Query('code') code: string,
+    @Query('state') userId: string,
+    @Res() reply: FastifyReply,
+  ) {
     try {
       if (!code || !userId) {
         throw new BadRequestException('Missing OAuth parameters');
@@ -69,10 +75,16 @@ export class GoogleController {
 
       await this.googleService.insertToken(userId, tokens.refresh_token);
 
-      return {
-        success: true,
-        message: 'Google connected successfully',
-      };
+      return reply.type('text/html').send(`
+        <!DOCTYPE html>
+        <html>
+        <body>
+        <script>
+          window.close();
+        </script>
+        </body>
+        </html>
+      `);
     } catch (err) {
       console.error('Google OAuth callback failed:', err);
 
